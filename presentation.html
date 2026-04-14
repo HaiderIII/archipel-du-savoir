@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L'Archipel du Savoir — Présentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Fredoka', system-ui, sans-serif;
+      background: #060E1A;
+      color: #C8D0DC;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(241,196,15,0.08) 0%, transparent 70%),
+        linear-gradient(160deg, #060E1A 0%, #0C1929 50%, #060E1A 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(46,204,113,0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(231,76,60,0.04) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(52,152,219,0.03) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .islands-deco {
+      font-size: clamp(40px, 10vw, 90px);
+      display: flex; gap: clamp(16px, 4vw, 48px);
+      margin-bottom: 28px;
+      filter: drop-shadow(0 0 32px rgba(241,196,15,0.15));
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .islands-deco span:nth-child(2) { animation-delay: -2s; }
+    .islands-deco span:nth-child(3) { animation-delay: -4s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 7vw, 64px);
+      font-weight: 700;
+      color: #F1C40F;
+      letter-spacing: 4px;
+      text-shadow: 0 0 60px rgba(241,196,15,0.25);
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+
+    .hero-sub {
+      font-size: clamp(14px, 2.5vw, 20px);
+      color: rgba(255,255,255,0.45);
+      font-weight: 400;
+      letter-spacing: 2px;
+      margin-bottom: 32px;
+    }
+
+    .hero-desc {
+      max-width: 600px;
+      font-size: clamp(15px, 2vw, 18px);
+      line-height: 1.7;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 40px;
+    }
+
+    .hero-desc strong { color: #F1C40F; font-weight: 600; }
+
+    .btn-dl {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(241,196,15,0.15);
+      border: 2px solid rgba(241,196,15,0.4);
+      color: #F1C40F;
+      padding: 14px 36px;
+      border-radius: 16px;
+      font-size: 16px; font-weight: 700;
+      text-decoration: none;
+      font-family: inherit;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .btn-dl:hover {
+      background: rgba(241,196,15,0.25);
+      border-color: rgba(241,196,15,0.7);
+      transform: translateY(-2px);
+    }
+
+    .scroll-hint {
+      position: absolute; bottom: 28px;
+      font-size: 11px; color: rgba(255,255,255,0.2);
+      letter-spacing: 2px;
+      animation: blink 2.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:.6} }
+
+    /* ── SECTION ── */
+    section {
+      padding: clamp(48px, 8vw, 96px) clamp(16px, 5vw, 48px);
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 3px;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: clamp(22px, 4vw, 38px);
+      font-weight: 700; color: #fff;
+      margin-bottom: 32px;
+      line-height: 1.2;
+    }
+    h2 span { color: #F1C40F; }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent);
+      margin: 0 auto;
+    }
+
+    /* ── TEAMS ── */
+    .teams {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .team-badge {
+      padding: 8px 18px; border-radius: 50px;
+      font-size: 14px; font-weight: 700;
+      border: 2px solid;
+    }
+
+    /* ── FEATURES GRID ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .feature-card {
+      padding: 22px 24px; border-radius: 18px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .feature-card:hover {
+      border-color: rgba(255,255,255,0.14);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon { font-size: 32px; margin-bottom: 12px; }
+
+    .feature-title {
+      font-size: 16px; font-weight: 700;
+      color: #fff; margin-bottom: 6px;
+    }
+
+    .feature-desc {
+      font-size: 13px; line-height: 1.65;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .feature-pill {
+      display: inline-block;
+      margin-top: 10px; padding: 2px 9px;
+      border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+
+    /* ── ISLANDS ── */
+    .islands {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .island-card {
+      padding: 22px 24px; border-radius: 18px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.07);
+      transition: transform 0.15s;
+    }
+    .island-card:hover { transform: translateY(-3px); }
+
+    .island-icon { font-size: 44px; margin-bottom: 10px; }
+    .island-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .island-cases { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+    /* ── MINI-GAMES FORMATS ── */
+    .formats {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+
+    .format-tag {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 50px;
+      font-size: 13px; font-weight: 700;
+      border: 1px solid;
+    }
+    .format-count {
+      font-size: 10px; font-weight: 400;
+      opacity: 0.6;
+    }
+
+    /* ── TECH STACK ── */
+    .tech-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .tech-badge {
+      padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* ── STATS ROW ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .stat-box {
+      padding: 18px; border-radius: 14px;
+      text-align: center;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat-num {
+      font-size: 36px; font-weight: 700;
+      color: #F1C40F; line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-lbl {
+      font-size: 11px; color: rgba(255,255,255,0.35);
+      letter-spacing: 1px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.2);
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════ HERO ══════════════════ -->
+  <div class="hero">
+    <div class="islands-deco">
+      <span>🏝️</span><span>🌋</span><span>🐚</span>
+    </div>
+    <p class="hero-sub">JEU DE SOCIÉTÉ · CULTURE GÉNÉRALE</p>
+    <h1>L'ARCHIPEL<br>DU SAVOIR</h1>
+    <p class="hero-desc">
+      Un jeu de plateau <strong>Mario Party</strong> version culture générale.<br>
+      4 équipes, 3 îles, des questions, des mini-jeux et du chaos.
+    </p>
+    <a href="dist/index.html" class="btn-dl" download="archipel-du-savoir.html">
+      ⬇️ Télécharger l'application
+    </a>
+    <p class="scroll-hint">↓ &nbsp; DÉCOUVRIR &nbsp; ↓</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ CHIFFRES ══════════════════ -->
+  <section>
+    <p class="section-label">EN CHIFFRES</p>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-num">150</div>
+        <div class="stat-lbl">QUESTIONS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">34</div>
+        <div class="stat-lbl">MINI-JEUX</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">3</div>
+        <div class="stat-lbl">ÎLES</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">14</div>
+        <div class="stat-lbl">CARTES CHAOS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">4</div>
+        <div class="stat-lbl">ÉQUIPES</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="font-size:28px">1 HTML</div>
+        <div class="stat-lbl">À PARTAGER</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ C'EST QUOI ══════════════════ -->
+  <section>
+    <p class="section-label">LE CONCEPT</p>
+    <h2>Un plateau physique,<br>une <span>application compagnon</span></h2>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🎲</div>
+        <div class="feature-title">Plateau recto / verso</div>
+        <div class="feature-desc">
+          Chaque case a deux effets selon la face active. Tous les 3 mini-jeux, un dé décide si le plateau se retourne — tous les raccourcis s'inversent.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">❓</div>
+        <div class="feature-title">3 niveaux de questions</div>
+        <div class="feature-desc">
+          Collège (+1₽), Lycée (+3₽), Expert (+5₽ / −2₽ si faux). 50 questions par niveau, tirées sans répétition jusqu'à épuisement.
+        </div>
+        <span class="feature-pill" style="background:rgba(46,204,113,0.12);color:#2ECC71;border:1px solid rgba(46,204,113,0.2)">50 × 3 niveaux</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⭐</div>
+        <div class="feature-title">Système d'étoiles</div>
+        <div class="feature-desc">
+          Une seule étoile active sur le plateau. Coûte 10₽. Après achat, elle se déplace aléatoirement. C'est l'objectif principal de la partie.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌀</div>
+        <div class="feature-title">Cartes Chaos</div>
+        <div class="feature-desc">
+          14 effets perturbateurs : Tempête, Vol de pièces, Amnésie, Retournement instantané… Tirées sans remise jusqu'à épuisement du paquet.
+        </div>
+        <span class="feature-pill" style="background:rgba(142,68,173,0.12);color:#8E44AD;border:1px solid rgba(142,68,173,0.2)">14 cartes</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛒</div>
+        <div class="feature-title">Boutique</div>
+        <div class="feature-desc">
+          5 objets achetables avec vos pièces : Double dé, Bouclier, Poison, Voleur, Échangeur de position.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🥊</div>
+        <div class="feature-title">Duel de l'Espoir</div>
+        <div class="feature-desc">
+          Dès le tour 7, la dernière équipe peut défier la première sur une question Expert et lui voler une étoile. Aucune pénalité si elle perd.
+        </div>
+        <span class="feature-pill" style="background:rgba(241,196,15,0.1);color:#F1C40F;border:1px solid rgba(241,196,15,0.2)">Tour 7+</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ ÎLES ══════════════════ -->
+  <section>
+    <p class="section-label">LE PLATEAU</p>
+    <h2>3 îles à <span>explorer</span></h2>
+
+    <div class="islands">
+      <div class="island-card" style="background:rgba(27,58,34,0.4);border-color:rgba(46,204,113,0.15)">
+        <div class="island-icon">🏝️</div>
+        <div class="island-name" style="color:#2ECC71">Île Mystère</div>
+        <div class="island-cases">9 cases · 4 raccourcis</div>
+      </div>
+      <div class="island-card" style="background:rgba(58,27,27,0.4);border-color:rgba(231,76,60,0.15)">
+        <div class="island-icon">🌋</div>
+        <div class="island-name" style="color:#E74C3C">Île Volcanique</div>
+        <div class="island-cases">8 cases · 6 raccourcis</div>
+      </div>
+      <div class="island-card" style="background:rgba(27,42,58,0.4);border-color:rgba(52,152,219,0.15)">
+        <div class="island-icon">🐚</div>
+        <div class="island-name" style="color:#3498DB">Île Corail</div>
+        <div class="island-cases">8 cases · 6 raccourcis</div>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;font-size:13px;color:rgba(255,255,255,0.35);text-align:center">
+      Les îles sont reliées par 3 ponts (−3₽) et 3 téléporteurs (−5₽).
+      Les raccourcis inversent leur direction à chaque retournement.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ MINI-JEUX ══════════════════ -->
+  <section>
+    <p class="section-label">MINI-JEUX</p>
+    <h2><span>34 mini-jeux</span> en 6 formats</h2>
+    <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-bottom:24px;line-height:1.7">
+      Chaque mini-jeu est détaillé dans l'application : règles complètes, récompenses, et contenu prêt à jouer (questions, mots, paires, sujets de débat…).
+    </p>
+
+    <div class="formats">
+      <div class="format-tag" style="background:rgba(231,76,60,0.1);border-color:rgba(231,76,60,0.25);color:#E74C3C">
+        🔴 Tous contre tous <span class="format-count">· 10 jeux</span>
+      </div>
+      <div class="format-tag" style="background:rgba(0,188,212,0.1);border-color:rgba(0,188,212,0.25);color:#00BCD4">
+        🔵 2 vs 2 <span class="format-count">· 7 jeux</span>
+      </div>
+      <div class="format-tag" style="background:rgba(46,204,113,0.1);border-color:rgba(46,204,113,0.25);color:#2ECC71">
+        🟢 1 vs 3 <span class="format-count">· 6 jeux</span>
+      </div>
+      <div class="format-tag" style="background:rgba(142,68,173,0.1);border-color:rgba(142,68,173,0.25);color:#8E44AD">
+        🟣 Tournoi 1v1 <span class="format-count">· 5 jeux</span>
+      </div>
+      <div class="format-tag" style="background:rgba(211,84,0,0.1);border-color:rgba(211,84,0,0.25);color:#D35400">
+        🟤 Coopératif <span class="format-count">· 3 jeux</span>
+      </div>
+      <div class="format-tag" style="background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.25);color:#F1C40F">
+        ⭐ Comeback (T7+) <span class="format-count">· 3 jeux</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ ÉQUIPES ══════════════════ -->
+  <section>
+    <p class="section-label">LES ÉQUIPES</p>
+    <h2>4 équipes,<br><span>3 Awards</span> en fin de partie</h2>
+
+    <div class="teams" style="margin-bottom:32px">
+      <div class="team-badge" style="color:#E74C3C;border-color:rgba(231,76,60,0.4);background:rgba(231,76,60,0.08)">🔴 Équipe 1</div>
+      <div class="team-badge" style="color:#3498DB;border-color:rgba(52,152,219,0.4);background:rgba(52,152,219,0.08)">🔵 Équipe 2</div>
+      <div class="team-badge" style="color:#2ECC71;border-color:rgba(46,204,113,0.4);background:rgba(46,204,113,0.08)">🟢 Équipe 3</div>
+      <div class="team-badge" style="color:#F39C12;border-color:rgba(243,156,18,0.4);background:rgba(243,156,18,0.08)">🟡 Équipe 4</div>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Le Savant</div>
+        <div class="feature-desc">L'équipe avec le plus de bonnes réponses aux questions reçoit +1⭐.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Le Bagarreur</div>
+        <div class="feature-desc">L'équipe avec le plus de mini-jeux gagnés reçoit +1⭐.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚔️</div>
+        <div class="feature-title">Le Conquérant</div>
+        <div class="feature-desc">L'équipe ayant remporté le plus de duels reçoit +1⭐.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════ TECH ══════════════════ -->
+  <section style="text-align:center">
+    <p class="section-label">FAIT AVEC</p>
+    <h2>Une seule <span>page HTML</span> à partager</h2>
+    <p style="color:rgba(255,255,255,0.45);font-size:14px;max-width:480px;margin:0 auto 28px;line-height:1.7">
+      L'application se partage comme un fichier — pas de serveur, pas d'installation.
+      Tout l'état de la partie est sauvegardé localement dans le navigateur.
+    </p>
+
+    <div class="tech-row" style="justify-content:center;margin-bottom:32px">
+      <span class="tech-badge">⚛️ React 19</span>
+      <span class="tech-badge">⚡ Vite 8</span>
+      <span class="tech-badge">📦 vite-plugin-singlefile</span>
+      <span class="tech-badge">💾 localStorage</span>
+      <span class="tech-badge">🎨 Fredoka</span>
+    </div>
+
+    <a href="dist/index.html" class="btn-dl" download="archipel-du-savoir.html">
+      ⬇️ Télécharger l'application (306 Ko)
+    </a>
+  </section>
+
+  <div class="divider"></div>
+
+  <footer>
+    🏝️ &nbsp; L'ARCHIPEL DU SAVOIR &nbsp; · &nbsp; CULTURE GÉNÉRALE &nbsp; · &nbsp; COLLÈGE / LYCÉE
+  </footer>
+
+</body>
+</html>

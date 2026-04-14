@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'Archipel du Savoir — 35 Mini-Jeux Complets</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B1120;
+    --surface: #111B2E;
+    --surface2: #162035;
+    --surface3: #1a2540;
+    --gold: #F1C40F;
+    --cyan: #00BCD4;
+    --red: #E74C3C;
+    --green: #2ECC71;
+    --purple: #8E44AD;
+    --orange: #D35400;
+    --blue: #2980B9;
+    --pink: #E91E63;
+    --teal: #1ABC9C;
+    --text: #C8D0DC;
+    --text-dim: #6B7A90;
+    --text-bright: #EEF1F5;
+    --border: rgba(255,255,255,0.06);
+    --legit: #3498DB;
+    --pop: #E67E22;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .hero {
+    text-align: center; padding: 50px 20px 30px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 50% 80%, rgba(241,196,15,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 20%, rgba(0,188,212,0.04) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(24px, 5vw, 44px); color: var(--gold);
+    letter-spacing: 4px; text-shadow: 0 0 40px rgba(241,196,15,0.15); position: relative;
+  }
+  .hero .subtitle {
+    font-size: 14px; color: var(--text-dim); margin-top: 6px;
+    letter-spacing: 2px; font-family: 'Fredoka', sans-serif;
+  }
+  .hero .meta {
+    margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 5px 14px; border-radius: 20px;
+    font-family: 'Fredoka', sans-serif; font-size: 11px; color: var(--text-dim);
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+  section { margin-top: 44px; }
+  section > h2 {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px;
+    color: var(--gold); letter-spacing: 1px;
+    padding-bottom: 8px; border-bottom: 1px solid rgba(241,196,15,0.12); margin-bottom: 16px;
+  }
+  .ratio-bar {
+    display: flex; border-radius: 8px; overflow: hidden; height: 8px; margin: 10px 0;
+  }
+  .ratio-legit { background: var(--legit); flex: 3; }
+  .ratio-pop { background: var(--pop); flex: 1; }
+  .ratio-legend {
+    display: flex; gap: 16px; font-family: 'Fredoka', sans-serif; font-size: 11px;
+    color: var(--text-dim); margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .ratio-legend span { display: flex; align-items: center; gap: 5px; }
+  .ratio-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .format-header {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px;
+    margin-top: 36px; margin-bottom: 12px; padding: 8px 16px;
+    border-radius: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .format-sub {
+    font-size: 13px; color: var(--text-dim); margin-bottom: 16px; padding-left: 4px;
+  }
+  .game-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; margin-bottom: 20px; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .game-card:hover { border-color: rgba(255,255,255,0.1); }
+  .game-header {
+    display: flex; align-items: center; gap: 10px; padding: 16px 20px;
+    cursor: pointer; user-select: none; flex-wrap: wrap;
+  }
+  .game-header:hover { background: rgba(255,255,255,0.02); }
+  .game-num {
+    font-family: 'Fredoka', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 1px; padding: 3px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: var(--text-dim);
+  }
+  .game-emoji { font-size: 26px; }
+  .game-title {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
+    color: var(--text-bright); flex: 1;
+  }
+  .game-tag {
+    font-family: 'Fredoka', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: 1px; padding: 3px 8px; border-radius: 6px;
+  }
+  .game-time {
+    font-family: 'Fredoka', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: 1px; padding: 3px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: var(--text-dim);
+  }
+  .game-toggle {
+    font-size: 14px; color: var(--text-dim); transition: transform 0.3s;
+    font-family: 'Fredoka', sans-serif; font-weight: 600;
+  }
+  .game-card.open .game-toggle { transform: rotate(180deg); }
+  .game-body { display: none; padding: 0 20px 20px; }
+  .game-card.open .game-body { display: block; }
+  .game-desc {
+    font-size: 15px; line-height: 1.6; margin-bottom: 12px;
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-radius: 10px; border-left: 3px solid rgba(255,255,255,0.06);
+  }
+  .game-rules { margin-bottom: 12px; }
+  .game-rules h4 {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px;
+    color: var(--cyan); margin-bottom: 6px; letter-spacing: 0.5px;
+  }
+  .game-rules p, .game-rules li { font-size: 14px; color: var(--text); line-height: 1.55; }
+  .game-rules ul, .game-rules ol { padding-left: 20px; margin-bottom: 8px; }
+  .game-rules li { margin-bottom: 4px; }
+  .game-reward {
+    font-family: 'Fredoka', sans-serif; font-size: 12px; color: var(--gold);
+    padding: 6px 12px; background: rgba(241,196,15,0.06);
+    border-radius: 8px; margin-bottom: 12px; display: inline-block;
+  }
+  .game-material {
+    font-size: 12px; color: var(--text-dim); padding: 6px 12px;
+    background: rgba(255,255,255,0.02); border-radius: 8px;
+    margin-bottom: 12px; font-family: 'Fredoka', sans-serif;
+  }
+  .content-block {
+    margin-top: 14px; padding: 14px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .content-block h5 {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 12px;
+    color: var(--gold); letter-spacing: 1px; margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .q-item {
+    display: flex; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 14px; align-items: flex-start;
+  }
+  .q-item:last-child { border-bottom: none; }
+  .q-n {
+    font-family: 'Fredoka', sans-serif; font-size: 10px; font-weight: 600;
+    color: var(--text-dim); min-width: 22px; padding-top: 2px;
+  }
+  .q-t { flex: 1; }
+  .q-a {
+    color: var(--text-dim); font-size: 11px; cursor: pointer;
+    font-family: 'Fredoka', sans-serif; user-select: none;
+    background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap; align-self: center; transition: all 0.2s;
+  }
+  .q-a:hover { background: rgba(255,255,255,0.1); color: var(--text-bright); }
+  .q-cat {
+    font-family: 'Fredoka', sans-serif; font-size: 8px; font-weight: 600;
+    padding: 1px 5px; border-radius: 4px; letter-spacing: 0.5px;
+    align-self: center; white-space: nowrap;
+  }
+  .q-cat-legit { background: rgba(52,152,219,0.15); color: #5DADE2; }
+  .q-cat-pop { background: rgba(230,126,34,0.15); color: #E67E22; }
+  .pair-item {
+    display: flex; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px;
+  }
+  .pair-item:last-child { border-bottom: none; }
+  .pair-a { color: var(--cyan); font-family: 'Fredoka', sans-serif; font-weight: 500; min-width: 120px; }
+  .pair-vs { color: var(--text-dim); font-size: 10px; align-self: center; }
+  .pair-b { color: var(--pink); font-family: 'Fredoka', sans-serif; font-weight: 500; }
+  .list-item {
+    padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 13px; color: var(--text);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .indice-block {
+    margin-bottom: 10px; padding: 10px 14px;
+    background: rgba(255,255,255,0.02); border-radius: 8px;
+  }
+  .indice-block .ib-title {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px;
+    color: var(--text-bright); margin-bottom: 4px;
+  }
+  .indice-block .ib-answer {
+    cursor: pointer; font-size: 11px; color: var(--text-dim);
+    font-family: 'Fredoka', sans-serif;
+    background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 6px;
+    display: inline-block; margin-bottom: 6px;
+  }
+  .indice-block .ib-answer:hover { background: rgba(255,255,255,0.1); color: var(--text-bright); }
+  .indice-line {
+    font-size: 13px; color: var(--text-dim); padding: 2px 0;
+    display: flex; gap: 6px;
+  }
+  .indice-num {
+    font-family: 'Fredoka', sans-serif; font-size: 10px; font-weight: 600;
+    color: var(--gold); min-width: 16px;
+  }
+  .top-block {
+    margin-bottom: 10px; padding: 10px 14px;
+    background: rgba(255,255,255,0.02); border-radius: 8px;
+  }
+  .top-block .top-q {
+    font-size: 14px; color: var(--text-bright); margin-bottom: 6px;
+    font-family: 'Fredoka', sans-serif; font-weight: 500;
+  }
+  .top-answers { display: flex; flex-wrap: wrap; gap: 4px; }
+  .top-a {
+    font-size: 11px; padding: 2px 8px; border-radius: 6px;
+    font-family: 'Fredoka', sans-serif; cursor: pointer;
+    background: rgba(255,255,255,0.04); color: var(--text-dim);
+  }
+  .top-a:hover { background: rgba(255,255,255,0.1); color: var(--text-bright); }
+  .toc { list-style: none; margin-top: 10px; }
+  .toc li { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .toc li a {
+    color: var(--cyan); text-decoration: none; font-family: 'Fredoka', sans-serif;
+    font-size: 13px; font-weight: 500; transition: color 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toc li a:hover { color: var(--gold); }
+  .toc .toc-num { color: var(--text-dim); font-size: 11px; min-width: 24px; }
+  .toc .toc-format {
+    font-size: 8px; padding: 1px 6px; border-radius: 4px;
+    font-weight: 600; letter-spacing: 0.5px; margin-left: auto;
+  }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  .expand-bar {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .expand-btn {
+    font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 600;
+    padding: 6px 16px; border-radius: 10px; cursor: pointer;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-dim); transition: all 0.2s;
+  }
+  .expand-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-bright); }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px; margin-top: 10px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px;
+    color: var(--gold);
+  }
+  .stat-label {
+    font-family: 'Fredoka', sans-serif; font-size: 10px; color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  @media (max-width: 600px) {
+    .game-header { padding: 12px 14px; }
+    .game-body { padding: 0 14px 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .pair-a { min-width: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>L'ARCHIPEL DU SAVOIR</h1>
+  <div class="subtitle">35 MINI-JEUX — GUIDE COMPLET DU MAÎTRE DU JEU</div>
+  <div class="meta">
+    <span>🎮 35 mini-jeux</span>
+    <span>🎯 6 formats</span>
+    <span>📚 75% culture légitime</span>
+    <span>🎲 25% culture générale</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════ RATIO EXPLIQUÉ ═══════════ -->
+<section>
+  <h2>📐 Ratio des questions</h2>
+  <div class="ratio-bar"><div class="ratio-legit"></div><div class="ratio-pop"></div></div>
+  <div class="ratio-legend">
+    <span><span class="dot" style="background:var(--legit);"></span> 75% Culture légitime — Histoire, Sciences, Littérature, Philosophie, Arts, Géographie, Politique</span>
+    <span><span class="dot" style="background:var(--pop);"></span> 25% Culture générale — Pop culture, Sport, Musique actuelle, Food, Tech, Entertainment</span>
+  </div>
+  <p style="font-size:14px;">Les badges <span class="q-cat q-cat-legit">LÉGITIME</span> et <span class="q-cat q-cat-pop">POP/GÉ</span> marquent chaque question pour bien identifier le ratio.</p>
+</section>
+
+<!-- ═══════════ STATS ═══════════ -->
+<section>
+  <h2>📊 Vue d'ensemble</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">35</div><div class="stat-label">MINI-JEUX</div></div>
+    <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">FORMATS</div></div>
+    <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">TOUS VS TOUS</div></div>
+    <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">2 VS 2</div></div>
+    <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">1 VS 3</div></div>
+    <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">TOURNOI 1V1</div></div>
+    <div class="stat-card"><div class="stat-num">2</div><div class="stat-label">COOPÉRATIF</div></div>
+    <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">COMEBACK</div></div>
+  </div>
+</section>
+
+<!-- ═══════════ SOMMAIRE ═══════════ -->
+<section>
+  <h2>📑 Sommaire des 35 mini-jeux</h2>
+  <ul class="toc" id="toc-list"></ul>
+</section>
+
+<!-- ═══════════ EXPAND ═══════════ -->
+<div class="expand-bar">
+  <button class="expand-btn" onclick="document.querySelectorAll('.game-card').forEach(c=>c.classList.add('open'))">📖 Tout ouvrir</button>
+  <button class="expand-btn" onclick="document.querySelectorAll('.game-card').forEach(c=>c.classList.remove('open'))">📕 Tout fermer</button>
+  <button class="expand-btn" onclick="openRandom()">🎲 Jeu au hasard</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 1 : TOUS CONTRE TOUS (🔴)          -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-tvt">
+  <div class="format-header" style="background:rgba(231,76,60,0.1);color:#E74C3C;">
+    🔴 Tous contre tous — 4 équipes (10 jeux)
+  </div>
+
+  <!-- ═══ JEU 1 : BUZZER ═══ -->
+  <div class="game-card" id="jeu-1">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#01</span><span class="game-emoji">🔔</span>
+      <span class="game-title">Buzzer Culture</span>
+      <span class="game-tag" style="background:rgba(231,76,60,0.15);color:#E74C3C;">TOUS</span>
+      <span class="game-time">~5 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Question posée à voix haute. Première équipe à taper sur la table et donner la bonne réponse gagne le point. Mauvaise réponse = éliminé pour cette question.</div>
+      <div class="game-rules">
+        <h4>📋 Règles</h4>
+        <ol>
+          <li>Le MJ lit la question lentement.</li>
+          <li>Première équipe qui tape la table a 5 secondes pour répondre.</li>
+          <li>Bonne → +2₽. Mauvaise → éliminée pour cette question.</li>
+          <li>10 questions par manche (8 légitimes, 2 pop).</li>
+        </ol>
+      </div>
+      <div class="game-reward">🪙 +2₽ par bonne réponse</div>
+
+      <div class="content-block">
+        <h5>📝 12 questions buzzer (ratio 9L / 3P)</h5>
+        <div class="q-item"><span class="q-n">1</span><span class="q-t">Quel philosophe grec a fondé l'Académie à Athènes ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Platon':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">2</span><span class="q-t">Quel traité de 1648 a mis fin à la guerre de Trente Ans ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Traités de Westphalie':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">3</span><span class="q-t">Quel est l'élément chimique de symbole Fe ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Le fer':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">4</span><span class="q-t">Qui a écrit « Du contrat social » en 1762 ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Jean-Jacques Rousseau':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">5</span><span class="q-t">Quel peintre a réalisé « La Liberté guidant le peuple » ?</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Eugène Delacroix':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">6</span><span class="q-t">Quel détroit sépare l'Europe de l'Asie au niveau d'Istanbul ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Le Bosphore':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">7</span><span class="q-t">Quel scientifique a découvert la structure de l'ADN avec Watson ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Francis Crick (et Rosalind Franklin)':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">8</span><span class="q-t">Quel empire a bâti la Cité interdite de Pékin ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'La dynastie Ming':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">9</span><span class="q-t">Quelle est la capitale de l'Australie ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Canberra':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">10</span><span class="q-t">Quel pays a gagné la Coupe du monde de football 2022 ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Argentine':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">11</span><span class="q-t">Quel rappeur américain a sorti l'album « DAMN. » ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Kendrick Lamar':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">12</span><span class="q-t">Dans quel film Simba est-il le personnage principal ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'Le Roi Lion':'Réponse'">Réponse</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 2 : CHRONO-LISTE ═══ -->
+  <div class="game-card" id="jeu-2">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#02</span><span class="game-emoji">📝</span>
+      <span class="game-title">Chrono-Liste</span>
+      <span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">TOUS</span>
+      <span class="game-time">~5 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Thème annoncé. Chaque équipe à tour de rôle a 5 secondes pour donner une réponse valide. Répétition = éliminé. Dernier debout gagne.</div>
+      <div class="game-reward">🪙 1er : +5₽ · 2e : +3₽ · 3e : +1₽</div>
+
+      <div class="content-block">
+        <h5>📝 16 thèmes (12 légitimes / 4 pop)</h5>
+        <div class="list-item">1. 📚 Auteurs français de littérature <span class="q-cat q-cat-legit">LIT</span></div>
+        <div class="list-item">2. 🏛️ Empereurs romains <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">3. 🌍 Pays d'Afrique <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="list-item">4. 🔬 Éléments du tableau périodique <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="list-item">5. 🏛️ Capitales européennes <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="list-item">6. 🎨 Peintres célèbres <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="list-item">7. 📖 Dieux de la mythologie grecque <span class="q-cat q-cat-legit">MYTH</span></div>
+        <div class="list-item">8. 🧪 Organes du corps humain <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="list-item">9. 🗺️ Fleuves du monde <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="list-item">10. 🎵 Compositeurs de musique classique <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="list-item">11. ⚖️ Présidents de la Ve République française <span class="q-cat q-cat-legit">POLITIQUE</span></div>
+        <div class="list-item">12. 📜 Guerres célèbres de l'histoire <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">13. ⚽ Clubs de football européens <span class="q-cat q-cat-pop">SPORT</span></div>
+        <div class="list-item">14. 🎬 Films d'animation Disney/Pixar <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="list-item">15. 🎮 Jeux vidéo célèbres <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="list-item">16. 🎤 Rappeurs français <span class="q-cat q-cat-pop">POP</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 3 : QUORIDOR 4 ═══ -->
+  <div class="game-card" id="jeu-3">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#03</span><span class="game-emoji">♟️</span>
+      <span class="game-title">Quoridor — 4 Joueurs</span>
+      <span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">TOUS</span>
+      <span class="game-time">~10 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Plateau 7×7. Chaque équipe contrôle un pion et doit atteindre le bord opposé. À chaque tour : avancer d'une case OU poser un mur. 4 joueurs = chaos stratégique.</div>
+      <div class="game-rules">
+        <h4>📋 Règles complètes — Quoridor 4 joueurs</h4>
+        <ol>
+          <li><strong>Plateau :</strong> Grille 7×7.</li>
+          <li><strong>Placement :</strong> 🔴 milieu du bord nord · 🔵 milieu du bord sud · 🟢 milieu du bord ouest · 🟡 milieu du bord est.</li>
+          <li><strong>Murs :</strong> 4 murs par équipe (2 cases de long chacun).</li>
+          <li><strong>Tour :</strong> Avancer d'1 case (haut/bas/gauche/droite) OU poser un mur.</li>
+          <li><strong>Sauter :</strong> Si pion adverse adjacent → le sauter si la case derrière est libre.</li>
+          <li><strong>Règle d'or :</strong> JAMAIS bloquer totalement le chemin d'un joueur vers son objectif.</li>
+          <li><strong>Victoire :</strong> Premier à atteindre le bord opposé.</li>
+          <li><strong>Temps max :</strong> 10 min. Sinon le joueur le plus avancé gagne.</li>
+        </ol>
+        <h4>💡 Stratégies à 4</h4>
+        <p>Alliances temporaires pour bloquer le leader. Garder 1 mur pour la fin. Poser un mur qui gêne 2 adversaires = coup idéal.</p>
+      </div>
+      <div class="game-reward">🪙 1er : +6₽ · 2e : +3₽ · 3e : +1₽</div>
+      <div class="game-material">📦 Plateau 7×7 carton, 4 pions, 16 barrières (bâtonnets de glace)</div>
+      <div class="content-block">
+        <h5>🗺️ Disposition de départ</h5>
+        <div style="font-family:monospace;font-size:13px;line-height:1.4;color:var(--text);background:rgba(0,0,0,0.2);padding:12px;border-radius:8px;overflow-x:auto;white-space:pre;">  · · · 🔴 · · ·
+  · · · · · · ·
+  · · · · · · ·
+  🟢 · · · · · 🟡
+  · · · · · · ·
+  · · · · · · ·
+  · · · 🔵 · · ·</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 4 : UNDERCOVER ═══ -->
+  <div class="game-card" id="jeu-4">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#04</span><span class="game-emoji">🕵️</span>
+      <span class="game-title">Undercover</span>
+      <span class="game-tag" style="background:rgba(142,68,173,0.15);color:#A569BD;">TOUS</span>
+      <span class="game-time">~10 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Chaque joueur reçoit un mot secret. Tous le même sauf 1 Undercover (mot proche). 1 indice en 1 mot par tour, puis vote d'élimination.</div>
+      <div class="game-reward">🪙 Undercover survivant : +6₽ · Démasqué par : +3₽</div>
+
+      <div class="content-block">
+        <h5>📝 20 paires (15 légitimes / 5 pop)</h5>
+        <div class="pair-item"><span class="pair-a">Monarchie</span><span class="pair-vs">vs</span><span class="pair-b">Dictature</span> <span class="q-cat q-cat-legit">POL</span></div>
+        <div class="pair-item"><span class="pair-a">Révolution</span><span class="pair-vs">vs</span><span class="pair-b">Réforme</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="pair-item"><span class="pair-a">Symphonie</span><span class="pair-vs">vs</span><span class="pair-b">Concerto</span> <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="pair-item"><span class="pair-a">Volcan</span><span class="pair-vs">vs</span><span class="pair-b">Geyser</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="pair-item"><span class="pair-a">Pyramide</span><span class="pair-vs">vs</span><span class="pair-b">Temple</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="pair-item"><span class="pair-a">Atome</span><span class="pair-vs">vs</span><span class="pair-b">Molécule</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="pair-item"><span class="pair-a">Renaissance</span><span class="pair-vs">vs</span><span class="pair-b">Lumières</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="pair-item"><span class="pair-a">Océan</span><span class="pair-vs">vs</span><span class="pair-b">Mer</span> <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="pair-item"><span class="pair-a">Tragédie</span><span class="pair-vs">vs</span><span class="pair-b">Comédie</span> <span class="q-cat q-cat-legit">LIT</span></div>
+        <div class="pair-item"><span class="pair-a">Démocratie</span><span class="pair-vs">vs</span><span class="pair-b">République</span> <span class="q-cat q-cat-legit">POL</span></div>
+        <div class="pair-item"><span class="pair-a">Fossile</span><span class="pair-vs">vs</span><span class="pair-b">Minéral</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="pair-item"><span class="pair-a">Continent</span><span class="pair-vs">vs</span><span class="pair-b">Archipel</span> <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="pair-item"><span class="pair-a">Philosophe</span><span class="pair-vs">vs</span><span class="pair-b">Théologien</span> <span class="q-cat q-cat-legit">PHILO</span></div>
+        <div class="pair-item"><span class="pair-a">Fresque</span><span class="pair-vs">vs</span><span class="pair-b">Mosaïque</span> <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="pair-item"><span class="pair-a">Soleil</span><span class="pair-vs">vs</span><span class="pair-b">Étoile</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="pair-item"><span class="pair-a">Fortnite</span><span class="pair-vs">vs</span><span class="pair-b">Minecraft</span> <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="pair-item"><span class="pair-a">Netflix</span><span class="pair-vs">vs</span><span class="pair-b">YouTube</span> <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="pair-item"><span class="pair-a">Kebab</span><span class="pair-vs">vs</span><span class="pair-b">Tacos</span> <span class="q-cat q-cat-pop">FOOD</span></div>
+        <div class="pair-item"><span class="pair-a">iPhone</span><span class="pair-vs">vs</span><span class="pair-b">Samsung</span> <span class="q-cat q-cat-pop">TECH</span></div>
+        <div class="pair-item"><span class="pair-a">Messi</span><span class="pair-vs">vs</span><span class="pair-b">Ronaldo</span> <span class="q-cat q-cat-pop">SPORT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 5 : PETIT BAC ═══ -->
+  <div class="game-card" id="jeu-5">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#05</span><span class="game-emoji">✍️</span>
+      <span class="game-title">Le Petit Bac Savant</span>
+      <span class="game-tag" style="background:rgba(241,196,15,0.15);color:#F1C40F;">TOUS</span>
+      <span class="game-time">~7 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Lettre tirée au sort + 8 catégories (6 légitimes, 2 pop). 2 min chrono. +1 par réponse valide, +2 si unique.</div>
+      <div class="game-reward">🪙 1er : +5₽ · 2e : +3₽ · 3e : +1₽</div>
+      <div class="content-block">
+        <h5>📝 Catégories (ratio 6L / 2P)</h5>
+        <div class="list-item">🌍 Pays <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="list-item">📚 Auteur / Penseur <span class="q-cat q-cat-legit">LIT</span></div>
+        <div class="list-item">🏛️ Personnage historique <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">🔬 Terme scientifique <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="list-item">🎨 Œuvre d'art / Monument <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="list-item">🗺️ Fleuve ou Montagne <span class="q-cat q-cat-legit">GÉO</span></div>
+        <div class="list-item">🎬 Film / Série <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="list-item">🍔 Nourriture <span class="q-cat q-cat-pop">FOOD</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 6 : JUSTE PRIX ═══ -->
+  <div class="game-card" id="jeu-6">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#06</span><span class="game-emoji">🔢</span>
+      <span class="game-title">Le Juste Prix Culturel</span>
+      <span class="game-tag" style="background:rgba(231,76,60,0.15);color:#E74C3C;">TOUS</span>
+      <span class="game-time">~6 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Question chiffrée. Chaque équipe écrit sa réponse. La plus proche gagne.</div>
+      <div class="game-reward">🪙 1er : +4₽ · 2e : +2₽</div>
+      <div class="content-block">
+        <h5>📝 12 questions chiffrées (9L / 3P)</h5>
+        <div class="q-item"><span class="q-n">1</span><span class="q-t">En quelle année Gutenberg a-t-il imprimé sa première Bible ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'1455':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">2</span><span class="q-t">Combien d'os le corps humain adulte possède-t-il ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'206':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">3</span><span class="q-t">Combien de pays y a-t-il en Afrique ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'54':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">4</span><span class="q-t">En quelle année la Déclaration des droits de l'homme a-t-elle été adoptée ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'1789':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">5</span><span class="q-t">Combien de symphonies Beethoven a-t-il composées ?</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'9':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">6</span><span class="q-t">Quelle est la vitesse de la lumière en km/s (arrondi) ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'~300 000 km/s':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">7</span><span class="q-t">Combien de sourates contient le Coran ?</span><span class="q-cat q-cat-legit">CULTURE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'114':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">8</span><span class="q-t">En quelle année l'homme a-t-il marché sur la Lune ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'1969':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">9</span><span class="q-t">Combien de langues officielles l'ONU reconnaît-elle ?</span><span class="q-cat q-cat-legit">POL</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'6 (anglais, français, espagnol, russe, chinois, arabe)':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">10</span><span class="q-t">Combien de followers Cristiano Ronaldo a-t-il sur Instagram (millions) ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'~640 millions':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">11</span><span class="q-t">En quelle année YouTube a-t-il été créé ?</span><span class="q-cat q-cat-pop">TECH</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'2005':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">12</span><span class="q-t">Combien de mètres mesure la Tour Eiffel (avec antenne) ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'330 m':'Réponse'">Réponse</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 7 : VRAI/FAUX ═══ -->
+  <div class="game-card" id="jeu-7">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#07</span><span class="game-emoji">✅</span>
+      <span class="game-title">Vrai ou Faux Express</span>
+      <span class="game-tag" style="background:rgba(231,76,60,0.15);color:#E74C3C;">TOUS</span>
+      <span class="game-time">~5 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Affirmations lues rapidement. Chaque équipe lève VRAI ou FAUX simultanément.</div>
+      <div class="game-reward">🪙 1er : +4₽ · 2e : +2₽</div>
+      <div class="content-block">
+        <h5>📝 16 affirmations (12L / 4P)</h5>
+        <div class="q-item"><span class="q-n">1</span><span class="q-t">Socrate a écrit de nombreux livres philosophiques.</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Socrate n\'a rien écrit, c\'est Platon qui a retranscrit':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">2</span><span class="q-t">Cléopâtre vivait plus proche de nous que de la construction des pyramides.</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — ~2500 ans d\'écart':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">3</span><span class="q-t">Le cœur humain se situe exactement au centre de la poitrine.</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Légèrement à gauche':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">4</span><span class="q-t">L'empire ottoman a existé pendant plus de 600 ans.</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — 1299 à 1922':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">5</span><span class="q-t">Napoléon était petit pour son époque.</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — 1m69, taille moyenne de l\'époque':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">6</span><span class="q-t">Les bananes sont des baies au sens botanique.</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">7</span><span class="q-t">Voltaire et Rousseau sont morts la même année.</span><span class="q-cat q-cat-legit">LIT</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — Tous deux en 1778':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">8</span><span class="q-t">L'Éthiopie utilise le calendrier grégorien comme la France.</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Calendrier éthiopien, 13 mois, 7 ans de retard':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">9</span><span class="q-t">L'Antarctique est le plus grand désert du monde.</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — Désert froid, plus grand que le Sahara':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">10</span><span class="q-t">Marie-Antoinette a dit « Qu'ils mangent de la brioche ».</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Aucune preuve historique, attribution apocryphe':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">11</span><span class="q-t">Il y a plus d'étoiles dans l'univers que de grains de sable sur Terre.</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — Environ 10× plus':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">12</span><span class="q-t">Mozart est mort avant 40 ans.</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI — Mort à 35 ans':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">13</span><span class="q-t">La Grande Muraille de Chine est visible depuis l'espace.</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Mythe':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">14</span><span class="q-t">Un humain avale 8 araignées par an dans son sommeil.</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'❌ FAUX — Mythe urbain':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">15</span><span class="q-t">Le Japon a plus de distributeurs automatiques par habitant que tout autre pays.</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI':'Réponse'">Réponse</span></div>
+        <div class="q-item"><span class="q-n">16</span><span class="q-t">Le football a été codifié en Angleterre en 1863.</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='Réponse'?'✅ VRAI':'Réponse'">Réponse</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 8 : CHAÎNE DE MOTS ═══ -->
+  <div class="game-card" id="jeu-8">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#08</span><span class="game-emoji">🔗</span>
+      <span class="game-title">Chaîne de Mots</span>
+      <span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">TOUS</span>
+      <span class="game-time">~5 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Un mot de départ. Chaque équipe à tour de rôle dit un mot LIÉ et justifie en 5s. Dernier debout gagne.</div>
+      <div class="game-reward">🪙 1er : +5₽ · 2e : +3₽ · 3e : +1₽</div>
+      <div class="content-block">
+        <h5>📝 12 mots de départ (9L / 3P)</h5>
+        <div class="list-item">1. 🏛️ Athènes <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">2. 🔬 Gravité <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="list-item">3. 📜 Révolution <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">4. 🎨 Renaissance <span class="q-cat q-cat-legit">ART</span></div>
+        <div class="list-item">5. 🌍 Empire <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">6. 📖 Mythologie <span class="q-cat q-cat-legit">LIT</span></div>
+        <div class="list-item">7. 🧬 Évolution <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="list-item">8. ⚖️ Justice <span class="q-cat q-cat-legit">PHILO</span></div>
+        <div class="list-item">9. 🗺️ Colonisation <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="list-item">10. 🎮 Fortnite <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="list-item">11. ⚽ Champion <span class="q-cat q-cat-pop">SPORT</span></div>
+        <div class="list-item">12. 📱 Intelligence artificielle <span class="q-cat q-cat-pop">TECH</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 9 : TABOU ═══ -->
+  <div class="game-card" id="jeu-9">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#09</span><span class="game-emoji">🚫</span>
+      <span class="game-title">Le Mot Interdit (Tabou)</span>
+      <span class="game-tag" style="background:rgba(142,68,173,0.15);color:#A569BD;">TOUS</span>
+      <span class="game-time">~7 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Faire deviner un mot SANS utiliser 3 mots interdits. 45s par équipe.</div>
+      <div class="game-reward">🪙 +1₽ par mot deviné</div>
+      <div class="content-block">
+        <h5>📝 20 cartes Tabou (15L / 5P)</h5>
+        <div class="q-item"><span class="q-n">1</span><span class="q-t"><strong>DÉMOCRATIE</strong> — interdits : vote, peuple, politique</span> <span class="q-cat q-cat-legit">POL</span></div>
+        <div class="q-item"><span class="q-n">2</span><span class="q-t"><strong>PHOTOSYNTHÈSE</strong> — interdits : plante, soleil, oxygène</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="q-item"><span class="q-n">3</span><span class="q-t"><strong>RENAISSANCE</strong> — interdits : Italie, art, époque</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="q-item"><span class="q-n">4</span><span class="q-t"><strong>COLISÉE</strong> — interdits : Rome, gladiateur, arène</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="q-item"><span class="q-n">5</span><span class="q-t"><strong>CONSTITUTION</strong> — interdits : loi, droits, État</span> <span class="q-cat q-cat-legit">POL</span></div>
+        <div class="q-item"><span class="q-n">6</span><span class="q-t"><strong>DARWINISME</strong> — interdits : évolution, espèce, singe</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="q-item"><span class="q-n">7</span><span class="q-t"><strong>SPHINX</strong> — interdits : Égypte, lion, pyramide</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="q-item"><span class="q-n">8</span><span class="q-t"><strong>PHILOSOPHIE</strong> — interdits : penser, sagesse, Socrate</span> <span class="q-cat q-cat-legit">PHILO</span></div>
+        <div class="q-item"><span class="q-n">9</span><span class="q-t"><strong>RÉVOLUTION</strong> — interdits : France, 1789, révolte</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="q-item"><span class="q-n">10</span><span class="q-t"><strong>GRAVITATION</strong> — interdits : Newton, pomme, tomber</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="q-item"><span class="q-n">11</span><span class="q-t"><strong>MANUSCRIT</strong> — interdits : écrire, livre, ancien</span> <span class="q-cat q-cat-legit">LIT</span></div>
+        <div class="q-item"><span class="q-n">12</span><span class="q-t"><strong>COLONIALISME</strong> — interdits : empire, Afrique, territoire</span> <span class="q-cat q-cat-legit">HIST</span></div>
+        <div class="q-item"><span class="q-n">13</span><span class="q-t"><strong>BOUSSOLE</strong> — interdits : nord, direction, aiguille</span> <span class="q-cat q-cat-legit">SCIENCE</span></div>
+        <div class="q-item"><span class="q-n">14</span><span class="q-t"><strong>OLYMPE</strong> — interdits : dieu, Grèce, montagne</span> <span class="q-cat q-cat-legit">MYTH</span></div>
+        <div class="q-item"><span class="q-n">15</span><span class="q-t"><strong>PARLEMENT</strong> — interdits : loi, député, assemblée</span> <span class="q-cat q-cat-legit">POL</span></div>
+        <div class="q-item"><span class="q-n">16</span><span class="q-t"><strong>SELFIE</strong> — interdits : photo, téléphone, visage</span> <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="q-item"><span class="q-n">17</span><span class="q-t"><strong>PÉNALTÉ</strong> — interdits : football, tir, gardien</span> <span class="q-cat q-cat-pop">SPORT</span></div>
+        <div class="q-item"><span class="q-n">18</span><span class="q-t"><strong>BITCOIN</strong> — interdits : argent, crypto, monnaie</span> <span class="q-cat q-cat-pop">TECH</span></div>
+        <div class="q-item"><span class="q-n">19</span><span class="q-t"><strong>RAP</strong> — interdits : musique, chanter, rythme</span> <span class="q-cat q-cat-pop">POP</span></div>
+        <div class="q-item"><span class="q-n">20</span><span class="q-t"><strong>SUSHI</strong> — interdits : Japon, riz, poisson</span> <span class="q-cat q-cat-pop">FOOD</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEU 10 : TOP 5 ═══ -->
+  <div class="game-card" id="jeu-10">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#10</span><span class="game-emoji">🏆</span>
+      <span class="game-title">Top 5</span>
+      <span class="game-tag" style="background:rgba(241,196,15,0.15);color:#F1C40F;">TOUS</span>
+      <span class="game-time">~6 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">Question classement. 60s pour écrire ses 5 réponses. +1₽ par bonne, +2₽ pour le n°1.</div>
+      <div class="game-reward">🪙 Variable — max ~+7₽</div>
+      <div class="content-block">
+        <h5>📝 8 questions Top 5 (6L / 2P)</h5>
+        <div class="top-block">
+          <div class="top-q">🏛️ Top 5 des plus grands empires de l'histoire (par superficie) <span class="q-cat q-cat-legit">HIST</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Empire britannique':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Empire mongol':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Empire russe':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Empire espagnol':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Empire arabe (Omeyyades)':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🌍 Top 5 des pays les plus peuplés du monde <span class="q-cat q-cat-legit">GÉO</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Inde':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Chine':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. USA':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Indonésie':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Pakistan':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">📚 Top 5 des livres les plus traduits au monde <span class="q-cat q-cat-legit">LIT</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. La Bible':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Le Petit Prince':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Pinocchio':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Alice au pays des merveilles':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Don Quichotte':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🔬 Top 5 des éléments les plus abondants dans la croûte terrestre <span class="q-cat q-cat-legit">SCIENCE</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Oxygène':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Silicium':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Aluminium':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Fer':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Calcium':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🗺️ Top 5 des plus grands pays par superficie <span class="q-cat q-cat-legit">GÉO</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Russie':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Canada':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. USA/Chine':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Chine/USA':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Brésil':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🏛️ Top 5 des langues les plus parlées au monde (locuteurs natifs) <span class="q-cat q-cat-legit">GÉO</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Mandarin':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Espagnol':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Anglais':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Hindi':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Arabe':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🎬 Top 5 des films les plus rentables (box-office) <span class="q-cat q-cat-pop">POP</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. Avatar':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. Avengers: Endgame':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Avatar 2':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Titanic':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. Star Wars VII':'5.'">5.</span>
+          </div>
+        </div>
+        <div class="top-block">
+          <div class="top-q">🏅 Top 5 des pays avec le plus de médailles olympiques (total) <span class="q-cat q-cat-pop">SPORT</span></div>
+          <div class="top-answers">
+            <span class="top-a" onclick="this.textContent=this.textContent==='1.'?'1. USA':'1.'">1.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='2.'?'2. URSS/Russie':'2.'">2.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='3.'?'3. Allemagne':'3.'">3.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='4.'?'4. Grande-Bretagne':'4.'">4.</span>
+            <span class="top-a" onclick="this.textContent=this.textContent==='5.'?'5. France':'5.'">5.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 2 : 2 VS 2 (🔵) — 9 jeux           -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-2v2">
+  <div class="format-header" style="background:rgba(0,188,212,0.1);color:#00BCD4;">🔵 2 vs 2 (9 jeux)</div>
+  <p class="format-sub">Tirage au sort des alliances. Récompense partagée.</p>
+
+  <!-- JEU 11-19 : structure identique, contenu recalibré 75/25 -->
+  <!-- Pour la clarté du fichier, seuls les jeux clés sont détaillés avec le nouveau contenu -->
+
+  <!-- ═══ JEU 11 : QUI SUIS-JE ═══ -->
+  <div class="game-card" id="jeu-11">
+    <div class="game-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="game-num">#11</span><span class="game-emoji">🎭</span>
+      <span class="game-title">Qui Suis-Je — Relais</span>
+      <span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span>
+      <span class="game-time">~7 MIN</span><span class="game-toggle">▼</span>
+    </div>
+    <div class="game-body">
+      <div class="game-desc">5 indices du plus vague au plus précis. Plus tôt = plus de points. 4 manches.</div>
+      <div class="game-reward">🪙 Indice 1 : +5₽ · Indice 2 : +4₽ · etc.</div>
+      <div class="content-block">
+        <h5>📝 6 sujets (5L / 1P)</h5>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'Ibn Khaldoun':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Personnage #1 <span class="q-cat q-cat-legit">HIST</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> Je suis né en Tunisie au XIVe siècle.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> J'ai voyagé dans tout le monde musulman médiéval.</div>
+          <div class="indice-line"><span class="indice-num">3.</span> J'ai écrit sur la montée et la chute des civilisations.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> Mon œuvre majeure s'appelle la Muqaddima.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> On me considère comme le père de la sociologie et de l'historiographie moderne.</div>
+        </div>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'Marie Curie':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Personnage #2 <span class="q-cat q-cat-legit">SCIENCE</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> Je suis née dans un pays qui n'existait pas encore sur les cartes officielles.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> J'ai quitté mon pays pour étudier dans une grande ville européenne.</div>
+          <div class="indice-line"><span class="indice-num">3.</span> Mon travail est lié à des choses invisibles mais dangereuses.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> J'ai reçu le prix le plus prestigieux du monde, deux fois.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> Je suis la première femme à avoir obtenu un Prix Nobel.</div>
+        </div>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'La Route de la Soie':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Concept #1 <span class="q-cat q-cat-legit">HIST</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> Je relie deux extrémités du plus grand continent.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> Marco Polo m'a empruntée.</div>
+          <div class="indice-line"><span class="indice-num">3.</span> J'ai permis l'échange d'épices, de papier et de poudre à canon.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> Mon nom évoque un tissu précieux.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> La Chine a relancé un projet moderne qui porte mon nom.</div>
+        </div>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'Galilée':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Personnage #3 <span class="q-cat q-cat-legit">SCIENCE</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> Je suis né à Pise au XVIe siècle.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> J'ai amélioré un instrument venu des Pays-Bas pour regarder le ciel.</div>
+          <div class="indice-line"><span class="indice-num">3.</span> J'ai découvert les lunes de Jupiter.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> L'Église m'a forcé à renier mes idées.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> On me cite souvent : « Et pourtant elle tourne ».</div>
+        </div>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'L\'imprimerie':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Invention #1 <span class="q-cat q-cat-legit">HIST</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> J'existais déjà en Chine bien avant l'Europe.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> Un Allemand m'a révolutionnée au XVe siècle.</div>
+          <div class="indice-line"><span class="indice-num">3.</span> J'utilise des caractères mobiles en métal.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> Ma première grande œuvre européenne est un livre sacré.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> Sans moi, pas de journaux, pas de livres de poche, pas de Révolution.</div>
+        </div>
+        <div class="indice-block">
+          <span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Réponse'?'Usain Bolt':'🔓 Réponse'">🔓 Réponse</span>
+          <div class="ib-title">Personnage #4 <span class="q-cat q-cat-pop">SPORT</span></div>
+          <div class="indice-line"><span class="indice-num">1.</span> Je viens d'une île des Caraïbes.</div>
+          <div class="indice-line"><span class="indice-num">2.</span> Mon surnom est « Lightning ».</div>
+          <div class="indice-line"><span class="indice-num">3.</span> J'ai 8 médailles d'or olympiques.</div>
+          <div class="indice-line"><span class="indice-num">4.</span> Je fais 1m95 — inhabituel pour mon sport.</div>
+          <div class="indice-line"><span class="indice-num">5.</span> J'ai couru le 100m en 9,58 secondes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JEUX 12-19 : cartes condensées ═══ -->
+  <div class="game-card" id="jeu-12"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#12</span><span class="game-emoji">✏️</span><span class="game-title">Dessin-Devinette</span><span class="game-tag" style="background:rgba(241,196,15,0.15);color:#F1C40F;">2v2</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Un dessinateur, l'alliance devine. 60s. Interdit d'écrire.</div><div class="game-reward">🪙 +2₽ par mot trouvé</div><div class="content-block"><h5>📝 20 mots (15L / 5P)</h5><div class="list-item">1. Le Parthénon <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">2. Un microscope <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">3. Les pyramides de Gizeh <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">4. La Joconde <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">5. Un philosophe grec (toge + barbe) <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">6. Un globe terrestre <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">7. Une éruption volcanique <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">8. Un chevalier en armure <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">9. Un système solaire <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">10. La Statue de la Liberté <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">11. L'ADN (double hélice) <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">12. Un pharaon <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">13. Les anneaux olympiques <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">14. Un iceberg <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">15. Le Big Bang <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">16. Un astronaute <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">17. Un robot <span class="q-cat q-cat-pop">TECH</span></div><div class="list-item">18. Un DJ qui mixe <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">19. Un basketteur qui dunke <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">20. Un parachute <span class="q-cat q-cat-pop">POP</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-13"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#13</span><span class="game-emoji">🎤</span><span class="game-title">Blind Test Fredonné</span><span class="game-tag" style="background:rgba(233,30,99,0.15);color:#E91E63;">2v2</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Fredonner ou taper le rythme d'un morceau. L'alliance adverse devine.</div><div class="game-reward">🪙 +3₽ par morceau trouvé</div><div class="content-block"><h5>📝 16 morceaux (12L / 4P)</h5><div class="list-item">1. 🎵 « Ode à la Joie » — Beethoven <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">2. 🎵 La Marseillaise <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">3. 🎵 « Les Quatre Saisons » (Printemps) — Vivaldi <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">4. 🎵 « Für Elise » — Beethoven <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">5. 🎵 « Boléro » — Ravel <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">6. 🎵 « La Petite Musique de Nuit » — Mozart <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">7. 🎵 « Clair de Lune » — Debussy <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">8. 🎵 Hymne de la Champions League <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">9. 🎵 « Bella Ciao » (chant partisan) <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">10. 🎵 God Save the King (hymne britannique) <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">11. 🎵 « L'Internationale » <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">12. 🎵 « Le Lac des Cygnes » — Tchaïkovski <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">13. 🎬 Thème de Star Wars <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">14. 🎬 Thème de Pirates des Caraïbes <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">15. 🎵 « Bohemian Rhapsody » — Queen <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">16. 🎵 « Alors on danse » — Stromae <span class="q-cat q-cat-pop">POP</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-14"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#14</span><span class="game-emoji">🤐</span><span class="game-title">Mime en Chaîne</span><span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">2v2</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Mime transmis en chaîne. Le dernier devine.</div><div class="game-reward">🪙 +4₽ par mot transmis</div><div class="content-block"><h5>📝 12 concepts (9L / 3P)</h5><div class="list-item">1. Napoléon couronné <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">2. Archimède dans son bain (eurêka) <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">3. Un volcan qui explose <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">4. Un pharaon sur son trône <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">5. Christophe Colomb découvrant l'Amérique <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">6. Galilée regardant dans un télescope <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">7. Un gladiateur dans l'arène <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">8. Quelqu'un qui marche sur la Lune <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">9. La chute du mur de Berlin <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">10. Un arbitre qui donne un carton rouge <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">11. Un basketteur qui dunke <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">12. Quelqu'un qui prend un selfie <span class="q-cat q-cat-pop">POP</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-15"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#15</span><span class="game-emoji">🗺️</span><span class="game-title">La Carte Muette</span><span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Carte sans noms. Le MJ pointe. L'alliance identifie.</div><div class="game-reward">🪙 +2₽ par bonne réponse</div><div class="content-block"><h5>📝 15 pays à pointer <span class="q-cat q-cat-legit">GÉO — 100% légitime</span></h5><div class="list-item">1. Éthiopie · 2. Turquie · 3. Iran · 4. Pérou · 5. Norvège</div><div class="list-item">6. Madagascar · 7. Pakistan · 8. Colombie · 9. Mongolie · 10. Grèce</div><div class="list-item">11. Nigeria · 12. Afghanistan · 13. Chili · 14. Thaïlande · 15. Pologne</div></div></div></div>
+
+  <div class="game-card" id="jeu-16"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#16</span><span class="game-emoji">🔑</span><span class="game-title">Mot de Passe</span><span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">UN seul mot comme indice. Partenaire devine. Raté = l'autre alliance peut voler.</div><div class="game-reward">🪙 +3₽ trouvé · Vol : +2₽</div><div class="content-block"><h5>📝 20 mots secrets (15L / 5P)</h5><div class="list-item">1. MONARCHIE <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">2. HIÉROGLYPHE <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">3. GRAVITATION <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">4. ÉPIDÉMIE <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">5. RENAISSANCE <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">6. ODYSSÉE <span class="q-cat q-cat-legit">LIT</span></div><div class="list-item">7. CONSTITUTION <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">8. TSUNAMI <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">9. ARISTOCRATIE <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">10. CONSTELLATION <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">11. HÉRÉSIE <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">12. DIALECTIQUE <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">13. CARTOGRAPHIE <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">14. SÉDIMENT <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">15. CALLIGRAPHIE <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">16. PODCAST <span class="q-cat q-cat-pop">TECH</span></div><div class="list-item">17. MARATHON <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">18. SELFIE <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">19. HASHTAG <span class="q-cat q-cat-pop">TECH</span></div><div class="list-item">20. STREAMING <span class="q-cat q-cat-pop">TECH</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-17"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#17</span><span class="game-emoji">⏳</span><span class="game-title">Timeline</span><span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">5 événements à classer chronologiquement. 60s de concertation.</div><div class="game-reward">🪙 Parfait : +6₽ · +1₽ par bonne position</div><div class="content-block"><h5>📝 4 séries (3L / 1P)</h5><div class="indice-block"><div class="ib-title">Série A <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">• Hégire de Mahomet</div><div class="list-item">• Chute de Constantinople</div><div class="list-item">• Construction des pyramides de Gizeh</div><div class="list-item">• Sacre de Charlemagne</div><div class="list-item">• Fondation de Rome (légende)</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Ordre'?'Pyramides (~2500 av.JC) → Rome (-753) → Hégire (622) → Charlemagne (800) → Constantinople (1453)':'🔓 Ordre'">🔓 Ordre</span></div><div class="indice-block"><div class="ib-title">Série B <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">• Publication de « De l'origine des espèces » (Darwin)</div><div class="list-item">• Découverte de la pénicilline</div><div class="list-item">• Première greffe du cœur</div><div class="list-item">• Héliocentrisme de Copernic</div><div class="list-item">• Invention du vaccin (Jenner)</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Ordre'?'Copernic (1543) → Jenner (1796) → Darwin (1859) → Pénicilline (1928) → Greffe (1967)':'🔓 Ordre'">🔓 Ordre</span></div><div class="indice-block"><div class="ib-title">Série C <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">• Abolition de l'esclavage en France</div><div class="list-item">• Déclaration universelle des droits de l'homme</div><div class="list-item">• Indépendance de l'Algérie</div><div class="list-item">• Chute du mur de Berlin</div><div class="list-item">• Droit de vote des femmes en France</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Ordre'?'Esclavage (1848) → Femmes (1944) → DUDH (1948) → Algérie (1962) → Berlin (1989)':'🔓 Ordre'">🔓 Ordre</span></div><div class="indice-block"><div class="ib-title">Série D <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">• Création de Facebook</div><div class="list-item">• Premier iPhone</div><div class="list-item">• Lancement de YouTube</div><div class="list-item">• Sortie de Fortnite</div><div class="list-item">• Création de TikTok</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Ordre'?'Facebook (2004) → YouTube (2005) → iPhone (2007) → TikTok (2016) → Fortnite (2017)':'🔓 Ordre'">🔓 Ordre</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-18"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#18</span><span class="game-emoji">🏓</span><span class="game-title">Quiz Ping-Pong</span><span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Alternance. Bonne réponse = balle chez l'adversaire. Mauvaise = l'autre marque. First to 5.</div><div class="game-reward">🪙 Gagnant : +5₽ · Perdant : +1₽</div><div class="content-block"><h5>📝 16 questions (12L / 4P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Quel philosophe a écrit « Le Prince » ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Machiavel':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Quel organe produit l'insuline ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le pancréas':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Quel fleuve traverse l'Égypte ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le Nil':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Qui a peint « Le Radeau de la Méduse » ?</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Géricault':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Quel empire a construit le Colisée ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'L\'Empire romain':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Quelle est la formule de l'eau ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'H₂O':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Qui a écrit « Les Misérables » ?</span><span class="q-cat q-cat-legit">LIT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Victor Hugo':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quel savant musulman est le père de l'algèbre ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Al-Khwarizmi':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t">Quel héros grec a un talon vulnérable ?</span><span class="q-cat q-cat-legit">MYTH</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Achille':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t">Quel est le plus petit pays du monde ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le Vatican':'R'">R</span></div><div class="q-item"><span class="q-n">11</span><span class="q-t">Quel est le symbole chimique de l'or ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Au':'R'">R</span></div><div class="q-item"><span class="q-n">12</span><span class="q-t">Quelle est la devise de la République française ?</span><span class="q-cat q-cat-legit">POL</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Liberté, Égalité, Fraternité':'R'">R</span></div><div class="q-item"><span class="q-n">13</span><span class="q-t">Qui est le créateur de Minecraft ?</span><span class="q-cat q-cat-pop">TECH</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Markus « Notch » Persson':'R'">R</span></div><div class="q-item"><span class="q-n">14</span><span class="q-t">Quel sport pratique Novak Djokovic ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Tennis':'R'">R</span></div><div class="q-item"><span class="q-n">15</span><span class="q-t">Quel animal est le symbole de la France ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le coq':'R'">R</span></div><div class="q-item"><span class="q-n">16</span><span class="q-t">Quel plat est le national du Japon servi avec du wasabi ?</span><span class="q-cat q-cat-pop">FOOD</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Sushi':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-19"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#19</span><span class="game-emoji">💬</span><span class="game-title">Débat Express</span><span class="game-tag" style="background:rgba(0,188,212,0.15);color:#00BCD4;">2v2</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Sujet de débat. Chaque alliance défend un côté 90s. Le MJ juge.</div><div class="game-reward">🪙 Gagnant : +4₽</div><div class="content-block"><h5>📝 12 sujets (9L / 3P)</h5><div class="list-item">1. La colonisation a-t-elle eu des aspects positifs ? <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">2. La démocratie est-elle le meilleur système politique ? <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">3. Les mathématiques sont-elles une invention ou une découverte ? <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">4. L'art moderne mérite-t-il d'être au musée ? <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">5. Faut-il restituer les œuvres d'art aux pays d'origine ? <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">6. L'homme est-il naturellement bon ou mauvais ? (Rousseau vs Hobbes) <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">7. L'exploration spatiale vaut-elle son coût ? <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">8. Les frontières devraient-elles être ouvertes ? <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">9. Le progrès scientifique rend-il l'homme plus heureux ? <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">10. Le VAR ruine-t-il le football ? <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">11. Les réseaux sociaux sont-ils une menace pour la démocratie ? <span class="q-cat q-cat-pop">TECH</span></div><div class="list-item">12. La pizza hawaïenne (ananas) est un crime culinaire <span class="q-cat q-cat-pop">FOOD</span></div></div></div></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 3 : 1 VS 3 (🟢) — 8 jeux           -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-1v3">
+  <div class="format-header" style="background:rgba(46,204,113,0.1);color:#2ECC71;">🟢 1 vs 3 (8 jeux)</div>
+  <p class="format-sub">Solo tirée au sort ou dernière du classement.</p>
+
+  <div class="game-card" id="jeu-20"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#20</span><span class="game-emoji">🤥</span><span class="game-title">Le Menteur</span><span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">3 faits — 1 est inventé. Les 3 autres votent.</div><div class="game-reward">🪙 Non démasqué : +7₽ · Qui trouve : +3₽</div><div class="content-block"><h5>📝 6 séries (2 vrais + 1 faux) — majoritairement légitimes</h5><div class="indice-block"><div class="ib-title">Série 1 <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">A. Les pieuvres ont 3 cœurs.</div><div class="list-item">B. Les os humains sont plus durs que le béton.</div><div class="list-item">C. Le cerveau humain consomme 50% de l'énergie du corps.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — C\'est ~20%':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 2 <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">A. L'empire ottoman a existé pendant plus de 600 ans.</div><div class="list-item">B. Cléopâtre était d'origine grecque.</div><div class="list-item">C. Jules César a été le premier empereur romain.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — César était dictateur, Auguste fut le 1er empereur':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 3 <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">A. Le Sahara a été vert et fertile il y a environ 6 000 ans.</div><div class="list-item">B. La Russie traverse 11 fuseaux horaires.</div><div class="list-item">C. L'Amazonie se trouve principalement en Argentine.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — L\'Amazonie est au Brésil':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 4 <span class="q-cat q-cat-legit">LIT</span></div><div class="list-item">A. Shakespeare a inventé plus de 1 700 mots anglais.</div><div class="list-item">B. Voltaire et Rousseau sont morts la même année (1778).</div><div class="list-item">C. Victor Hugo a écrit « Les Fleurs du mal ».</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — C\'est Baudelaire':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 5 <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">A. Socrate n'a jamais rien écrit lui-même.</div><div class="list-item">B. Descartes a écrit « Critique de la raison pure ».</div><div class="list-item">C. Le mot « philosophie » signifie « amour de la sagesse ».</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'B est FAUX — C\'est Kant':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 6 <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">A. Le miel ne périme jamais.</div><div class="list-item">B. Les flamants roses doivent leur couleur aux crevettes.</div><div class="list-item">C. La Grande Muraille est visible depuis la Lune.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX':'🔓 Le faux'">🔓 Le faux</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-21"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#21</span><span class="game-emoji">🔥</span><span class="game-title">Hot Seat</span><span class="game-tag" style="background:rgba(255,152,0,0.15);color:#FF9800;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">90 secondes de bombardement de questions. Les adversaires posent chacune 2 questions.</div><div class="game-reward">🪙 Solo : +2₽/bonne · Adversaires : +1₽/ratée</div><div class="content-block"><h5>📝 Catégories suggérées (ratio 3/4 légitime)</h5><div class="list-item">📚 Auteurs et leurs œuvres <span class="q-cat q-cat-legit">LIT</span></div><div class="list-item">🏛️ Dates historiques clés <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">🌍 Capitales de pays <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">🔬 Formules / lois scientifiques <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">🎨 Peintres et sculpteurs <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">⚖️ Régimes politiques <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">⚽ Records sportifs <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">🎬 Réalisateurs de films <span class="q-cat q-cat-pop">POP</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-22"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#22</span><span class="game-emoji">🎯</span><span class="game-title">Le Pari</span><span class="game-tag" style="background:rgba(142,68,173,0.15);color:#A569BD;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">L'équipe solo parie des pièces sur une question Expert.</div><div class="game-reward">🪙 Double si correct, perte si raté</div><div class="content-block"><h5>📝 8 questions Expert (6L / 2P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Quel savant a formulé la loi de la gravitation universelle ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Isaac Newton':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Quel philosophe a été condamné à boire la ciguë ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Socrate':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Quelle civilisation a inventé l'écriture cunéiforme ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Les Sumériens':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Quel architecte a conçu la Sagrada Família ?</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Antoni Gaudí':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Quel pays africain n'a jamais été colonisé (avec la Libéria) ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'L\'Éthiopie':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Quel écrivain a écrit « L'Étranger » ?</span><span class="q-cat q-cat-legit">LIT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Albert Camus':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Quel est le premier album studio de Kendrick Lamar ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Section.80':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quel film a reçu l'Oscar du meilleur film en 2020 ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Parasite':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-23"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#23</span><span class="game-emoji">🎭</span><span class="game-title">L'Imposteur Culturel</span><span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">1v3</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">L'équipe solo parle 60s d'un sujet qu'elle ne connaît PAS. Les 3 autres votent : expert ou imposteur ?</div><div class="game-reward">🪙 Crédible : +7₽ · Détecté : +2₽ chacune</div><div class="content-block"><h5>📝 12 sujets (9L / 3P)</h5><div class="list-item">1. Le fonctionnement du Parlement européen <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">2. L'histoire de la Route de la Soie <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">3. La théorie de la relativité d'Einstein <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">4. La construction du Canal de Suez <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">5. La philosophie de Nietzsche <span class="q-cat q-cat-legit">PHILO</span></div><div class="list-item">6. Le système de castes en Inde <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">7. Comment fonctionne un trou noir <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">8. L'architecture gothique au Moyen Âge <span class="q-cat q-cat-legit">ART</span></div><div class="list-item">9. La géopolitique du pétrole au Moyen-Orient <span class="q-cat q-cat-legit">POL</span></div><div class="list-item">10. Les règles du cricket <span class="q-cat q-cat-pop">SPORT</span></div><div class="list-item">11. Comment fonctionne la bourse <span class="q-cat q-cat-pop">TECH</span></div><div class="list-item">12. L'histoire du hip-hop américain <span class="q-cat q-cat-pop">POP</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-24"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#24</span><span class="game-emoji">🔢</span><span class="game-title">Le Bluff des Chiffres</span><span class="game-tag" style="background:rgba(233,30,99,0.15);color:#E91E63;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">3 statistiques — une est fausse.</div><div class="game-reward">🪙 Bluff réussi : +6₽ · Trouvé : +3₽</div><div class="content-block"><h5>📝 4 séries (3L / 1P)</h5><div class="indice-block"><div class="ib-title">Série 1 <span class="q-cat q-cat-legit">SCIENCE</span></div><div class="list-item">A. Le corps humain contient ~5 litres de sang.</div><div class="list-item">B. La vitesse de la lumière est de ~300 000 km/s.</div><div class="list-item">C. La Terre fait le tour du Soleil en 400 jours.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — 365,25 jours':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 2 <span class="q-cat q-cat-legit">HIST</span></div><div class="list-item">A. La Révolution française a commencé en 1789.</div><div class="list-item">B. L'empire romain d'Occident est tombé en 476.</div><div class="list-item">C. L'imprimerie a été inventée par Gutenberg en 1520.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — C\'est vers 1450':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 3 <span class="q-cat q-cat-legit">GÉO</span></div><div class="list-item">A. La population mondiale dépasse 8 milliards.</div><div class="list-item">B. L'océan Pacifique couvre plus de surface que tous les continents réunis.</div><div class="list-item">C. Le Sahara est le plus grand désert du monde.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — C\'est l\'Antarctique':'🔓 Le faux'">🔓 Le faux</span></div><div class="indice-block"><div class="ib-title">Série 4 <span class="q-cat q-cat-pop">POP</span></div><div class="list-item">A. La Tour Eiffel fait 330 mètres.</div><div class="list-item">B. L'Everest fait 8 849 mètres.</div><div class="list-item">C. Le Nil fait 8 000 km de long.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓 Le faux'?'C est FAUX — 6 650 km':'🔓 Le faux'">🔓 Le faux</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-25"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#25</span><span class="game-emoji">📖</span><span class="game-title">La Définition</span><span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Mot rare. L'équipe solo invente une fausse définition. Le MJ lit les deux. Vote.</div><div class="game-reward">🪙 Trompés : +6₽ · Sinon : +2₽ chacune</div><div class="content-block"><h5>📝 12 mots rares <span class="q-cat q-cat-legit">100% LÉGITIME</span></h5><div class="q-item"><span class="q-n">1</span><span class="q-t"><strong>Pétrichor</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Odeur de la terre après la pluie':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t"><strong>Sérendipité</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Découverte heureuse par hasard':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t"><strong>Callipyge</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Qui a de belles fesses':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t"><strong>Borborygme</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Gargouillement de l\'estomac':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t"><strong>Épistémologie</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Étude de la connaissance et de la science':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t"><strong>Ergastule</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Prison souterraine pour esclaves chez les Romains':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t"><strong>Tergiverser</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Hésiter, remettre à plus tard':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t"><strong>Idiosyncrasie</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Comportement propre à un individu':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t"><strong>Apocryphe</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Texte dont l\'authenticité est douteuse':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t"><strong>Syncrétisme</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Mélange de doctrines ou religions différentes':'R'">R</span></div><div class="q-item"><span class="q-n">11</span><span class="q-t"><strong>Hubris</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Orgueil démesuré qui mène à la chute (concept grec)':'R'">R</span></div><div class="q-item"><span class="q-n">12</span><span class="q-t"><strong>Panacée</strong></span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Remède universel à tous les maux':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-26"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#26</span><span class="game-emoji">⏱️</span><span class="game-title">30 Secondes Chrono</span><span class="game-tag" style="background:rgba(255,152,0,0.15);color:#FF9800;">1v3</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">30 secondes, max de bonnes réponses.</div><div class="game-reward">🪙 Solo : +1₽/bonne · Adversaires : +1₽/ratée</div><div class="content-block"><h5>📝 20 questions rapides (15L / 5P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Qui a écrit « Le Prince » ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Machiavel':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Capitale du Canada ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Ottawa':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Formule chimique du sel ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'NaCl':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Qui a peint la Chapelle Sixtine ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Michel-Ange':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Plus grand mammifère marin ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Baleine bleue':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Fleuve qui traverse Paris ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'La Seine':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Père de la psychanalyse ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Freud':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Combien de côtés a un hexagone ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'6':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t">Pays en forme de botte ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Italie':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t">Planète la plus proche du Soleil ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Mercure':'R'">R</span></div><div class="q-item"><span class="q-n">11</span><span class="q-t">Monnaie de la Grande-Bretagne ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Livre sterling':'R'">R</span></div><div class="q-item"><span class="q-n">12</span><span class="q-t">Qui a découvert l'Amérique (1492) ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Christophe Colomb':'R'">R</span></div><div class="q-item"><span class="q-n">13</span><span class="q-t">Contraire de « nocturne » ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Diurne':'R'">R</span></div><div class="q-item"><span class="q-n">14</span><span class="q-t">Capitale de l'Allemagne ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Berlin':'R'">R</span></div><div class="q-item"><span class="q-n">15</span><span class="q-t">Combien d'États aux USA ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'50':'R'">R</span></div><div class="q-item"><span class="q-n">16</span><span class="q-t">Quel animal est Dumbo ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Éléphant':'R'">R</span></div><div class="q-item"><span class="q-n">17</span><span class="q-t">Combien de cordes sur une guitare standard ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'6':'R'">R</span></div><div class="q-item"><span class="q-n">18</span><span class="q-t">Créateur de Mickey Mouse ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Walt Disney':'R'">R</span></div><div class="q-item"><span class="q-n">19</span><span class="q-t">Nombre de joueurs au basket sur le terrain ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'5':'R'">R</span></div><div class="q-item"><span class="q-n">20</span><span class="q-t">Couleur d'une émeraude ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Vert':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-27"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#27</span><span class="game-emoji">💰</span><span class="game-title">Enchères de Questions</span><span class="game-tag" style="background:rgba(46,204,113,0.15);color:#2ECC71;">1v3</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Catégorie annoncée. Enchères. Le plus offrant répond.</div><div class="game-reward">🪙 Double si correct, perte si raté</div><div class="content-block"><h5>📝 8 questions (6L / 2P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">🏛️ HIST : Quel empire a régné sur le Mexique avant les Espagnols ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Aztèque':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">🔬 SCIENCE : Quel est l'os le plus long du corps ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le fémur':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">📚 LIT : Qui a écrit « L'Iliade » et « L'Odyssée » ?</span><span class="q-cat q-cat-legit">LIT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Homère':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">🌍 GÉO : Quel pays est traversé par l'équateur ET le méridien de Greenwich ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Ghana':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">⚖️ POL : Quel pays a accueilli la première Coupe du monde de foot ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Uruguay (1930)':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">🎨 ART : Quel artiste a réalisé « Le Penseur » ?</span><span class="q-cat q-cat-legit">ART</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Auguste Rodin':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">🎵 POP : Quel artiste a le plus de ventes d'albums all-time ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'The Beatles':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">⚽ SPORT : Quel footballeur est surnommé « La Pulga » ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Messi':'R'">R</span></div></div></div></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 4 : TOURNOI 1V1 (🟠) — 5 jeux      -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-1v1">
+  <div class="format-header" style="background:rgba(211,84,0,0.1);color:#D35400;">🟠 Tournoi 1v1 (5 jeux)</div>
+
+  <div class="game-card" id="jeu-28"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#28</span><span class="game-emoji">⚡</span><span class="game-title">Tournoi Éclair</span><span class="game-tag" style="background:rgba(211,84,0,0.15);color:#D35400;">1v1</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Demi-finales + finale. Best of 3.</div><div class="game-reward">🪙 Champion : +6₽ · Finaliste : +3₽ · Demi : +1₽</div><div class="content-block"><h5>📝 12 questions (9L / 3P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Quel philosophe a écrit « Critique de la raison pure » ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Emmanuel Kant':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Quel fleuve traverse Londres ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'La Tamise':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Quel scientifique a découvert la pénicilline ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Alexander Fleming':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Quel pays a pour capitale Ankara ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Turquie':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Quel est le plus grand lac d'Afrique ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Lac Victoria':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Qui a fondé l'Empire mongol ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Gengis Khan':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Quel penseur a formulé le « cogito ergo sum » ?</span><span class="q-cat q-cat-legit">PHILO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Descartes':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quel est le nom de la monnaie européenne ?</span><span class="q-cat q-cat-legit">POL</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Euro':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t">Quel pays a inventé le judo ?</span><span class="q-cat q-cat-legit">HIST</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Japon':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t">Quel manga met en scène des Titans géants ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'L\'Attaque des Titans':'R'">R</span></div><div class="q-item"><span class="q-n">11</span><span class="q-t">Quel est le nom du héros de Zelda ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Link':'R'">R</span></div><div class="q-item"><span class="q-n">12</span><span class="q-t">Quel artiste a chanté « Thriller » ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Michael Jackson':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-29"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#29</span><span class="game-emoji">✊</span><span class="game-title">Pierre-Feuille-Culture</span><span class="game-tag" style="background:rgba(211,84,0,0.15);color:#D35400;">1v1</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">PFC. Le gagnant répond. Bonne → marque. Raté → l'adversaire marque.</div><div class="game-reward">🪙 Champion : +5₽ · Finaliste : +2₽</div><div class="content-block"><h5>📝 10 questions (8L / 2P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Quelle est la plus haute montagne d'Afrique ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Kilimandjaro':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Qui est le « père » de la médecine ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Hippocrate':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Quel est le plus petit continent ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Océanie':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Qui a écrit « Les Fleurs du mal » ?</span><span class="q-cat q-cat-legit">LIT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Baudelaire':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Quelle planète est la plus grande du système solaire ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Jupiter':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Quel pays est le plus grand producteur de café ?</span><span class="q-cat q-cat-legit">GÉO</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Brésil':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Combien de vertèbres dans la colonne humaine ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'33':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quel gaz respirons-nous principalement ?</span><span class="q-cat q-cat-legit">SCIENCE</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Azote (78%)':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t">Quel sport se joue à Wimbledon ?</span><span class="q-cat q-cat-pop">SPORT</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Tennis':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t">Quel pays a inventé la pizza ?</span><span class="q-cat q-cat-pop">FOOD</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Italie':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-30"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#30</span><span class="game-emoji">🧠</span><span class="game-title">Memory Culture</span><span class="game-tag" style="background:rgba(211,84,0,0.15);color:#D35400;">1v1</span><span class="game-time">~8 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">8 paires face cachée. Retourner 2 cartes à tour de rôle. Paire trouvée = gardée + rejoue.</div><div class="game-reward">🪙 +2₽/paire · Champion : +3₽ bonus</div><div class="content-block"><h5>📝 8 paires <span class="q-cat q-cat-legit">100% LÉGITIME</span></h5><div class="pair-item"><span class="pair-a">Socrate</span><span class="pair-vs">↔</span><span class="pair-b">Philosophie grecque</span></div><div class="pair-item"><span class="pair-a">Darwin</span><span class="pair-vs">↔</span><span class="pair-b">Théorie de l'évolution</span></div><div class="pair-item"><span class="pair-a">Gutenberg</span><span class="pair-vs">↔</span><span class="pair-b">Imprimerie</span></div><div class="pair-item"><span class="pair-a">Cléopâtre</span><span class="pair-vs">↔</span><span class="pair-b">Égypte antique</span></div><div class="pair-item"><span class="pair-a">Mozart</span><span class="pair-vs">↔</span><span class="pair-b">Symphonie n°40</span></div><div class="pair-item"><span class="pair-a">Ibn Khaldoun</span><span class="pair-vs">↔</span><span class="pair-b">Muqaddima</span></div><div class="pair-item"><span class="pair-a">Marie Curie</span><span class="pair-vs">↔</span><span class="pair-b">Radioactivité</span></div><div class="pair-item"><span class="pair-a">Galilée</span><span class="pair-vs">↔</span><span class="pair-b">Héliocentrisme</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-31"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#31</span><span class="game-emoji">🏃</span><span class="game-title">Relais des Savoirs</span><span class="game-tag" style="background:rgba(211,84,0,0.15);color:#D35400;">1v1</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Chaque membre répond à tour de rôle sans aide. Équipe la plus rapide gagne.</div><div class="game-reward">🪙 1er : +5₽ · 2e : +3₽</div><div class="content-block"><h5>📝 12 questions relais (9L / 3P)</h5><div class="q-item"><span class="q-n">1</span><span class="q-t">En quelle année a eu lieu la bataille de Waterloo ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'1815':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Quel est le plus grand désert chaud du monde ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Sahara':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Qui a écrit « Candide » ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Voltaire':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Quel organe filtre le sang ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Les reins':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">Quelle civilisation a construit Machu Picchu ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Les Incas':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Quel est le métal le plus léger ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Lithium':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Capitale de la Thaïlande ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Bangkok':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quel est le plus ancien sport olympique ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'La course (stadion)':'R'">R</span></div><div class="q-item"><span class="q-n">9</span><span class="q-t">Langue la plus parlée en Amérique du Sud ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Espagnol':'R'">R</span></div><div class="q-item"><span class="q-n">10</span><span class="q-t">Quel est l'animal le plus lent du monde ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Le paresseux':'R'">R</span></div><div class="q-item"><span class="q-n">11</span><span class="q-t">Nom du chat dans Alice au pays des merveilles ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Chat du Cheshire':'R'">R</span></div><div class="q-item"><span class="q-n">12</span><span class="q-t">15% de 200 ?</span><span class="q-cat q-cat-pop">POP</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'30':'R'">R</span></div></div></div></div>
+
+  <div class="game-card" id="jeu-32"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#32</span><span class="game-emoji">🎰</span><span class="game-title">Culture Roulette</span><span class="game-tag" style="background:rgba(211,84,0,0.15);color:#D35400;">1v1</span><span class="game-time">~7 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Le dé détermine la catégorie. 1=Histoire, 2=Science, 3=Littérature, 4=Géo, 5=Philo/Art, 6=Pop/Sport. Premier à buzzer et répondre. Best of 3.</div><div class="game-reward">🪙 Champion : +6₽ · Finaliste : +2₽</div><div class="content-block"><h5>📝 Exemples par catégorie</h5><div class="q-item"><span class="q-n">🎲1</span><span class="q-t">HIST : Quel est le premier président des USA ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'George Washington':'R'">R</span></div><div class="q-item"><span class="q-n">🎲2</span><span class="q-t">SCIENCE : Quel est le seul métal liquide à température ambiante ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Mercure':'R'">R</span></div><div class="q-item"><span class="q-n">🎲3</span><span class="q-t">LIT : Qui a écrit « Don Quichotte » ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Cervantès':'R'">R</span></div><div class="q-item"><span class="q-n">🎲4</span><span class="q-t">GÉO : Quel est le seul pays traversé par l'équateur ET le tropique du Capricorne ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Brésil':'R'">R</span></div><div class="q-item"><span class="q-n">🎲5</span><span class="q-t">PHILO : Quel concept Platon illustre-t-il avec des prisonniers face à un mur ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'L\'allégorie de la caverne':'R'">R</span></div><div class="q-item"><span class="q-n">🎲6</span><span class="q-t">POP : Quel personnage de manga a un bras en caoutchouc ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Luffy (One Piece)':'R'">R</span></div></div></div></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 5 : COOPÉRATIF (🟣)                -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-coop">
+  <div class="format-header" style="background:rgba(142,68,173,0.1);color:#A569BD;">🟣 Coopératif (2 jeux)</div>
+
+  <div class="game-card" id="jeu-33"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#33</span><span class="game-emoji">🧩</span><span class="game-title">Le Cadavre Exquis Culturel</span><span class="game-tag" style="background:rgba(142,68,173,0.15);color:#A569BD;">COOP</span><span class="game-time">~5 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">Chaque équipe écrit secrètement : un personnage historique, un lieu, une action, une époque. On lit la combinaison absurde.</div><div class="game-reward">🪙 Plus drôle : +4₽ · Plausible : +2₽ · Participation : +1₽</div><div class="content-block"><h5>📝 Catégories <span class="q-cat q-cat-legit">LÉGITIME</span></h5><div class="list-item">👤 Un penseur, savant ou chef d'État historique</div><div class="list-item">📍 Un monument, ville ou lieu historique</div><div class="list-item">🎬 Une action historique (verbe + complément)</div><div class="list-item">📅 Une époque ou siècle précis</div><p style="font-size:12px;color:var(--text-dim);margin-top:8px;">Ex : « Ibn Khaldoun · au sommet du Colisée · rédige une constitution · pendant la Renaissance »</p></div></div></div>
+
+  <div class="game-card" id="jeu-34"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#34</span><span class="game-emoji">🔗</span><span class="game-title">Le Fil Rouge</span><span class="game-tag" style="background:rgba(142,68,173,0.15);color:#A569BD;">COOP</span><span class="game-time">~6 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">5 indices avec un point commun caché. Toutes les équipes collaborent.</div><div class="game-reward">🪙 1er indice : +5₽ pour tous · 2e : +3₽ · 3e : +2₽ · 4e+ : +1₽</div><div class="content-block"><h5>📝 5 séries <span class="q-cat q-cat-legit">LÉGITIME</span></h5><div class="indice-block"><div class="ib-title">Série 1</div><div class="indice-line"><span class="indice-num">1.</span> J'ai inspiré Montesquieu pour la séparation des pouvoirs.</div><div class="indice-line"><span class="indice-num">2.</span> Mon parlement est le plus ancien du monde occidental.</div><div class="indice-line"><span class="indice-num">3.</span> J'ai signé la Magna Carta en 1215.</div><div class="indice-line"><span class="indice-num">4.</span> J'ai colonisé un quart de la planète.</div><div class="indice-line"><span class="indice-num">5.</span> Ma capitale est traversée par la Tamise.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓'?'L\'Angleterre / Le Royaume-Uni':'🔓'">🔓</span></div><div class="indice-block"><div class="ib-title">Série 2</div><div class="indice-line"><span class="indice-num">1.</span> Je suis composé à 78% d'un gaz incolore.</div><div class="indice-line"><span class="indice-num">2.</span> Lavoisier m'a analysé au XVIIIe siècle.</div><div class="indice-line"><span class="indice-num">3.</span> Sans moi, pas de combustion.</div><div class="indice-line"><span class="indice-num">4.</span> Les avions me traversent.</div><div class="indice-line"><span class="indice-num">5.</span> On me respire 20 000 fois par jour.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓'?'L\'air':'🔓'">🔓</span></div><div class="indice-block"><div class="ib-title">Série 3</div><div class="indice-line"><span class="indice-num">1.</span> Gutenberg m'a révolutionné.</div><div class="indice-line"><span class="indice-num">2.</span> J'existais en Chine bien avant l'Europe.</div><div class="indice-line"><span class="indice-num">3.</span> Hugo, Voltaire et Camus m'ont utilisé.</div><div class="indice-line"><span class="indice-num">4.</span> Je peux être de poche ou relié.</div><div class="indice-line"><span class="indice-num">5.</span> Sans moi, pas de bibliothèque.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓'?'Le livre':'🔓'">🔓</span></div><div class="indice-block"><div class="ib-title">Série 4</div><div class="indice-line"><span class="indice-num">1.</span> Aristote m'a théorisée le premier.</div><div class="indice-line"><span class="indice-num">2.</span> Athènes m'a inventée au Ve siècle av. J-C.</div><div class="indice-line"><span class="indice-num">3.</span> Montesquieu a défini mes 3 pouvoirs.</div><div class="indice-line"><span class="indice-num">4.</span> Je suis le contraire de la tyrannie.</div><div class="indice-line"><span class="indice-num">5.</span> Mon nom vient du grec « pouvoir du peuple ».</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓'?'La démocratie':'🔓'">🔓</span></div><div class="indice-block"><div class="ib-title">Série 5</div><div class="indice-line"><span class="indice-num">1.</span> Archimède m'a étudié dans son bain.</div><div class="indice-line"><span class="indice-num">2.</span> Je couvre 71% de la surface terrestre.</div><div class="indice-line"><span class="indice-num">3.</span> Ma formule chimique contient 3 atomes.</div><div class="indice-line"><span class="indice-num">4.</span> Je peux être douce ou salée.</div><div class="indice-line"><span class="indice-num">5.</span> Sans moi, pas de vie sur Terre.</div><span class="ib-answer" onclick="this.textContent=this.textContent==='🔓'?'L\'eau':'🔓'">🔓</span></div></div></div></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FORMAT 6 : COMEBACK (⭐)                   -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="format-comeback">
+  <div class="format-header" style="background:rgba(241,196,15,0.1);color:#F1C40F;">⭐ Comeback — Tours 7+ (1 jeu)</div>
+
+  <div class="game-card" id="jeu-35"><div class="game-header" onclick="this.parentElement.classList.toggle('open')"><span class="game-num">#35</span><span class="game-emoji">🥊</span><span class="game-title">Le Duel de l'Espoir</span><span class="game-tag" style="background:rgba(231,76,60,0.15);color:#E74C3C;">COMEBACK</span><span class="game-time">~3 MIN</span><span class="game-toggle">▼</span></div><div class="game-body"><div class="game-desc">La dernière équipe défie la première sur une question Expert. Si elle gagne → vole 1 étoile.</div><div class="game-rules"><h4>📋 Règles</h4><ol><li>Tour 7+ uniquement.</li><li>La dernière attaque, la première défend.</li><li>UNE question Expert, réponse simultanée (papier).</li><li>Dernière a bon + première a faux → VOL D'ÉTOILE.</li><li>Les deux ont bon → dernière +3₽.</li><li>Dernière a faux → première +3₽.</li></ol></div><div class="game-reward">⭐ Vol d'étoile possible !</div><div class="content-block"><h5>📝 8 questions Expert <span class="q-cat q-cat-legit">100% LÉGITIME</span></h5><div class="q-item"><span class="q-n">1</span><span class="q-t">Quelle est la seule merveille du monde antique encore debout ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Pyramide de Khéops':'R'">R</span></div><div class="q-item"><span class="q-n">2</span><span class="q-t">Quel scientifique a formulé les 3 lois du mouvement ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Isaac Newton':'R'">R</span></div><div class="q-item"><span class="q-n">3</span><span class="q-t">Quel est le vrai nom de Voltaire ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'François-Marie Arouet':'R'">R</span></div><div class="q-item"><span class="q-n">4</span><span class="q-t">Quel fleuve est le plus long d'Europe ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'La Volga (3 530 km)':'R'">R</span></div><div class="q-item"><span class="q-n">5</span><span class="q-t">En quelle année Mandela est-il sorti de prison ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'1990':'R'">R</span></div><div class="q-item"><span class="q-n">6</span><span class="q-t">Quel explorateur a mené la première circumnavigation (1522) ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Magellan (achevée par Elcano)':'R'">R</span></div><div class="q-item"><span class="q-n">7</span><span class="q-t">Quel concept Platon illustre-t-il avec des prisonniers face à un mur ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'L\'allégorie de la caverne':'R'">R</span></div><div class="q-item"><span class="q-n">8</span><span class="q-t">Quelle civilisation a inventé le zéro ?</span><span class="q-a" onclick="this.textContent=this.textContent==='R'?'Les Indiens (civilisation indienne / babyloniens aussi)':'R'">R</span></div></div></div></div>
+</section>
+
+<hr class="divider">
+<p style="text-align:center;color:var(--text-dim);font-size:12px;font-family:'Fredoka',sans-serif;padding:16px 0;">
+  L'Archipel du Savoir — 35 Mini-Jeux v2.0<br>
+  Ratio : 75% culture légitime · 25% culture générale<br>
+  <span style="color:var(--legit);">■</span> Légitime = Histoire, Sciences, Littérature, Philosophie, Art, Géographie, Politique<br>
+  <span style="color:var(--pop);">■</span> Pop/Gé = Sport, Entertainment, Food, Tech, Pop culture<br>
+  🎲 Bon jeu !
+</p>
+
+</div>
+
+<script>
+const GAMES=[
+{id:1,title:"Buzzer Culture",emoji:"🔔",format:"TOUS",color:"#E74C3C"},
+{id:2,title:"Chrono-Liste",emoji:"📝",format:"TOUS",color:"#E74C3C"},
+{id:3,title:"Quoridor 4 Joueurs",emoji:"♟️",format:"TOUS",color:"#E74C3C"},
+{id:4,title:"Undercover",emoji:"🕵️",format:"TOUS",color:"#E74C3C"},
+{id:5,title:"Le Petit Bac Savant",emoji:"✍️",format:"TOUS",color:"#E74C3C"},
+{id:6,title:"Le Juste Prix Culturel",emoji:"🔢",format:"TOUS",color:"#E74C3C"},
+{id:7,title:"Vrai ou Faux Express",emoji:"✅",format:"TOUS",color:"#E74C3C"},
+{id:8,title:"Chaîne de Mots",emoji:"🔗",format:"TOUS",color:"#E74C3C"},
+{id:9,title:"Le Mot Interdit",emoji:"🚫",format:"TOUS",color:"#E74C3C"},
+{id:10,title:"Top 5",emoji:"🏆",format:"TOUS",color:"#E74C3C"},
+{id:11,title:"Qui Suis-Je — Relais",emoji:"🎭",format:"2v2",color:"#00BCD4"},
+{id:12,title:"Dessin-Devinette",emoji:"✏️",format:"2v2",color:"#00BCD4"},
+{id:13,title:"Blind Test Fredonné",emoji:"🎤",format:"2v2",color:"#00BCD4"},
+{id:14,title:"Mime en Chaîne",emoji:"🤐",format:"2v2",color:"#00BCD4"},
+{id:15,title:"La Carte Muette",emoji:"🗺️",format:"2v2",color:"#00BCD4"},
+{id:16,title:"Mot de Passe",emoji:"🔑",format:"2v2",color:"#00BCD4"},
+{id:17,title:"Timeline",emoji:"⏳",format:"2v2",color:"#00BCD4"},
+{id:18,title:"Quiz Ping-Pong",emoji:"🏓",format:"2v2",color:"#00BCD4"},
+{id:19,title:"Débat Express",emoji:"💬",format:"2v2",color:"#00BCD4"},
+{id:20,title:"Le Menteur",emoji:"🤥",format:"1v3",color:"#2ECC71"},
+{id:21,title:"Hot Seat",emoji:"🔥",format:"1v3",color:"#2ECC71"},
+{id:22,title:"Le Pari",emoji:"🎯",format:"1v3",color:"#2ECC71"},
+{id:23,title:"L'Imposteur Culturel",emoji:"🎭",format:"1v3",color:"#2ECC71"},
+{id:24,title:"Le Bluff des Chiffres",emoji:"🔢",format:"1v3",color:"#2ECC71"},
+{id:25,title:"La Définition",emoji:"📖",format:"1v3",color:"#2ECC71"},
+{id:26,title:"30 Secondes Chrono",emoji:"⏱️",format:"1v3",color:"#2ECC71"},
+{id:27,title:"Enchères de Questions",emoji:"💰",format:"1v3",color:"#2ECC71"},
+{id:28,title:"Tournoi Éclair",emoji:"⚡",format:"1v1",color:"#D35400"},
+{id:29,title:"Pierre-Feuille-Culture",emoji:"✊",format:"1v1",color:"#D35400"},
+{id:30,title:"Memory Culture",emoji:"🧠",format:"1v1",color:"#D35400"},
+{id:31,title:"Relais des Savoirs",emoji:"🏃",format:"1v1",color:"#D35400"},
+{id:32,title:"Culture Roulette",emoji:"🎰",format:"1v1",color:"#D35400"},
+{id:33,title:"Cadavre Exquis Culturel",emoji:"🧩",format:"COOP",color:"#A569BD"},
+{id:34,title:"Le Fil Rouge",emoji:"🔗",format:"COOP",color:"#A569BD"},
+{id:35,title:"Le Duel de l'Espoir",emoji:"🥊",format:"COMEBACK",color:"#E74C3C"},
+];
+const toc=document.getElementById('toc-list');
+GAMES.forEach(g=>{const li=document.createElement('li');li.innerHTML=`<a href="#jeu-${g.id}"><span class="toc-num">#${String(g.id).padStart(2,'0')}</span>${g.emoji} ${g.title}<span class="toc-format" style="background:${g.color}20;color:${g.color};">${g.format}</span></a>`;toc.appendChild(li);});
+function openRandom(){document.querySelectorAll('.game-card').forEach(c=>c.classList.remove('open'));const i=Math.floor(Math.random()*35)+1;const e=document.getElementById(`jeu-${i}`);if(e){e.classList.add('open');e.scrollIntoView({behavior:'smooth',block:'center'});}}
+</script>
+</body>
+</html>
