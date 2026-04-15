@@ -150,9 +150,9 @@ export const AW = [
     label: "mini-jeux gagnés",
   },
   {
-    e: "⚔️", n: "Le Conquérant",
-    d: "L'équipe ayant gagné le plus de duels remporte +1⭐.",
-    stat: "duelsWon",
-    label: "duels gagnés",
+    e: "🧭", n: "L'Explorateur",
+    d: "L'équipe ayant visité le plus de cases uniques sur le plateau remporte +1⭐.",
+    stat: "visitedCases",
+    label: "cases visitées",
   },
 ];
