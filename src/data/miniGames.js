@@ -27,6 +27,9 @@ export const FORMAT = {
   comeback: { label: "Comeback (Tour 7+)", color: "#F1C40F", emoji: "⭐", short: "T7+" },
 };
 
+// Récompenses par rang (utilisées par le système de classement en fin de mini-jeu)
+export const RANK_COINS = [8, 4, 2, 0];
+
 export const MG = [
 
   // ═══════════════════════════════════════════
@@ -1021,6 +1024,27 @@ export const MG = [
         { title: "Fil 5 — L'Eau", cat: "SCIENCE", items: ["Archimède en a découvert une propriété fondamentale dans son bain.", "Elle couvre 71 % de la surface de la Terre.", "Sa formule chimique est H₂O.", "Elle existe naturellement sous 3 états : liquide, solide et gazeux.", "On ne peut vivre que 3 jours sans elle."] },
       ],
     },
+  },
+
+  // ═══════════════════════════════════════════
+  // FORMAT : COOP  (1 jeu)
+  // ═══════════════════════════════════════════
+
+  {
+    id: 35, emoji: "🧘", name: "The Mind",
+    format: "coop", duration: "3-5 min",
+    desc: "Sans parler, sans signaux, les joueurs de l'équipe posent leurs cartes en ordre croissant en suivant uniquement leur concentration collective. La plus rapide sans erreur gagne.",
+    rules: [
+      "Chaque joueur reçoit 2 cartes (numéros aléatoires entre 1 et 100) — garder la main cachée.",
+      "ZÉRO communication : ni paroles, ni gestes, ni signaux.",
+      "Les joueurs posent leurs cartes sur la table en ordre croissant, une à une, sans concertation.",
+      "Si une carte est posée dans le mauvais ordre, c'est raté.",
+      "Chronométrez depuis la première carte posée jusqu'à la dernière.",
+      "Comparez les temps entre les équipes — la plus rapide sans erreur gagne.",
+    ],
+    material: "Jeu The Mind (cartes 1–100) · Chronomètre",
+    reward: "Équipe la plus rapide sans erreur : +8₽. Si égalité ou aucun succès : +4₽ à chaque équipe.",
+    content: null,
   },
 
   // ═══════════════════════════════════════════
