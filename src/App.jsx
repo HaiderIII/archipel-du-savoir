@@ -126,10 +126,10 @@ function useLS(key, init) {
 // INITIAL STATE
 // ═══════════════════════════════════════════════════════
 const INIT_TEAMS = [
-  { name: "Équipe 1", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, duelsWon: 0 },
-  { name: "Équipe 2", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, duelsWon: 0 },
-  { name: "Équipe 3", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, duelsWon: 0 },
-  { name: "Équipe 4", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, duelsWon: 0 },
+  { name: "Équipe 1", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
+  { name: "Équipe 2", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
+  { name: "Équipe 3", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
+  { name: "Équipe 4", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
 ];
 const INIT_USED = { college: [], lycee: [], expert: [] };
 const MAX_TOURS = 10;
@@ -633,12 +633,244 @@ function MiniGameCard({ game, defaultOpen = false }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// PION OFFSETS
+// ═══════════════════════════════════════════════════════
+const PION_OFFSETS = [
+  [[0, 0]],
+  [[-9, 0], [9, 0]],
+  [[0, -10], [9, 6], [-9, 6]],
+  [[-8, -8], [8, -8], [-8, 8], [8, 8]],
+];
+
+// ═══════════════════════════════════════════════════════
+// BOARD SVG (shared pure visual component)
+// ═══════════════════════════════════════════════════════
+function BoardSVG({ side, starIdx, buying = false, withHover = false,
+  onHoverChange, onCaseClick, onStarClick, pawns = [], activePawnTeamIdx = -1 }) {
+  const [hov, setHov] = useState(null);
+  const [tpH, setTpH] = useState(false);
+
+  const handleEnter = (id, type) => {
+    if (!withHover) return;
+    setHov(id);
+    setTpH(type === "teleport");
+    onHoverChange?.(id, type);
+  };
+  const handleLeave = () => {
+    if (!withHover) return;
+    setHov(null);
+    setTpH(false);
+    onHoverChange?.(null, null);
+  };
+  const handleSVGLeave = () => {
+    if (!withHover) return;
+    setHov(null);
+    setTpH(false);
+    onHoverChange?.(null, null);
+  };
+
+  const gdir = (islandIdx, scId) => islands[islandIdx].cfg[side][scId];
+  const starSeg = AS[starIdx];
+  const isRecto = side === 0;
+  const sideColor = isRecto ? "#2ecc71" : "#e74c3c";
+
+  const pionsByCase = {};
+  pawns.forEach(p => {
+    if (!pionsByCase[p.caseId]) pionsByCase[p.caseId] = [];
+    pionsByCase[p.caseId].push(p.teamIdx);
+  });
+
+  return (
+    <svg viewBox="0 0 760 580" style={{ width: "100%", display: "block" }}
+      onMouseLeave={handleSVGLeave}>
+      <defs>
+        <radialGradient id="wm" cx="50%" cy="45%">
+          <stop offset="0%"   stopColor="#122940" />
+          <stop offset="100%" stopColor="#080F1A" />
+        </radialGradient>
+      </defs>
+      <rect width={760} height={580} rx={14} fill="url(#wm)" />
+
+      {/* Teleporter links */}
+      {tpLinks.map((tl, i) => {
+        const mx = (tl.f.x + tl.t.x) / 2, my = (tl.f.y + tl.t.y) / 2 - 28;
+        return (
+          <path key={`tp${i}`}
+            d={`M ${tl.f.x} ${tl.f.y} Q ${mx} ${my} ${tl.t.x} ${tl.t.y}`}
+            fill="none" stroke="#00BCD4" strokeWidth={tpH ? 1.8 : 0.8}
+            strokeDasharray="8,6" opacity={tpH ? 0.4 : 0.06}
+          />
+        );
+      })}
+
+      {/* Island backgrounds */}
+      {islands.map((il, i) => (
+        <g key={`ib${i}`}>
+          <ellipse cx={il.cx+4} cy={il.cy+6} rx={il.rx} ry={il.ry} fill="rgba(0,0,0,0.2)"
+            transform={`rotate(${il.rot},${il.cx+4},${il.cy+6})`} />
+          <ellipse cx={il.cx} cy={il.cy} rx={il.rx} ry={il.ry} fill={il.color}
+            stroke="rgba(255,255,255,0.06)" strokeWidth={1.5}
+            transform={`rotate(${il.rot},${il.cx},${il.cy})`} />
+          <text x={il.cx} y={il.cy - il.ry + 20}
+            textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize={9.5}
+            fontWeight="600" letterSpacing="1.5">
+            {il.icon} {il.name}
+          </text>
+          <text x={il.cx} y={il.cy + il.ry - 12}
+            textAnchor="middle" fill={`${sideColor}55`} fontSize={8}
+            fontWeight="700" letterSpacing="2">
+            {isRecto ? "RECTO" : "VERSO"}
+          </text>
+        </g>
+      ))}
+
+      {/* Bridges */}
+      {bridges.map((b, i) => (
+        <g key={`br${i}`}>
+          <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
+            stroke="#5C4A1A" strokeWidth={9} strokeLinecap="round" opacity={0.28} />
+          <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
+            stroke="#A07C28" strokeWidth={3.5} strokeLinecap="round"
+            strokeDasharray="10,7" opacity={0.55} />
+          <g onMouseEnter={withHover ? () => handleEnter(`br${i}`, "bridge") : undefined}
+             onMouseLeave={withHover ? handleLeave : undefined}
+             style={{ cursor: withHover ? "pointer" : "default" }}>
+            {hov === `br${i}` && <circle cx={b.m.x} cy={b.m.y} r={26} fill="#8B6914" opacity={0.18} />}
+            <circle cx={b.m.x+1.5} cy={b.m.y+2} r={14} fill="rgba(0,0,0,0.28)" />
+            <circle cx={b.m.x} cy={b.m.y} r={14} fill="#8B6914"
+              stroke={hov === `br${i}` ? "#fff" : "rgba(0,0,0,0.2)"}
+              strokeWidth={hov === `br${i}` ? 2.5 : 1.5} />
+            <text x={b.m.x} y={b.m.y+1} textAnchor="middle" dominantBaseline="central"
+              fill="#fff" fontWeight="700" fontSize={10}>→</text>
+          </g>
+        </g>
+      ))}
+
+      {/* Main path segments */}
+      {islands.map(il => il.mp.map((cid, idx) => {
+        const nid = il.mp[(idx + 1) % il.mp.length];
+        const f = gc(cid), t = gc(nid);
+        if (!f || !t) return null;
+        const sid = `m-${cid}-${nid}`;
+        const hasStar = starSeg?.sid === sid;
+        return (
+          <line key={sid} x1={f.x} y1={f.y} x2={t.x} y2={t.y}
+            stroke={hasStar ? "rgba(241,196,15,0.22)" : "rgba(255,255,255,0.12)"}
+            strokeWidth={hasStar ? 3 : 2.5} strokeDasharray="5,4" />
+        );
+      }))}
+
+      {/* Shortcuts with arrows */}
+      {islands.map((il, ii) => il.sc.map(sc => {
+        const f = gc(sc.f), t = gc(sc.t);
+        if (!f || !t) return null;
+        const dir = gdir(ii, sc.id);
+        const rf = dir === 1 ? f : t, rt = dir === 1 ? t : f;
+        const dx = rt.x - rf.x, dy = rt.y - rf.y;
+        const ln = Math.sqrt(dx*dx + dy*dy);
+        const nx = dx/ln, ny = dy/ln;
+        const ax = (rf.x + rt.x) / 2, ay = (rf.y + rt.y) / 2;
+        const hasStar = starSeg?.sid === `sc-${sc.id}`;
+        const isHov = hov && (hov === sc.f || hov === sc.t);
+        const co = hasStar
+          ? (isHov ? "rgba(241,196,15,0.85)" : "rgba(241,196,15,0.38)")
+          : (isHov ? "rgba(0,220,250,0.8)"   : "rgba(0,188,212,0.28)");
+        return (
+          <g key={sc.id}>
+            <line x1={rf.x} y1={rf.y} x2={rt.x} y2={rt.y}
+              stroke={co} strokeWidth={isHov ? 3 : 2} strokeDasharray="6,5" />
+            <polygon
+              points={`${ax+8*nx},${ay+8*ny} ${ax-5*ny-4*nx},${ay+5*nx-4*ny} ${ax+5*ny-4*nx},${ay-5*nx-4*ny}`}
+              fill={co}
+            />
+          </g>
+        );
+      }))}
+
+      {/* Star token */}
+      {!buying && starSeg && (() => {
+        const mx = (starSeg.f.x + starSeg.t.x) / 2;
+        const my = (starSeg.f.y + starSeg.t.y) / 2;
+        return (
+          <g onClick={onStarClick}
+             onMouseEnter={withHover ? () => handleEnter("star", "star") : undefined}
+             onMouseLeave={withHover ? handleLeave : undefined}
+             style={{ cursor: onStarClick ? "pointer" : "default" }}>
+            {hov === "star" && <circle cx={mx} cy={my} r={28} fill="rgba(241,196,15,0.12)" />}
+            <circle cx={mx+1.5} cy={my+2} r={19} fill="rgba(0,0,0,0.32)" />
+            <circle cx={mx} cy={my} r={19} fill="#F1C40F"
+              stroke={hov === "star" ? "#fff" : "rgba(0,0,0,0.15)"}
+              strokeWidth={hov === "star" ? 2.5 : 1.5} />
+            <circle cx={mx-4} cy={my-5} r={4.5} fill="rgba(255,255,255,0.3)" />
+            <text x={mx} y={my+2} textAnchor="middle" dominantBaseline="central"
+              fill="#fff" fontWeight="800" fontSize={18}>★</text>
+          </g>
+        );
+      })()}
+
+      {/* Case circles */}
+      {islands.map(il => il.cases.map(c => {
+        const side0 = side === 0;
+        const tp = c.r === c.v ? c.r : (side0 ? c.r : c.v);
+        const cf = CT[tp];
+        if (!cf) return null;
+        const r = 17;
+        return (
+          <g key={c.id}
+             onMouseEnter={withHover ? () => handleEnter(c.id, tp) : undefined}
+             onMouseLeave={withHover ? handleLeave : undefined}
+             onClick={onCaseClick ? () => onCaseClick(c.id) : undefined}
+             style={{ cursor: onCaseClick ? "pointer" : (withHover ? "pointer" : "default") }}>
+            {hov === c.id && <circle cx={c.x} cy={c.y} r={r+10} fill={cf.c} opacity={0.18} />}
+            {tp === "teleport" && (
+              <circle cx={c.x} cy={c.y} r={r+6} fill="none"
+                stroke="#00BCD4" strokeWidth={1.5} opacity={0.22} />
+            )}
+            <circle cx={c.x+1.5} cy={c.y+2} r={r} fill="rgba(0,0,0,0.28)" />
+            <circle cx={c.x} cy={c.y} r={r} fill={cf.c}
+              stroke={hov === c.id ? "#fff" : "rgba(0,0,0,0.2)"}
+              strokeWidth={hov === c.id ? 2.5 : 1.5} />
+            <circle cx={c.x-3} cy={c.y-4} r={r*0.22} fill="rgba(255,255,255,0.28)" />
+            <text x={c.x} y={c.y+1} textAnchor="middle" dominantBaseline="central"
+              fill="#fff" fontWeight="700" fontSize={11}>{cf.l}</text>
+          </g>
+        );
+      }))}
+
+      {/* Pions — rendered on top, pointer-events off so clicks pass through */}
+      {Object.entries(pionsByCase).map(([caseId, tIdxs]) => {
+        const c = gc(caseId);
+        if (!c) return null;
+        const count = Math.min(tIdxs.length, 4);
+        const offsets = PION_OFFSETS[count - 1];
+        return tIdxs.map((tIdx, i) => {
+          const [ox, oy] = offsets[i] || [0, 0];
+          const isActive = tIdx === activePawnTeamIdx;
+          return (
+            <g key={`pion-${tIdx}`} style={{ pointerEvents: "none" }}>
+              {isActive && <circle cx={c.x+ox} cy={c.y+oy} r={16} fill={TC[tIdx]} opacity={0.18} />}
+              <circle cx={c.x+ox+1} cy={c.y+oy+1.5} r={10} fill="rgba(0,0,0,0.45)" />
+              <circle cx={c.x+ox} cy={c.y+oy} r={10} fill={TC[tIdx]}
+                stroke={isActive ? "#fff" : "rgba(0,0,0,0.3)"}
+                strokeWidth={isActive ? 2.5 : 1} />
+              <text x={c.x+ox} y={c.y+oy+1} textAnchor="middle" dominantBaseline="central"
+                fill="#fff" fontSize={10} fontWeight="800" fontFamily="system-ui">
+                {tIdx + 1}
+              </text>
+            </g>
+          );
+        });
+      })}
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // BOARD MAP COMPONENT
 // ═══════════════════════════════════════════════════════
 function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
   const [hov, setHov]       = useState(null);
   const [hovT, setHovT]     = useState(null);
-  const [tpH, setTpH]       = useState(false);
   const [buying, setBuying] = useState(false);
   const [dice, setDice]     = useState(null);
   const [rolling, setRolling] = useState(false);
@@ -648,8 +880,6 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
     setToast(msg);
     setTimeout(() => setToast(null), dur);
   };
-
-  const gdir = (islandIdx, scId) => islands[islandIdx].cfg[side][scId];
 
   const rollDie = useCallback(() => {
     if (rolling) return;
@@ -694,10 +924,6 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
     }, 1800);
   }, [starIdx, buying, setStarIdx]);
 
-  const onHover  = (id, type) => { setHov(id); setHovT(type); if (type === "teleport") setTpH(true); };
-  const onLeave  = () => { setHov(null); setHovT(null); setTpH(false); };
-
-  const starSeg = AS[starIdx];
   const isRecto = side === 0;
   const sideColor = isRecto ? "#2ecc71" : "#e74c3c";
   const diceIcons = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
@@ -742,156 +968,13 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
         </div>
       )}
 
-      {/* SVG Board */}
-      <svg viewBox="0 0 760 580" style={{ width: "100%", display: "block" }}>
-        <defs>
-          <radialGradient id="wm" cx="50%" cy="45%">
-            <stop offset="0%"   stopColor="#122940" />
-            <stop offset="100%" stopColor="#080F1A" />
-          </radialGradient>
-        </defs>
-        <rect width={760} height={580} rx={14} fill="url(#wm)" />
-
-        {/* Teleporter links */}
-        {tpLinks.map((tl, i) => {
-          const mx = (tl.f.x + tl.t.x) / 2, my = (tl.f.y + tl.t.y) / 2 - 28;
-          return (
-            <path key={`tp${i}`}
-              d={`M ${tl.f.x} ${tl.f.y} Q ${mx} ${my} ${tl.t.x} ${tl.t.y}`}
-              fill="none" stroke="#00BCD4" strokeWidth={tpH ? 1.8 : 0.8}
-              strokeDasharray="8,6" opacity={tpH ? 0.4 : 0.06}
-            />
-          );
-        })}
-
-        {/* Island backgrounds */}
-        {islands.map((il, i) => (
-          <g key={`ib${i}`}>
-            <ellipse cx={il.cx+4} cy={il.cy+6} rx={il.rx} ry={il.ry} fill="rgba(0,0,0,0.2)"
-              transform={`rotate(${il.rot},${il.cx+4},${il.cy+6})`} />
-            <ellipse cx={il.cx} cy={il.cy} rx={il.rx} ry={il.ry} fill={il.color}
-              stroke="rgba(255,255,255,0.06)" strokeWidth={1.5}
-              transform={`rotate(${il.rot},${il.cx},${il.cy})`} />
-            <text x={il.cx} y={il.cy - il.ry + 20}
-              textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize={9.5}
-              fontWeight="600" letterSpacing="1.5">
-              {il.icon} {il.name}
-            </text>
-            <text x={il.cx} y={il.cy + il.ry - 12}
-              textAnchor="middle" fill={`${sideColor}55`} fontSize={8}
-              fontWeight="700" letterSpacing="2">
-              {isRecto ? "RECTO" : "VERSO"}
-            </text>
-          </g>
-        ))}
-
-        {/* Bridges */}
-        {bridges.map((b, i) => (
-          <g key={`br${i}`}>
-            <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
-              stroke="#5C4A1A" strokeWidth={9} strokeLinecap="round" opacity={0.28} />
-            <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
-              stroke="#A07C28" strokeWidth={3.5} strokeLinecap="round"
-              strokeDasharray="10,7" opacity={0.55} />
-            <g onMouseEnter={() => onHover(`br${i}`, "bridge")} onMouseLeave={onLeave}
-               style={{ cursor: "pointer" }}>
-              {hov === `br${i}` && <circle cx={b.m.x} cy={b.m.y} r={26} fill="#8B6914" opacity={0.18} />}
-              <circle cx={b.m.x+1.5} cy={b.m.y+2} r={14} fill="rgba(0,0,0,0.28)" />
-              <circle cx={b.m.x} cy={b.m.y} r={14} fill="#8B6914"
-                stroke={hov === `br${i}` ? "#fff" : "rgba(0,0,0,0.2)"}
-                strokeWidth={hov === `br${i}` ? 2.5 : 1.5} />
-              <text x={b.m.x} y={b.m.y+1} textAnchor="middle" dominantBaseline="central"
-                fill="#fff" fontWeight="700" fontSize={10}>→</text>
-            </g>
-          </g>
-        ))}
-
-        {/* Main path segments */}
-        {islands.map(il => il.mp.map((cid, idx) => {
-          const nid = il.mp[(idx + 1) % il.mp.length];
-          const f = gc(cid), t = gc(nid);
-          if (!f || !t) return null;
-          const sid = `m-${cid}-${nid}`;
-          const hasStar = starSeg?.sid === sid;
-          return (
-            <line key={sid} x1={f.x} y1={f.y} x2={t.x} y2={t.y}
-              stroke={hasStar ? "rgba(241,196,15,0.22)" : "rgba(255,255,255,0.12)"}
-              strokeWidth={hasStar ? 3 : 2.5} strokeDasharray="5,4" />
-          );
-        }))}
-
-        {/* Shortcuts with arrows */}
-        {islands.map((il, ii) => il.sc.map(sc => {
-          const f = gc(sc.f), t = gc(sc.t);
-          if (!f || !t) return null;
-          const dir = gdir(ii, sc.id);
-          const rf = dir === 1 ? f : t, rt = dir === 1 ? t : f;
-          const dx = rt.x - rf.x, dy = rt.y - rf.y;
-          const ln = Math.sqrt(dx*dx + dy*dy);
-          const nx = dx/ln, ny = dy/ln;
-          const ax = (rf.x + rt.x) / 2, ay = (rf.y + rt.y) / 2;
-          const hasStar = starSeg?.sid === `sc-${sc.id}`;
-          const isHov = hov && (hov === sc.f || hov === sc.t);
-          const co = hasStar
-            ? (isHov ? "rgba(241,196,15,0.85)" : "rgba(241,196,15,0.38)")
-            : (isHov ? "rgba(0,220,250,0.8)"   : "rgba(0,188,212,0.28)");
-          return (
-            <g key={sc.id}>
-              <line x1={rf.x} y1={rf.y} x2={rt.x} y2={rt.y}
-                stroke={co} strokeWidth={isHov ? 3 : 2} strokeDasharray="6,5" />
-              <polygon
-                points={`${ax+8*nx},${ay+8*ny} ${ax-5*ny-4*nx},${ay+5*nx-4*ny} ${ax+5*ny-4*nx},${ay-5*nx-4*ny}`}
-                fill={co}
-              />
-            </g>
-          );
-        }))}
-
-        {/* Star token */}
-        {!buying && starSeg && (() => {
-          const mx = (starSeg.f.x + starSeg.t.x) / 2;
-          const my = (starSeg.f.y + starSeg.t.y) / 2;
-          return (
-            <g onClick={buyStar} onMouseEnter={() => onHover("star","star")} onMouseLeave={onLeave}
-               style={{ cursor: "pointer" }}>
-              {hov === "star" && <circle cx={mx} cy={my} r={28} fill="rgba(241,196,15,0.12)" />}
-              <circle cx={mx+1.5} cy={my+2} r={19} fill="rgba(0,0,0,0.32)" />
-              <circle cx={mx} cy={my} r={19} fill="#F1C40F"
-                stroke={hov === "star" ? "#fff" : "rgba(0,0,0,0.15)"}
-                strokeWidth={hov === "star" ? 2.5 : 1.5} />
-              <circle cx={mx-4} cy={my-5} r={4.5} fill="rgba(255,255,255,0.3)" />
-              <text x={mx} y={my+2} textAnchor="middle" dominantBaseline="central"
-                fill="#fff" fontWeight="800" fontSize={18}>★</text>
-            </g>
-          );
-        })()}
-
-        {/* Case circles */}
-        {islands.map(il => il.cases.map(c => {
-          const side0 = side === 0;
-          const tp = c.r === c.v ? c.r : (side0 ? c.r : c.v);
-          const cf = CT[tp];
-          if (!cf) return null;
-          const r = 17;
-          return (
-            <g key={c.id} onMouseEnter={() => onHover(c.id, tp)} onMouseLeave={onLeave}
-               style={{ cursor: "pointer" }}>
-              {hov === c.id && <circle cx={c.x} cy={c.y} r={r+10} fill={cf.c} opacity={0.18} />}
-              {tp === "teleport" && (
-                <circle cx={c.x} cy={c.y} r={r+6} fill="none"
-                  stroke="#00BCD4" strokeWidth={1.5} opacity={0.22} />
-              )}
-              <circle cx={c.x+1.5} cy={c.y+2} r={r} fill="rgba(0,0,0,0.28)" />
-              <circle cx={c.x} cy={c.y} r={r} fill={cf.c}
-                stroke={hov === c.id ? "#fff" : "rgba(0,0,0,0.2)"}
-                strokeWidth={hov === c.id ? 2.5 : 1.5} />
-              <circle cx={c.x-3} cy={c.y-4} r={r*0.22} fill="rgba(255,255,255,0.28)" />
-              <text x={c.x} y={c.y+1} textAnchor="middle" dominantBaseline="central"
-                fill="#fff" fontWeight="700" fontSize={11}>{cf.l}</text>
-            </g>
-          );
-        }))}
-      </svg>
+      <BoardSVG
+        side={side} starIdx={starIdx} buying={buying}
+        withHover={true}
+        onHoverChange={(id, type) => { setHov(id); setHovT(type); }}
+        onStarClick={buyStar}
+        pawns={[]}
+      />
 
       {/* Hover tooltip */}
       {hov && hovT && CT[hovT] && (
@@ -917,6 +1000,95 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// PAWN MAP (Plateau tab)
+// ═══════════════════════════════════════════════════════
+function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx }) {
+  const [toast, setToast] = useState(null);
+  const show = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  const handleCaseClick = useCallback((caseId) => {
+    setTeams(prev => prev.map((t, i) => {
+      if (i !== turn) return t;
+      const visited = t.visitedCases ?? [];
+      const newVisited = visited.includes(caseId) ? visited : [...visited, caseId];
+      return { ...t, pos: caseId, visitedCases: newVisited };
+    }));
+    const c = gc(caseId);
+    const tp = c ? (c.r === c.v ? c.r : (side === 0 ? c.r : c.v)) : null;
+    const ct = tp ? CT[tp] : null;
+    show(`${TE[turn]} → ${caseId}${ct ? ` · ${ct.e} ${ct.d}` : ""}`);
+  }, [turn, side, setTeams]);
+
+  const pawns = teams.map((t, i) => ({ teamIdx: i, caseId: t.pos ?? "1a" }));
+
+  return (
+    <div>
+      {/* Team stats grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
+        {teams.map((t, i) => (
+          <div key={i} style={{
+            padding: "8px 10px", borderRadius: 12,
+            background: i === turn ? `${TC[i]}15` : "rgba(255,255,255,0.02)",
+            border: `2px solid ${i === turn ? TC[i]+"60" : "rgba(255,255,255,0.06)"}`,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+              <span style={{ fontSize: 13 }}>{TE[i]}</span>
+              <span style={{
+                color: i === turn ? TC[i] : "rgba(255,255,255,0.7)",
+                fontWeight: 700, fontSize: 12, flex: 1,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{t.name}</span>
+              {i === turn && <span style={{ fontSize: 8, color: TC[i], fontWeight: 700 }}>▶</span>}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <span style={{ color: "#D4A017", fontWeight: 700, fontSize: 14 }}>🪙 {t.coins}</span>
+              <span style={{ color: "#F1C40F", fontWeight: 700, fontSize: 14 }}>⭐ {t.stars}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Active team bar + Suivant */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
+        padding: "7px 14px", borderRadius: 10,
+        background: `${TC[turn]}10`, border: `1px solid ${TC[turn]}30`,
+      }}>
+        <span style={{ color: TC[turn], fontWeight: 700, fontSize: 13 }}>{TE[turn]} {teams[turn].name}</span>
+        <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>— clique une case pour déplacer</span>
+        <button
+          onClick={() => setTurn(p => (p + 1) % 4)}
+          style={{
+            marginLeft: "auto", background: `${TC[turn]}20`,
+            border: `1px solid ${TC[turn]}40`, color: TC[turn],
+            padding: "4px 12px", borderRadius: 8, fontSize: 11,
+            fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          }}
+        >Suivant →</button>
+      </div>
+
+      {toast && (
+        <div style={{
+          textAlign: "center", background: "rgba(10,12,24,0.96)",
+          border: "1px solid rgba(255,255,255,0.14)", padding: "6px 16px",
+          borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, marginBottom: 8,
+        }}>
+          {toast}
+        </div>
+      )}
+
+      <BoardSVG
+        side={side} starIdx={starIdx} buying={false}
+        withHover={false}
+        onCaseClick={handleCaseClick}
+        pawns={pawns}
+        activePawnTeamIdx={turn}
+      />
     </div>
   );
 }
@@ -1001,9 +1173,11 @@ export default function App() {
   const filteredGames = mgFilter === "all" ? MG : MG.filter(g => g.format === mgFilter);
 
   // ── Awards computation ────────────────────────────────
+  const getStatVal = (team, stat) =>
+    stat === "visitedCases" ? (team.visitedCases?.length ?? 0) : (team[stat] ?? 0);
   const awardLeaders = AW.map(a => {
-    const max = Math.max(...teams.map(t => t[a.stat] ?? 0));
-    const leaders = teams.filter(t => (t[a.stat] ?? 0) === max);
+    const max = Math.max(...teams.map(t => getStatVal(t, a.stat)));
+    const leaders = teams.filter(t => getStatVal(t, a.stat) === max);
     return { award: a, leader: max === 0 ? null : leaders, value: max };
   });
 
@@ -1034,6 +1208,7 @@ export default function App() {
     { id: "dashboard",  label: "🏠 Tableau"   },
     { id: "questions",  label: "❓ Questions"  },
     { id: "carte",      label: "🗺️ Carte"     },
+    { id: "plateau",    label: "🎯 Plateau"    },
     { id: "minigames",  label: "🎮 Mini-jeux"  },
     { id: "chaos",      label: "🌀 Chaos"      },
     { id: "rules",      label: "📖 Règles"     },
@@ -1181,7 +1356,6 @@ export default function App() {
                     <StatCounter emoji="🛡️" value={t.shields}   label="BOU" onDec={() => upT(i,"shields",-1)}   onInc={() => upT(i,"shields",1)}   />
                     <StatCounter emoji="🧠" value={t.qOk}       label="QST" onDec={() => upT(i,"qOk",-1)}       onInc={() => upT(i,"qOk",1)}       />
                     <StatCounter emoji="🏆" value={t.mgWon}     label="MJ"  onDec={() => upT(i,"mgWon",-1)}     onInc={() => upT(i,"mgWon",1)}     />
-                    <StatCounter emoji="⚔️" value={t.duelsWon}  label="DU"  onDec={() => upT(i,"duelsWon",-1)}  onInc={() => upT(i,"duelsWon",1)}  />
                   </div>
                 </div>
               ))}
@@ -1427,6 +1601,15 @@ export default function App() {
           />
         )}
 
+        {/* ════════════ PLATEAU ════════════════════════════ */}
+        {tab === "plateau" && (
+          <PawnMap
+            teams={teams} setTeams={setTeams}
+            turn={turn} setTurn={setTurn}
+            side={mapSide} starIdx={starIdx}
+          />
+        )}
+
         {/* ════════════ MINI-JEUX ══════════════════════════ */}
         {tab === "minigames" && (
           <div>
@@ -1600,7 +1783,7 @@ export default function App() {
               },
               {
                 t: "🎯 Victoire",
-                c: "Après 8-10 tours : on distribue les Awards (+1⭐ chacun : Le Savant, Le Bagarreur, Le Conquérant). L'équipe avec le plus d'étoiles gagne. Égalité → plus de pièces. Toujours égalité → duel Expert.",
+                c: "Après 8-10 tours : on distribue les Awards (+1⭐ chacun : Le Savant, Le Bagarreur, L'Explorateur). L'équipe avec le plus d'étoiles gagne. Égalité → plus de pièces. Toujours égalité → duel Expert.",
               },
               {
                 t: "🥊 Duel de l'Espoir (tour 7+)",
