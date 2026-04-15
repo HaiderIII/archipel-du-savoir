@@ -131,10 +131,10 @@ function useLS(key, init) {
 // INITIAL STATE
 // ═══════════════════════════════════════════════════════
 const INIT_TEAMS = [
-  { name: "Équipe 1", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
-  { name: "Équipe 2", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
-  { name: "Équipe 3", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
-  { name: "Équipe 4", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"] },
+  { name: "Équipe 1", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"], items: [] },
+  { name: "Équipe 2", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"], items: [] },
+  { name: "Équipe 3", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"], items: [] },
+  { name: "Équipe 4", coins: 0, stars: 0, shields: 0, qOk: 0, mgWon: 0, pos: "1a", visitedCases: ["1a"], items: [] },
 ];
 const INIT_USED = { college: [], lycee: [], expert: [] };
 const MAX_TOURS = 10;
@@ -754,53 +754,69 @@ function MiniGameRanking({ teams, setTeams }) {
 }
 
 // ═══════════════════════════════════════════════════════
-// DUEL MODAL — Les 12 coups de midi style
+// DUEL MODAL — Les 12 coups de midi : chess clock duel
+// Challenger starts (60s), défiant (55s).
+// Bonne réponse = garde la main. Erreur = passe la main.
+// Le joueur dont le chrono tombe à 0 perd.
 // ═══════════════════════════════════════════════════════
 function DuelModal({ teams, turn, setTeams, onClose }) {
   const [challenger, setChallenger] = useState(null);
-  const [phase, setPhase] = useState("setup"); // setup|p1|p1done|p2|p2done|result
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [running, setRunning] = useState(false);
-  const [times, setTimes] = useState([null, null]);
-  const [question, setQuestion] = useState(null);
-  const [showAns, setShowAns] = useState(false);
+  const [duelLevel, setDuelLevel] = useState("college");
+  const [phase, setPhase] = useState("setup"); // setup | duel | result
+  // clocks[0] = défiant (turn), clocks[1] = challenger
+  const [clocks, setClocks] = useState([55, 60]);
+  // hand: 0 = défiant a la main, 1 = challenger a la main (challenger commence)
+  const [hand, setHand] = useState(1);
+  const [qPool, setQPool] = useState([]);
+  const [qIdx, setQIdx] = useState(0);
+  const [activeQ, setActiveQ] = useState(null);
 
+  // Tick active clock
   useEffect(() => {
-    if (!running || timeLeft <= 0) return;
-    const iv = setTimeout(() => {
-      if (timeLeft <= 1) {
-        setRunning(false);
-        setTimes(prev => phase === "p1" ? [60, prev[1]] : [prev[0], 60]);
-        setPhase(p => p === "p1" ? "p1done" : "p2done");
-      } else {
-        setTimeLeft(t => t - 1);
-      }
+    if (phase !== "duel") return;
+    if (clocks[hand] <= 0) return;
+    const timer = setTimeout(() => {
+      setClocks(prev => { const nc = [...prev]; nc[hand] = nc[hand] - 1; return nc; });
     }, 1000);
-    return () => clearTimeout(iv);
-  }, [running, timeLeft, phase]);
+    return () => clearTimeout(timer);
+  }, [phase, clocks, hand]);
 
-  const start = () => { setTimeLeft(60); setRunning(true); };
+  // End of game when a clock hits 0
+  useEffect(() => {
+    if (phase === "duel" && (clocks[0] <= 0 || clocks[1] <= 0)) {
+      setPhase("result");
+    }
+  }, [phase, clocks]);
 
-  const correct = () => {
-    const elapsed = 60 - timeLeft;
-    setRunning(false);
-    setTimes(prev => phase === "p1" ? [elapsed, prev[1]] : [prev[0], elapsed]);
-    setPhase(p => p === "p1" ? "p1done" : "p2done");
+  const startDuel = () => {
+    if (challenger === null) return;
+    const pool = [...(window._Q?.[duelLevel] || [])];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    setQPool(pool);
+    setQIdx(0);
+    setActiveQ(pool[0] || null);
+    setClocks([55, 60]);
+    setHand(1); // challenger starts
+    setPhase("duel");
   };
-  const miss = () => {
-    setRunning(false);
-    setTimes(prev => phase === "p1" ? [60, prev[1]] : [prev[0], 60]);
-    setPhase(p => p === "p1" ? "p1done" : "p2done");
+
+  const nextQ = (switchHand) => {
+    const ni = qIdx + 1;
+    setQIdx(ni);
+    setActiveQ(qPool[ni % Math.max(1, qPool.length)] || null);
+    if (switchHand) setHand(h => 1 - h);
   };
 
   const applyAndClose = () => {
-    const [t1, t2] = times;
-    const t1ok = t1 !== null && t1 < 60;
-    const t2ok = t2 !== null && t2 < 60;
     let winnerIdx = null;
-    if (t1ok && !t2ok) winnerIdx = turn;
-    else if (!t1ok && t2ok) winnerIdx = challenger;
-    else if (t1ok && t2ok) winnerIdx = t1 <= t2 ? turn : challenger;
+    // Who still has time?
+    if (clocks[0] > 0 && clocks[1] <= 0) winnerIdx = turn;
+    else if (clocks[1] > 0 && clocks[0] <= 0) winnerIdx = challenger;
+    else if (clocks[0] > clocks[1]) winnerIdx = turn;
+    else if (clocks[1] > clocks[0]) winnerIdx = challenger;
     if (winnerIdx !== null) {
       const loserIdx = winnerIdx === turn ? challenger : turn;
       setTeams(prev => prev.map((t, i) => {
@@ -812,29 +828,27 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
     onClose();
   };
 
-  const timerColor = timeLeft <= 10 ? "#E74C3C" : timeLeft <= 30 ? "#F1C40F" : "#2ECC71";
-  const curIdx = phase.startsWith("p2") ? challenger : turn;
+  const handTeamIdx = hand === 0 ? turn : challenger;
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 999,
       display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#0c1525", border: "2px solid rgba(231,76,60,0.45)", borderRadius: 20,
-        padding: 28, maxWidth: 480, width: "100%", maxHeight: "92vh", overflowY: "auto" }}>
+        padding: 24, maxWidth: 500, width: "100%", maxHeight: "92vh", overflowY: "auto" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ color: "#E74C3C", fontWeight: 800, fontSize: 22, letterSpacing: 1 }}>⚔️ DUEL</div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)",
             fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
         </div>
 
-        {/* SETUP */}
+        {/* ── SETUP ── */}
         {phase === "setup" && (
           <div>
-            <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 14 }}>
+            <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 12 }}>
               {TE[turn]} <strong style={{ color: TC[turn] }}>{teams[turn].name}</strong> défie…
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
               {teams.map((t, i) => i !== turn && (
                 <button key={i} onClick={() => setChallenger(i)} style={{
                   background: challenger === i ? `${TC[i]}28` : "rgba(255,255,255,0.04)",
@@ -847,119 +861,117 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                 </button>
               ))}
             </div>
-            {question && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-                borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
-                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginBottom: 6 }}>QUESTION</div>
-                <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{question.q}</div>
-                {showAns
-                  ? <div style={{ marginTop: 8, color: "#2ECC71", fontWeight: 700, fontSize: 14 }}>→ {question.r}</div>
-                  : <button onClick={() => setShowAns(true)} style={{
-                      marginTop: 8, background: "none", border: "1px solid rgba(255,255,255,0.12)",
-                      color: "rgba(255,255,255,0.4)", borderRadius: 6, padding: "2px 8px",
-                      fontSize: 10, cursor: "pointer", fontFamily: "inherit",
-                    }}>Réponse</button>
-                }
-              </div>
-            )}
-            <button onClick={() => window._Q && setQuestion(
-              [...window._Q.college, ...window._Q.lycee][Math.floor(Math.random() * (window._Q.college.length + window._Q.lycee.length))]
-            )} style={{
-              background: "rgba(241,196,15,0.12)", border: "1px solid rgba(241,196,15,0.28)",
-              color: "#F1C40F", padding: "8px 18px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-              cursor: "pointer", fontFamily: "inherit", marginBottom: 14, display: "block",
-            }}>🎲 Tirer une question</button>
-            <button disabled={challenger === null || !question} onClick={() => { setPhase("p1"); start(); }}
-              style={{
-                width: "100%", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700,
-                cursor: challenger !== null && question ? "pointer" : "not-allowed", fontFamily: "inherit",
-                background: challenger !== null && question ? "rgba(231,76,60,0.18)" : "rgba(60,60,60,0.1)",
-                border: `1px solid ${challenger !== null && question ? "rgba(231,76,60,0.4)" : "rgba(80,80,80,0.2)"}`,
-                color: challenger !== null && question ? "#E74C3C" : "#555",
-              }}>
-              Lancer le Duel →
-            </button>
+
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 700,
+              letterSpacing: 1, marginBottom: 8 }}>NIVEAU DES QUESTIONS</div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+              {Object.entries(LC).map(([k, c]) => (
+                <button key={k} onClick={() => setDuelLevel(k)} style={{
+                  padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                  background: duelLevel === k ? `${c.color}22` : "rgba(255,255,255,0.04)",
+                  border: `2px solid ${duelLevel === k ? c.color + "60" : "rgba(255,255,255,0.08)"}`,
+                  color: duelLevel === k ? c.color : "rgba(255,255,255,0.45)",
+                }}>
+                  {c.emoji} {c.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 18,
+              background: "rgba(231,76,60,0.06)", border: "1px solid rgba(231,76,60,0.15)",
+              color: "rgba(255,255,255,0.45)", fontSize: 12, lineHeight: 1.6 }}>
+              ⏱ Le challenger a <strong style={{ color: "#E74C3C" }}>60s</strong>, le défiant a <strong style={{ color: "#E74C3C" }}>55s</strong>.
+              Le challenger commence. <strong>Bonne réponse = garde la main.</strong> Erreur = passe la main à l&apos;adversaire.
+              Le premier dont le chrono tombe à 0 perd.
+            </div>
+
+            <button disabled={challenger === null} onClick={startDuel} style={{
+              width: "100%", padding: "13px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+              cursor: challenger !== null ? "pointer" : "not-allowed", fontFamily: "inherit",
+              background: challenger !== null ? "rgba(231,76,60,0.18)" : "rgba(60,60,60,0.1)",
+              border: `1px solid ${challenger !== null ? "rgba(231,76,60,0.4)" : "rgba(80,80,80,0.2)"}`,
+              color: challenger !== null ? "#E74C3C" : "#555",
+            }}>Lancer le Duel ⚔️</button>
           </div>
         )}
 
-        {/* PLAYER ROUND */}
-        {(phase === "p1" || phase === "p1done" || phase === "p2" || phase === "p2done") && curIdx !== null && (
+        {/* ── DUEL ── */}
+        {phase === "duel" && challenger !== null && (
           <div>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
-              {phase.startsWith("p1") ? "MANCHE 1" : "MANCHE 2"}
+            {/* Chess clocks */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+              {([[turn, 0], [challenger, 1]]).map(([tIdx, ci]) => {
+                const sec = clocks[ci];
+                const isActive = ci === hand;
+                const color = TC[tIdx];
+                const tcol = sec <= 10 ? "#E74C3C" : sec <= 25 ? "#F1C40F" : "#2ECC71";
+                return (
+                  <div key={ci} style={{ flex: 1, padding: "12px 10px", borderRadius: 14, textAlign: "center",
+                    background: isActive ? `${color}15` : "rgba(255,255,255,0.025)",
+                    border: `2px solid ${isActive ? color + "60" : "rgba(255,255,255,0.07)"}`,
+                    boxShadow: isActive ? `0 0 20px ${color}25` : "none", transition: "all 0.3s" }}>
+                    <div style={{ color, fontWeight: 700, fontSize: 11, marginBottom: 5 }}>
+                      {TE[tIdx]} {teams[tIdx]?.name}
+                    </div>
+                    <div style={{ fontSize: 44, fontWeight: 900, color: tcol, fontFamily: "system-ui", lineHeight: 1 }}>
+                      {sec < 10 ? `0${sec}` : sec}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 9, marginTop: 2 }}>sec</div>
+                    {isActive && (
+                      <div style={{ marginTop: 5, color, fontSize: 9, fontWeight: 700, letterSpacing: 1 }}>▶ MAIN</div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <span style={{ fontSize: 22 }}>{TE[curIdx]}</span>
-              <span style={{ color: TC[curIdx], fontWeight: 800, fontSize: 18 }}>{teams[curIdx].name}</span>
+
+            {/* Who has the hand */}
+            <div style={{ textAlign: "center", marginBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+              🎤 Au tour de <strong style={{ color: TC[handTeamIdx] }}>
+                {TE[handTeamIdx]} {teams[handTeamIdx]?.name}
+              </strong>
             </div>
-            <div style={{ textAlign: "center", marginBottom: 18 }}>
-              <div style={{ fontSize: 80, fontWeight: 900, color: timerColor,
-                fontFamily: "system-ui", lineHeight: 1, transition: "color 0.4s" }}>
-                {timeLeft < 10 ? `0${timeLeft}` : timeLeft}
-              </div>
-              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>secondes</div>
-            </div>
-            {question && (
-              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 16px", marginBottom: 16 }}>
-                <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{question.q}</div>
-              </div>
-            )}
-            {(phase === "p1" || phase === "p2") && (
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={correct} style={{
-                  flex: 2, background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)",
-                  color: "#2ECC71", padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: 700,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>✓ Bonne réponse ! ({60 - timeLeft}s)</button>
-                <button onClick={miss} style={{
-                  flex: 1, background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)",
-                  color: "#E74C3C", padding: "12px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>✗ Raté</button>
-              </div>
-            )}
-            {(phase === "p1done" || phase === "p2done") && (
-              <div>
-                <div style={{ textAlign: "center", marginBottom: 14, fontWeight: 700, fontSize: 16,
-                  color: (phase === "p1done" ? times[0] : times[1]) < 60 ? "#2ECC71" : "#E74C3C" }}>
-                  {(phase === "p1done" ? times[0] : times[1]) < 60
-                    ? `✓ Répondu en ${phase === "p1done" ? times[0] : times[1]}s`
-                    : "✗ Temps écoulé"
-                  }
+
+            {/* Question */}
+            {activeQ && (
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px",
+                marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>
+                  {LC[duelLevel]?.emoji} {LC[duelLevel]?.label.toUpperCase()} · {activeQ.cat}
                 </div>
-                {phase === "p1done" ? (
-                  <button onClick={() => { setPhase("p2"); start(); }} style={{
-                    width: "100%", background: "rgba(52,152,219,0.18)", border: "1px solid rgba(52,152,219,0.4)",
-                    color: "#3498DB", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "inherit",
-                  }}>
-                    → Manche 2 : {TE[challenger]} {teams[challenger].name}
-                  </button>
-                ) : (
-                  <button onClick={() => setPhase("result")} style={{
-                    width: "100%", background: "rgba(241,196,15,0.14)", border: "1px solid rgba(241,196,15,0.3)",
-                    color: "#F1C40F", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "inherit",
-                  }}>🏆 Résultats</button>
-                )}
+                <div style={{ color: "#fff", fontSize: 15, fontWeight: 600, lineHeight: 1.55 }}>{activeQ.q}</div>
               </div>
             )}
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => nextQ(false)} style={{
+                flex: 2, background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)",
+                color: "#2ECC71", padding: "13px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>✓ Bonne réponse — garde la main</button>
+              <button onClick={() => nextQ(true)} style={{
+                flex: 1, background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)",
+                color: "#E74C3C", padding: "13px", borderRadius: 12, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>✗ Erreur</button>
+            </div>
           </div>
         )}
 
-        {/* RESULT */}
-        {phase === "result" && (() => {
-          const [t1, t2] = times;
-          const t1ok = t1 < 60, t2ok = t2 < 60;
+        {/* ── RESULT ── */}
+        {phase === "result" && challenger !== null && (() => {
           let winnerIdx = null;
-          if (t1ok && !t2ok) winnerIdx = turn;
-          else if (!t1ok && t2ok) winnerIdx = challenger;
-          else if (t1ok && t2ok) winnerIdx = t1 <= t2 ? turn : challenger;
+          if (clocks[0] > 0 && clocks[1] <= 0) winnerIdx = turn;
+          else if (clocks[1] > 0 && clocks[0] <= 0) winnerIdx = challenger;
+          else if (clocks[0] > clocks[1]) winnerIdx = turn;
+          else if (clocks[1] > clocks[0]) winnerIdx = challenger;
           return (
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 56, marginBottom: 10 }}>{winnerIdx !== null ? "🏆" : "🤝"}</div>
+              <div style={{ fontSize: 56, marginBottom: 8 }}>{winnerIdx !== null ? "🏆" : "🤝"}</div>
               {winnerIdx !== null ? (
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 18 }}>
                   <div style={{ color: TC[winnerIdx], fontWeight: 800, fontSize: 20, marginBottom: 6 }}>
                     {TE[winnerIdx]} {teams[winnerIdx].name} GAGNE !
                   </div>
@@ -969,19 +981,23 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                   </div>
                 </div>
               ) : (
-                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 16, marginBottom: 20 }}>
-                  Égalité — personne n&apos;a répondu à temps
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 16, marginBottom: 18 }}>
+                  Égalité parfaite !
                 </div>
               )}
-              <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-                {[turn, challenger].map((tIdx, pi) => (
-                  <div key={pi} style={{ flex: 1, padding: "12px", borderRadius: 12,
+              <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+                {([[turn, 0], [challenger, 1]]).map(([tIdx, ci]) => (
+                  <div key={ci} style={{ flex: 1, padding: "12px", borderRadius: 12,
                     background: tIdx === winnerIdx ? `${TC[tIdx]}18` : "rgba(255,255,255,0.03)",
                     border: `2px solid ${tIdx === winnerIdx ? TC[tIdx]+"50" : "rgba(255,255,255,0.06)"}` }}>
-                    <div style={{ color: TC[tIdx], fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{TE[tIdx]} {teams[tIdx].name}</div>
-                    <div style={{ fontWeight: 900, fontSize: 28, color: times[pi] < 60 ? "#2ECC71" : "#E74C3C" }}>
-                      {times[pi] < 60 ? `${times[pi]}s` : "✗"}
+                    <div style={{ color: TC[tIdx], fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+                      {TE[tIdx]} {teams[tIdx].name}
                     </div>
+                    <div style={{ fontWeight: 900, fontSize: 30,
+                      color: clocks[ci] > 0 ? "#2ECC71" : "#E74C3C" }}>
+                      {clocks[ci]}s
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>restantes</div>
                   </div>
                 ))}
               </div>
@@ -1127,6 +1143,123 @@ function AimantPicker({ teams, onApply }) {
           background: "rgba(142,68,173,0.25)", border: "1px solid rgba(142,68,173,0.5)", color: "#D4A0F5",
         }}>⚡ Appliquer l&apos;échange</button>
       )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// SHOP MODAL — opened when landing on a shop case
+// ═══════════════════════════════════════════════════════
+function ShopModal({ team, onBuy, onClose }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 900,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "#0c1525", border: "2px solid rgba(39,174,96,0.45)", borderRadius: 20,
+        padding: 24, maxWidth: 430, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div style={{ color: "#27AE60", fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>🛒 BOUTIQUE</div>
+          <button onClick={onClose} style={{ background: "none", border: "none",
+            color: "rgba(255,255,255,0.3)", fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginBottom: 16 }}>
+          Budget : <strong style={{ color: "#D4A017" }}>{team.coins}₽</strong>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {SI.map((item, i) => {
+            const canAfford = team.coins >= item.c;
+            const owned = (team.items ?? []).filter(x => x === i).length;
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 14px", borderRadius: 12,
+                background: canAfford ? "rgba(39,174,96,0.06)" : "rgba(231,76,60,0.04)",
+                border: `2px solid ${canAfford ? "rgba(39,174,96,0.4)" : "rgba(231,76,60,0.25)"}`,
+              }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{item.e}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{item.n}</span>
+                    <span style={{ padding: "1px 7px", borderRadius: 6,
+                      background: canAfford ? "rgba(39,174,96,0.2)" : "rgba(231,76,60,0.15)",
+                      color: canAfford ? "#27AE60" : "#E74C3C", fontSize: 10, fontWeight: 700 }}>
+                      {item.c}₽
+                    </span>
+                    {owned > 0 && (
+                      <span style={{ padding: "1px 6px", borderRadius: 6,
+                        background: "rgba(241,196,15,0.15)", color: "#F1C40F", fontSize: 10 }}>
+                        ×{owned}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.42)", fontSize: 11, marginTop: 3, lineHeight: 1.4 }}>{item.d}</div>
+                </div>
+                <button
+                  disabled={!canAfford}
+                  onClick={() => onBuy(i)}
+                  style={{
+                    padding: "7px 13px", borderRadius: 8, fontSize: 11, fontWeight: 700, flexShrink: 0,
+                    cursor: canAfford ? "pointer" : "not-allowed", fontFamily: "inherit",
+                    background: canAfford ? "rgba(39,174,96,0.22)" : "rgba(80,80,80,0.1)",
+                    border: `1px solid ${canAfford ? "rgba(39,174,96,0.5)" : "rgba(80,80,80,0.2)"}`,
+                    color: canAfford ? "#27AE60" : "#555",
+                  }}>
+                  Acheter
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={onClose} style={{
+          marginTop: 14, width: "100%", padding: "10px", borderRadius: 10,
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit",
+        }}>Fermer la boutique</button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// STAR BUY MODAL — confirms star purchase on landing
+// ═══════════════════════════════════════════════════════
+function StarBuyModal({ team, onBuy, onSkip }) {
+  const canAfford = team.coins >= STAR_COST;
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 901,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "#0c1525", border: "2px solid rgba(241,196,15,0.5)", borderRadius: 20,
+        padding: 28, maxWidth: 360, width: "100%", textAlign: "center" }}>
+        <div style={{ fontSize: 56, marginBottom: 8 }}>⭐</div>
+        <div style={{ color: "#F1C40F", fontWeight: 800, fontSize: 20, marginBottom: 8 }}>
+          Acheter l&apos;Étoile ?
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
+          Coût : <strong style={{ color: "#F1C40F" }}>{STAR_COST}₽</strong>
+          <br />
+          Budget : <strong style={{ color: canAfford ? "#27AE60" : "#E74C3C" }}>{team.coins}₽</strong>
+        </div>
+        {!canAfford && (
+          <div style={{ marginBottom: 14, color: "#E74C3C", fontSize: 12, fontStyle: "italic" }}>
+            Pas assez de pièces pour acheter l&apos;étoile.
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button disabled={!canAfford} onClick={onBuy} style={{
+            flex: 2, padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+            cursor: canAfford ? "pointer" : "not-allowed", fontFamily: "inherit",
+            background: canAfford ? "rgba(241,196,15,0.18)" : "rgba(80,80,80,0.1)",
+            border: `2px solid ${canAfford ? "rgba(241,196,15,0.5)" : "rgba(80,80,80,0.2)"}`,
+            color: canAfford ? "#F1C40F" : "#555",
+          }}>⭐ Acheter ({STAR_COST}₽)</button>
+          <button onClick={onSkip} style={{
+            flex: 1, padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.45)",
+          }}>Passer</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1392,7 +1525,7 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
 }
 
 // ═══════════════════════════════════════════════════════
-// BOARD MAP COMPONENT
+// BOARD MAP COMPONENT  (Carte tab — no pawns)
 // ═══════════════════════════════════════════════════════
 function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
   const [hov, setHov]       = useState(null);
@@ -1533,30 +1666,99 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
 // ═══════════════════════════════════════════════════════
 // PAWN MAP (Plateau tab)
 // ═══════════════════════════════════════════════════════
-function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, tourNum, setTourNum, maxTours, onDuel }) {
+function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
+  tourNum, setTourNum, maxTours, onDuel, onFinale }) {
   const [toast, setToast] = useState(null);
-  const show = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const [showShop, setShowShop] = useState(false);
+  const [showStarBuy, setShowStarBuy] = useState(false);
+
+  const show = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
 
   const handleCaseClick = useCallback((caseId) => {
     const c = gc(caseId);
     const tp = c ? (c.r === c.v ? c.r : (side === 0 ? c.r : c.v)) : null;
+
+    // Always move the pawn and track visited
     setTeams(prev => prev.map((t, i) => {
       if (i !== turn) return t;
       const visited = t.visitedCases ?? [];
       const nv = visited.includes(caseId) ? visited : [...visited, caseId];
       return { ...t, pos: caseId, visitedCases: nv };
     }));
-    if (tp === "duel") { onDuel?.(); return; }
+
+    // Auto-apply simple coin cases
+    if (tp === "coins_plus") {
+      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: t.coins + 2 }));
+      show(`${TE[turn]} atterrit sur 🪙 +2₽ !`);
+      return;
+    }
+    if (tp === "coins_minus") {
+      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: Math.max(0, t.coins - 3) }));
+      show(`${TE[turn]} atterrit sur 💀 −3₽ !`);
+      return;
+    }
+    if (tp === "bonus") {
+      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: t.coins + 5 }));
+      show(`${TE[turn]} atterrit sur 💎 Bonus +5₽ !`);
+      return;
+    }
+    if (tp === "shield") {
+      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, shields: t.shields + 1 }));
+      show(`${TE[turn]} atterrit sur 🛡️ +1 bouclier !`);
+      return;
+    }
+    if (tp === "shop") {
+      setShowShop(true);
+      return;
+    }
+    if (tp === "duel") {
+      onDuel?.();
+      return;
+    }
+
+    // Star detection — show purchase popup if landing on a star segment endpoint
+    const st = AS[starIdx];
+    if (st && (st.f?.id === caseId || st.t?.id === caseId)) {
+      setShowStarBuy(true);
+      return;
+    }
+
     const ct = tp ? CT[tp] : null;
     show(`${TE[turn]} → ${caseId}${ct ? ` · ${ct.e} ${ct.d}` : ""}`);
-  }, [turn, side, setTeams, onDuel]);
+  }, [turn, side, starIdx, setTeams, onDuel]);
+
+  const buyItem = (itemIdx) => {
+    const item = SI[itemIdx];
+    setTeams(prev => prev.map((t, i) => {
+      if (i !== turn) return t;
+      return {
+        ...t,
+        coins: t.coins - item.c,
+        items: [...(t.items ?? []), itemIdx],
+        shields: itemIdx === 1 ? t.shields + 1 : t.shields,
+      };
+    }));
+    show(`${TE[turn]} 🛒 ${item.e} ${item.n} acheté !`);
+  };
+
+  const buyStar = () => {
+    setTeams(prev => prev.map((t, i) => i !== turn ? t : {
+      ...t, coins: t.coins - STAR_COST, stars: t.stars + 1,
+    }));
+    let n;
+    do { n = Math.floor(Math.random() * AS.length); } while (n === starIdx);
+    setStarIdx(n);
+    setShowStarBuy(false);
+    show(`${TE[turn]} ⭐ Étoile achetée ! +1⭐ — l'étoile se déplace.`);
+  };
 
   const pawns = teams.map((t, i) => ({ teamIdx: i, caseId: t.pos ?? "1a" }));
   const tourPct = Math.round((tourNum / maxTours) * 100);
+  const estMin = maxTours * 8;
 
   return (
     <div>
-      {/* Tour counter */}
+      {/* ── Tour counter ── */}
       <div style={{
         display: "flex", alignItems: "center", gap: 12, marginBottom: 10,
         padding: "10px 16px", borderRadius: 14,
@@ -1565,9 +1767,11 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, tourNum, setTo
       }}>
         <span style={{ fontSize: 18 }}>🗺️</span>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <span style={{ color: "#F1C40F", fontWeight: 800, fontSize: 15 }}>Tour {tourNum}</span>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>/ {maxTours}</span>
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+              / {maxTours} · <span style={{ color: "rgba(255,255,255,0.25)" }}>~{estMin} min</span>
+            </span>
           </div>
           <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${tourPct}%`, borderRadius: 3,
@@ -1589,47 +1793,62 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, tourNum, setTo
         </div>
       </div>
 
-      {/* Team stats grid */}
+      {/* ── Team stats grid ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
         {teams.map((t, i) => (
           <div key={i} style={{
-            padding: "8px 10px", borderRadius: 12,
+            padding: "8px 8px", borderRadius: 12,
             background: i === turn ? `${TC[i]}18` : "rgba(255,255,255,0.025)",
             border: `2px solid ${i === turn ? TC[i]+"70" : "rgba(255,255,255,0.06)"}`,
             boxShadow: i === turn ? `0 0 12px ${TC[i]}20` : "none",
             transition: "all 0.2s",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>
-              <span style={{ fontSize: 13 }}>{TE[i]}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 4 }}>
+              <span style={{ fontSize: 12 }}>{TE[i]}</span>
               <span style={{
                 color: i === turn ? TC[i] : "rgba(255,255,255,0.65)",
-                fontWeight: 700, fontSize: 11, flex: 1,
+                fontWeight: 700, fontSize: 10, flex: 1,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>{t.name}</span>
-              {i === turn && <span style={{ fontSize: 8, color: TC[i], fontWeight: 700 }}>▶</span>}
+              {i === turn && <span style={{ fontSize: 7, color: TC[i], fontWeight: 700 }}>▶</span>}
             </div>
-            <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-              <span style={{ color: "#D4A017", fontWeight: 700, fontSize: 13 }}>🪙{t.coins}</span>
-              <span style={{ color: "#F1C40F", fontWeight: 700, fontSize: 13 }}>⭐{t.stars}</span>
+            <div style={{ display: "flex", gap: 5, justifyContent: "center", flexWrap: "wrap" }}>
+              <span style={{ color: "#D4A017", fontWeight: 700, fontSize: 12 }}>🪙{t.coins}</span>
+              <span style={{ color: "#F1C40F", fontWeight: 700, fontSize: 12 }}>⭐{t.stars}</span>
+              {t.shields > 0 && <span style={{ color: "#607D8B", fontSize: 11 }}>🛡{t.shields}</span>}
             </div>
+            {/* Items bag */}
+            {(t.items ?? []).length > 0 && (
+              <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
+                {(t.items ?? []).map((idx, j) => (
+                  <span key={j} title={SI[idx]?.n} style={{ fontSize: 11 }}>{SI[idx]?.e}</span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Active team bar */}
+      {/* ── Active team bar ── */}
       <div style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
-        padding: "8px 14px", borderRadius: 12,
+        padding: "8px 12px", borderRadius: 12,
         background: `${TC[turn]}12`, border: `1px solid ${TC[turn]}35`,
+        flexWrap: "wrap",
       }}>
         <span style={{ color: TC[turn], fontWeight: 700, fontSize: 13 }}>{TE[turn]} {teams[turn].name}</span>
-        <span style={{ color: "rgba(255,255,255,0.28)", fontSize: 11 }}>— clique une case</span>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        <span style={{ color: "rgba(255,255,255,0.28)", fontSize: 11, flex: 1 }}>— clique une case</span>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           <button onClick={() => onDuel?.()} style={{
             background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.35)",
             color: "#E74C3C", padding: "4px 10px", borderRadius: 8, fontSize: 11,
             fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
           }}>⚔️ Duel</button>
+          <button onClick={() => onFinale?.()} style={{
+            background: "rgba(241,196,15,0.12)", border: "1px solid rgba(241,196,15,0.3)",
+            color: "#F1C40F", padding: "4px 10px", borderRadius: 8, fontSize: 11,
+            fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          }}>🏁 Fin</button>
           <button onClick={() => setTurn(p => (p + 1) % 4)} style={{
             background: `${TC[turn]}20`, border: `1px solid ${TC[turn]}40`, color: TC[turn],
             padding: "4px 12px", borderRadius: 8, fontSize: 11,
@@ -1657,6 +1876,24 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, tourNum, setTo
           activePawnTeamIdx={turn}
         />
       </div>
+
+      {/* Shop modal */}
+      {showShop && (
+        <ShopModal
+          team={teams[turn]}
+          onBuy={(idx) => { buyItem(idx); }}
+          onClose={() => setShowShop(false)}
+        />
+      )}
+
+      {/* Star purchase modal */}
+      {showStarBuy && (
+        <StarBuyModal
+          team={teams[turn]}
+          onBuy={buyStar}
+          onSkip={() => setShowStarBuy(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1904,7 +2141,7 @@ export default function App() {
           🏝️ L&apos;ARCHIPEL DU SAVOIR
         </h1>
         <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 3, letterSpacing: 1 }}>
-          Tour {tourNum}/{MAX_TOURS} · {mapSide === 0 ? "RECTO" : "VERSO"}
+          Tour {tourNum}/{maxTours} · ~{maxTours * 8} min · {mapSide === 0 ? "RECTO" : "VERSO"}
         </div>
       </div>
 
@@ -2009,6 +2246,21 @@ export default function App() {
                     <StatCounter emoji="🧠" value={t.qOk}       label="QST" onDec={() => upT(i,"qOk",-1)}       onInc={() => upT(i,"qOk",1)}       />
                     <StatCounter emoji="🏆" value={t.mgWon}     label="MJ"  onDec={() => upT(i,"mgWon",-1)}     onInc={() => upT(i,"mgWon",1)}     />
                   </div>
+                  {/* Items bag */}
+                  {(t.items ?? []).length > 0 && (
+                    <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 8,
+                      background: "rgba(39,174,96,0.06)", border: "1px solid rgba(39,174,96,0.15)" }}>
+                      <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 8, fontWeight: 700, letterSpacing: 1, marginBottom: 3 }}>SAC</div>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {(t.items ?? []).map((itemIdx, j) => (
+                          <span key={j} title={SI[itemIdx]?.n} style={{
+                            fontSize: 14, padding: "2px 4px", borderRadius: 6,
+                            background: "rgba(39,174,96,0.12)",
+                          }}>{SI[itemIdx]?.e}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -2024,9 +2276,9 @@ export default function App() {
                 <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>TOUR</span>
                 <Btn label="−" onClick={() => setTourNum(p => Math.max(1,p-1))} color="#E74C3C" small />
                 <span style={{ color: "#F1C40F", fontSize: 20, fontWeight: 800, minWidth: 40, textAlign: "center" }}>
-                  {tourNum}/{MAX_TOURS}
+                  {tourNum}/{maxTours}
                 </span>
-                <Btn label="+" onClick={() => setTourNum(p => Math.min(MAX_TOURS,p+1))} color="#2ECC71" small />
+                <Btn label="+" onClick={() => setTourNum(p => Math.min(maxTours,p+1))} color="#2ECC71" small />
               </div>
               <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)" }} />
               <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 11 }}>C&apos;EST AU TOUR DE</span>
@@ -2108,17 +2360,20 @@ export default function App() {
             </div>
 
             {/* Max tours setting */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
               marginBottom: 10, flexWrap: "wrap" }}>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Nombre de tours :</span>
+              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Durée de partie :</span>
               {[6, 8, 10, 12, 15].map(n => (
                 <button key={n} onClick={() => setMaxTours(n)} style={{
-                  padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                  cursor: "pointer", fontFamily: "inherit",
+                  padding: "4px 10px", borderRadius: 8, fontFamily: "inherit",
+                  cursor: "pointer", textAlign: "center", lineHeight: 1.3,
                   background: maxTours === n ? "rgba(241,196,15,0.18)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${maxTours === n ? "rgba(241,196,15,0.4)" : "rgba(255,255,255,0.08)"}`,
                   color: maxTours === n ? "#F1C40F" : "rgba(255,255,255,0.4)",
-                }}>{n}</button>
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{n} tours</div>
+                  <div style={{ fontSize: 9, opacity: 0.7 }}>~{n * 8} min</div>
+                </button>
               ))}
             </div>
 
@@ -2285,10 +2540,11 @@ export default function App() {
           <PawnMap
             teams={teams} setTeams={setTeams}
             turn={turn} setTurn={setTurn}
-            side={mapSide} starIdx={starIdx}
+            side={mapSide} starIdx={starIdx} setStarIdx={setStarIdx}
             tourNum={tourNum} setTourNum={setTourNum}
             maxTours={maxTours}
             onDuel={() => setShowDuel(true)}
+            onFinale={() => setShowFinale(true)}
           />
         )}
 

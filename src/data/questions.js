@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════
-// BANQUE DE QUESTIONS  —  3 niveaux × 50 questions
+// BANQUE DE QUESTIONS  —  3 niveaux
 // ✏️  Pour modifier : ajouter / supprimer / corriger dans les tableaux.
 //    Chaque question : { q: "...", r: "...", cat: "..." }
 //    Catégories : GÉO · HISTOIRE · SCIENCE · NATURE · ART · LITTÉRATURE
 //                 MUSIQUE · CULTURE · PHILO · FOOD · SPORT · DÉTENTE · TECH
+// Note : questions rap/foot et tout contenu choquant retirés.
 // ═══════════════════════════════════════════════════════════════════
 
 export const Q = {
@@ -60,6 +61,32 @@ export const Q = {
     { q: "Dans quel film un poisson-clown cherche son fils ?", r: "Le Monde de Nemo", cat: "DÉTENTE" },
     { q: "Comment appelle-t-on l'écriture des anciens Égyptiens ?", r: "Les hiéroglyphes", cat: "HISTOIRE" },
     { q: "Quel gaz représente environ 78 % de l'air que nous respirons ?", r: "L'azote", cat: "SCIENCE" },
+    // ── Nouvelles questions collège ──
+    { q: "Quelle est la capitale du Japon ?", r: "Tokyo", cat: "GÉO" },
+    { q: "Combien de grammes dans un kilogramme ?", r: "1 000 g", cat: "SCIENCE" },
+    { q: "Quelle planète est la plus proche du Soleil ?", r: "Mercure", cat: "SCIENCE" },
+    { q: "Quel insecte produit du miel ?", r: "L'abeille", cat: "NATURE" },
+    { q: "Combien de côtés a un hexagone ?", r: "6", cat: "SCIENCE" },
+    { q: "Dans quel pays a été inventée la pizza ?", r: "L'Italie", cat: "FOOD" },
+    { q: "Quelle chaîne de montagnes sépare la France de l'Espagne ?", r: "Les Pyrénées", cat: "GÉO" },
+    { q: "Combien de planètes dans notre système solaire ?", r: "8", cat: "SCIENCE" },
+    { q: "Quel animal est surnommé « le roi de la jungle » ?", r: "Le lion", cat: "NATURE" },
+    { q: "De quelle nationalité était Léonard de Vinci ?", r: "Italienne", cat: "ART" },
+    { q: "Quel est le continent le plus peuplé de la planète ?", r: "L'Asie", cat: "GÉO" },
+    { q: "Quelle mer Moïse aurait-il traversée selon la Bible et le Coran ?", r: "La mer Rouge", cat: "CULTURE" },
+    { q: "Quel est le symbole chimique de l'eau ?", r: "H₂O", cat: "SCIENCE" },
+    { q: "Combien de jours dans une année bissextile ?", r: "366", cat: "SCIENCE" },
+    { q: "Quel est le plus grand pays entièrement situé en Asie ?", r: "La Chine", cat: "GÉO" },
+    { q: "Quel continent abrite le Sahara ?", r: "L'Afrique", cat: "GÉO" },
+    { q: "Comment appelle-t-on une personne qui ne mange pas de viande ?", r: "Un végétarien", cat: "CULTURE" },
+    { q: "Quelle est la monnaie du Japon ?", r: "Le yen", cat: "GÉO" },
+    { q: "Quel personnage animé est un ogre vert qui vit dans un marais ?", r: "Shrek", cat: "DÉTENTE" },
+    { q: "Quelle est la couleur obtenue en mélangeant le bleu et le jaune ?", r: "Le vert", cat: "SCIENCE" },
+    { q: "Dans quel pays se trouve la Grande Muraille ?", r: "La Chine", cat: "HISTOIRE" },
+    { q: "Quel est le nom de la baguette magique dans Harry Potter ?", r: "Une baguette (wand) — Harry utilise celle en houx et plume de phénix", cat: "DÉTENTE" },
+    { q: "Quel est le plus long fleuve du monde (généralement accepté) ?", r: "Le Nil (~6 650 km)", cat: "GÉO" },
+    { q: "Quel roi légendaire est associé à la Table Ronde ?", r: "Le roi Arthur", cat: "LITTÉRATURE" },
+    { q: "Combien de doigts a une main humaine ?", r: "5", cat: "SCIENCE" },
   ],
 
   // ─── LYCÉE  (+3₽) ───────────────────────────────────────────────
@@ -114,6 +141,32 @@ export const Q = {
     { q: "Manga avec un cahier qui donne le pouvoir de tuer ?", r: "Death Note", cat: "DÉTENTE" },
     { q: "Ville hôte des JO d'été 2028 ?", r: "Los Angeles", cat: "SPORT" },
     { q: "Dans quel pays se trouve la Grande Barrière de Corail ?", r: "Australie", cat: "GÉO" },
+    // ── Nouvelles questions lycée ──
+    { q: "Quelle molécule transporte l'oxygène dans le sang ?", r: "L'hémoglobine", cat: "SCIENCE" },
+    { q: "Quel président américain a aboli l'esclavage ?", r: "Abraham Lincoln", cat: "HISTOIRE" },
+    { q: "De quelle religion est le livre sacré appelé « Torah » ?", r: "Le judaïsme", cat: "CULTURE" },
+    { q: "Qui a peint « Les Tournesols » (1888) ?", r: "Vincent Van Gogh", cat: "ART" },
+    { q: "Dans quel pays se trouve le désert du Gobi ?", r: "Chine et Mongolie", cat: "GÉO" },
+    { q: "Qui a fondé la première université du monde, Al-Qaraouiyine, en 859 ?", r: "Fatima al-Fihri (à Fès, Maroc)", cat: "HISTOIRE" },
+    { q: "Quel auteur a écrit « Don Quichotte » ?", r: "Miguel de Cervantès", cat: "LITTÉRATURE" },
+    { q: "En quelle année la bombe atomique a-t-elle été larguée sur Hiroshima ?", r: "1945", cat: "HISTOIRE" },
+    { q: "Quelle est la plus grande île du monde ?", r: "Le Groenland", cat: "GÉO" },
+    { q: "Quelle est la particule qui constitue la lumière ?", r: "Le photon", cat: "SCIENCE" },
+    { q: "Quel philosophe grec a été le maître d'Alexandre le Grand ?", r: "Aristote", cat: "PHILO" },
+    { q: "Quel est le premier calife de l'islam après le Prophète Muhammad ﷺ ?", r: "Abou Bakr As-Siddiq", cat: "CULTURE" },
+    { q: "Qui était Averroès (Ibn Rushd) ?", r: "Philosophe et médecin andalou du XIIe siècle", cat: "SCIENCE" },
+    { q: "Quel empire islamique avait pour capitale Bagdad à son apogée ?", r: "L'Empire abbasside", cat: "HISTOIRE" },
+    { q: "Quelle révolution a renversé le tsar Nicolas II en 1917 ?", r: "La révolution russe (d'octobre)", cat: "HISTOIRE" },
+    { q: "Quel pays possède le plus de réserves de pétrole connues au monde ?", r: "Le Venezuela (ou Arabie Saoudite selon l'indicateur)", cat: "GÉO" },
+    { q: "Quel gaz nobles est le plus abondant dans l'atmosphère terrestre ?", r: "L'argon (après N₂ et O₂)", cat: "SCIENCE" },
+    { q: "Quel traité de 1783 a reconnu l'indépendance des États-Unis ?", r: "Le traité de Paris (1783)", cat: "HISTOIRE" },
+    { q: "Quelle est la capitale de l'Indonésie (depuis 2024) ?", r: "Nusantara (anciennement Jakarta)", cat: "GÉO" },
+    { q: "Quel auteur a écrit « 1984 » et « La Ferme des animaux » ?", r: "George Orwell", cat: "LITTÉRATURE" },
+    { q: "Quel pays d'Afrique du Nord a le plus grand nombre d'habitants ?", r: "L'Égypte", cat: "GÉO" },
+    { q: "Quel mouvement intellectuel du XVIIIe s. a prôné la raison contre les dogmes ?", r: "Les Lumières (siècle des Lumières)", cat: "HISTOIRE" },
+    { q: "De quelle matière est principalement composé le Soleil ?", r: "Hydrogène (et hélium)", cat: "SCIENCE" },
+    { q: "Quel continent détient le plus grand nombre de pays ?", r: "L'Afrique (54 pays)", cat: "GÉO" },
+    { q: "Quel auteur grec a écrit l'« Iliade » et l'« Odyssée » ?", r: "Homère", cat: "LITTÉRATURE" },
   ],
 
   // ─── EXPERT  (+5₽ / −2₽) ────────────────────────────────────────
@@ -168,5 +221,31 @@ export const Q = {
     { q: "Quel traité de 1648 a mis fin à la guerre de Trente Ans ?", r: "Les traités de Westphalie", cat: "HISTOIRE" },
     { q: "Mouvement qui a défendu la désobéissance civile non-violente (Gandhi) ?", r: "Le satyagraha", cat: "HISTOIRE" },
     { q: "Quel philosophe antique a fondé le stoïcisme ?", r: "Zénon de Kition", cat: "PHILO" },
+    // ── Nouvelles questions expert ──
+    { q: "Qui a écrit les « Prolégomènes » (Muqaddima), précurseur de la sociologie ?", r: "Ibn Khaldoun (XIVe s.)", cat: "SCIENCE" },
+    { q: "Quelle est la vitesse de la lumière dans le vide ?", r: "~300 000 km/s (3×10⁸ m/s)", cat: "SCIENCE" },
+    { q: "Quelle bataille de 732 a stoppé l'expansion vers le nord en Europe occidentale ?", r: "La bataille de Poitiers (Charles Martel)", cat: "HISTOIRE" },
+    { q: "Quel philosophe a théorisé la « Volonté de puissance » ?", r: "Friedrich Nietzsche", cat: "PHILO" },
+    { q: "Quelle civilisation a inventé l'écriture cunéiforme ?", r: "Les Sumériens (Mésopotamie)", cat: "HISTOIRE" },
+    { q: "Quel est le théorème de Gödel sur les systèmes formels ?", r: "Tout système cohérent suffisamment riche contient des vérités indémontrables (incomplétude)", cat: "SCIENCE" },
+    { q: "Qu'est-ce que la « Nahda » dans le monde arabe au XIXe s. ?", r: "La Renaissance culturelle et intellectuelle arabe", cat: "HISTOIRE" },
+    { q: "Quel chimiste a co-découvert l'oxygène au XVIIIe s. ?", r: "Carl Wilhelm Scheele et Joseph Priestley (simultanément)", cat: "SCIENCE" },
+    { q: "Quel philosophe a écrit « La République » ?", r: "Platon", cat: "PHILO" },
+    { q: "En quelle année l'Empire ottoman a-t-il été officiellement dissous ?", r: "1922 (abolition du sultanat)", cat: "HISTOIRE" },
+    { q: "Quel phénomène physique explique la portance des ailes d'avion ?", r: "La portance aérodynamique (principe de Bernoulli + déviation d'air)", cat: "SCIENCE" },
+    { q: "Qui a créé la première imprimerie à caractères mobiles en Asie (avant Gutenberg) ?", r: "Bi Sheng (Chine, XIe siècle)", cat: "HISTOIRE" },
+    { q: "Quelle langue est la plus parlée au monde en nombre de locuteurs natifs ?", r: "Le mandarin (chinois)", cat: "CULTURE" },
+    { q: "Qui était Maïmonide et pour quelle œuvre est-il connu ?", r: "Philosophe et médecin juif du XIIe s., auteur du « Guide des égarés »", cat: "PHILO" },
+    { q: "Quel traité international fonde le droit humanitaire moderne ?", r: "Les Conventions de Genève (1949)", cat: "DROIT" },
+    { q: "Quel est le processus par lequel les plantes fabriquent leurs nutriments à partir de la lumière ?", r: "La photosynthèse", cat: "SCIENCE" },
+    { q: "Quelle est la formule chimique du sel de table ?", r: "NaCl (chlorure de sodium)", cat: "SCIENCE" },
+    { q: "Qui a conquis Constantinople en 1453, mettant fin à l'Empire byzantin ?", r: "Mehmed II (dit le Conquérant)", cat: "HISTOIRE" },
+    { q: "Qu'est-ce que la « loi de Moore » en informatique ?", r: "La puissance des processeurs double environ tous les deux ans", cat: "TECH" },
+    { q: "Quel est le plus long mur jamais construit par l'homme ?", r: "La Grande Muraille de Chine (~21 000 km)", cat: "HISTOIRE" },
+    { q: "Quel économiste a théorisé la « main invisible » du marché ?", r: "Adam Smith (La Richesse des nations, 1776)", cat: "SCIENCE" },
+    { q: "Qu'est-ce que l'« effet Mandela » en psychologie populaire ?", r: "Faux souvenir collectif partagé par de nombreuses personnes (ex. : mauvais souvenir d'un événement)", cat: "PSYCHO" },
+    { q: "Quel royaume médiéval africain contrôlait les routes de l'or et du sel jusqu'au XIe s. ?", r: "L'Empire du Ghana (Wagadou)", cat: "HISTOIRE" },
+    { q: "Quel accord international de 1997 visait à réduire les émissions de gaz à effet de serre ?", r: "Le protocole de Kyoto", cat: "GÉO" },
+    { q: "Quel est le principe physique derrière le fonctionnement du laser ?", r: "L'émission stimulée de photons (amplification de lumière)", cat: "SCIENCE" },
   ],
 };
