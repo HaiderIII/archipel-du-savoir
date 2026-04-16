@@ -2917,7 +2917,7 @@ function ChaosCardModal({ card, teams, turn, onApply, onApplyCoins, onClose }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 10); return () => clearTimeout(t); }, []);
 
-  const needsTarget  = ["steal3", "give4", "curse", "steal_star"].includes(card.apply);
+  const needsTarget  = ["steal3", "give4", "curse", "steal_star", "swap_pos"].includes(card.apply);
   const needsDouble  = ["magnet"].includes(card.apply);
   const isManual     = card.apply === "manual";
   const isQCard      = ["bonus_question", "sablier", "double_ou_rien"].includes(card.apply);
@@ -3902,11 +3902,12 @@ export default function App() {
 
   // ── Chaos auto-apply ──────────────────────────────────
   const applyChaos = useCallback((cardName, targetIdx = null, targetIdx2 = null) => {
+    // Pre-compute randomness outside setTeams updater (called twice in strict mode)
+    const jackpotWinner = cardName === "Jackpot" ? Math.floor(Math.random() * 4) : -1;
     setTeams(prev => {
       const t = prev.map(x => ({ ...x }));
       switch (cardName) {
         case "Tempête":        return t.map(x => ({ ...x, coins: Math.max(0, x.coins - 2) }));
-        case "Solidarité":     return t.map(x => ({ ...x, coins: x.coins + 2 }));
         case "Aubaine":        return t.map((x, i) => i === turn ? { ...x, coins: x.coins + 5 } : x);
         case "Bénédiction": {
           const min = Math.min(...t.map(x => x.coins));
@@ -3916,25 +3917,7 @@ export default function App() {
           const max = Math.max(...t.map(x => x.coins));
           return t.map(x => x.coins === max ? { ...x, coins: Math.max(0, x.coins - 4) } : x);
         }
-        case "Tsunami": {
-          const max = Math.max(...t.map(x => x.coins));
-          return t.map(x => x.coins === max ? { ...x, coins: Math.max(0, x.coins - 5) } : x);
-        }
         case "Arc-en-ciel":    return t.map(x => ({ ...x, coins: x.coins + x.stars }));
-        case "Échange royal": {
-          const [c0, c2] = [t[0].coins, t[2].coins];
-          t[0].coins = c2; t[2].coins = c0;
-          const [c1, c3] = [t[1].coins, t[3].coins];
-          t[1].coins = c3; t[3].coins = c1;
-          return t;
-        }
-        case "Ricochet": {
-          const base = prev.map(x => x.coins);
-          return t.map((x, i) => ({
-            ...x,
-            coins: Math.max(0, base[i] - 1) + (base[(i + 3) % 4] > 0 ? 1 : 0),
-          }));
-        }
         case "Vol de pièces":
           if (targetIdx === null) return t;
           { const stolen = Math.min(3, t[targetIdx].coins);
@@ -3959,11 +3942,51 @@ export default function App() {
             t[turn].stars += 1;
           }
           return t;
+        // ── Nouvelles cartes ──────────────────────────────
+        case "Taxe": {
+          const collected = t.reduce((sum, x, i) => i !== turn ? sum + Math.min(2, x.coins) : sum, 0);
+          return t.map((x, i) => {
+            if (i === turn) return { ...x, coins: x.coins + collected };
+            return { ...x, coins: Math.max(0, x.coins - 2) };
+          });
+        }
+        case "Balance": {
+          const total = t.reduce((s, x) => s + x.coins, 0);
+          const share = Math.floor(total / 4);
+          return t.map(x => ({ ...x, coins: share }));
+        }
+        case "Coup d'état": {
+          const maxS = Math.max(...t.map(x => x.stars));
+          const minS = Math.min(...t.map(x => x.stars));
+          if (maxS === minS) return t;
+          return t.map(x => {
+            if (x.stars === maxS) return { ...x, stars: Math.max(0, x.stars - 1) };
+            if (x.stars === minS) return { ...x, stars: x.stars + 1 };
+            return x;
+          });
+        }
+        case "Héritage": {
+          const maxC = Math.max(...t.map(x => x.coins));
+          const richIdx = t.findIndex(x => x.coins === maxC);
+          const half = Math.floor(t[richIdx].coins / 2);
+          const perOther = Math.floor(half / 3);
+          return t.map((x, i) => {
+            if (i === richIdx) return { ...x, coins: x.coins - half };
+            return { ...x, coins: x.coins + perOther };
+          });
+        }
+        case "Jackpot":
+          t[jackpotWinner].coins += 8;
+          return t;
+        case "Échange de positions":
+          if (targetIdx === null) return t;
+          { const posA = t[turn].pos, posB = t[targetIdx].pos;
+            t[turn].pos = posB; t[targetIdx].pos = posA; return t; }
         default: return t;
       }
     });
     if (cardName === "Retournement") setMapSide(s => s === 0 ? 1 : 0);
-    if (cardName === "Péage") setBridgeTaxTurns(8); // 2 full tours × 4 équipes = 8 demi-tours
+    if (cardName === "Péage") setBridgeTaxTurns(8);
     if (cardName === "Amnésie") setAmnesiaActive(true);
   }, [turn, setTeams, setMapSide, setBridgeTaxTurns, setAmnesiaActive]);
 
@@ -4732,7 +4755,7 @@ export default function App() {
                     </div>
                   )}
                   {/* Auto-apply for simple cards */}
-                  {["Tempête","Solidarité","Aubaine","Bénédiction","Peur du vide","Tsunami","Arc-en-ciel","Échange royal","Ricochet","Péage"].includes(curCC.n) && (
+                  {["Tempête","Aubaine","Bénédiction","Peur du vide","Arc-en-ciel","Péage","Taxe","Balance","Coup d'état","Héritage","Jackpot"].includes(curCC.n) && (
                     <button onClick={() => applyChaos(curCC.n)} style={{
                       width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
                       cursor: "pointer", fontFamily: "inherit",
@@ -4748,7 +4771,7 @@ export default function App() {
                     }}>🔄 Retourner le plateau ({mapSide === 0 ? "RECTO→VERSO" : "VERSO→RECTO"})</button>
                   )}
                   {/* Target-selection cards */}
-                  {["Vol de pièces","Don empoisonné","Malédiction"].includes(curCC.n) && (
+                  {["Vol de pièces","Don empoisonné","Malédiction","Échange de positions"].includes(curCC.n) && (
                     <div>
                       <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginBottom: 8 }}>Choisir la cible :</div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

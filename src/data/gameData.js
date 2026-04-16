@@ -31,7 +31,7 @@ export const TE = ["🔴", "🔵", "🟢", "🟡"];
 // ═══════════════════════════════════════════════════════
 // count = nombre d'exemplaires dans le paquet (varie selon la puissance)
 export const CC = [
-  // ── Cartes fréquentes (count:3) ── légères, reversibles
+  // ── Cartes fréquentes (count:3) ── légères, impactantes
   {
     e: "🫳", n: "Vol de pièces", count: 3,
     d: "Désignez une équipe adverse : volez-lui 3₽ immédiatement.",
@@ -45,22 +45,16 @@ export const CC = [
     apply: "all_lose2",
   },
   {
-    e: "🤝", n: "Solidarité", count: 3,
-    d: "Toutes les équipes reçoivent 2₽.",
-    tip: "L'inverse de la Tempête.",
-    apply: "all_gain2",
-  },
-  {
-    e: "🏓", n: "Ricochet", count: 3,
-    d: "Chaque équipe donne 1₽ à l'équipe suivante dans l'ordre du tour (1→2→3→4→1).",
-    tip: "Opération simultanée. Le total de pièces dans le jeu reste identique.",
-    apply: "ricochet",
-  },
-  {
     e: "💰", n: "Aubaine", count: 3,
     d: "L'équipe active (celle qui a tiré la carte) gagne 5₽ immédiatement.",
     tip: "Avantage direct pour l'équipe dont c'est le tour.",
     apply: "active_gain5",
+  },
+  {
+    e: "💸", n: "Taxe", count: 3,
+    d: "L'équipe active perçoit 2₽ sur chaque équipe adverse (soit jusqu'à +6₽). Les équipes sans pièces ne paient rien.",
+    tip: "L'effet est asymétrique : l'active gagne ce que les autres perdent.",
+    apply: "tax",
   },
   // ── Cartes moyennes (count:2) ── impact modéré
   {
@@ -94,10 +88,10 @@ export const CC = [
     apply: "amnesia",
   },
   {
-    e: "🌊", n: "Tsunami", count: 2,
-    d: "L'équipe qui a le plus de pièces perd 5₽. En cas d'égalité au sommet, toutes les équipes concernées perdent 5₽.",
-    tip: "Les riches trinquent !",
-    apply: "richest_lose5",
+    e: "👑", n: "Coup d'état", count: 2,
+    d: "L'équipe qui a le plus d'étoiles perd 1⭐. L'équipe qui en a le moins en gagne 1⭐. Si toutes sont à égalité, aucun effet.",
+    tip: "En cas d'ex-æquo au sommet ou en bas, toutes les équipes concernées sont affectées.",
+    apply: "coup",
   },
   {
     e: "🌈", n: "Arc-en-ciel", count: 2,
@@ -117,13 +111,13 @@ export const CC = [
     tip: "Fixez votre mise AVANT de voir la question.",
     apply: "double_ou_rien",
   },
-  // ── Cartes rares (count:1) ── puissantes ou structurantes
   {
-    e: "🔄", n: "Échange royal", count: 1,
-    d: "Échangez TOUTES les pièces entre les équipes 1 & 3, puis entre les équipes 2 & 4.",
-    tip: "Seules les pièces changent, pas les étoiles.",
-    apply: "royal_swap",
+    e: "⚖️", n: "Balance", count: 2,
+    d: "Toutes les pièces sont mises en commun et redistribuées équitablement (arrondi vers le bas). Le reste disparaît.",
+    tip: "Dévastateur si les écarts sont grands. Calculez la moyenne avant d'appliquer.",
+    apply: "balance",
   },
+  // ── Cartes rares (count:1) ── puissantes ou structurantes
   {
     e: "🧲", n: "Aimant", count: 1,
     d: "L'équipe active choisit 2 équipes adverses. Ces 2 équipes s'échangent TOUTES leurs pièces.",
@@ -155,10 +149,22 @@ export const CC = [
     apply: "sablier",
   },
   {
-    e: "🎭", n: "Troc", count: 1,
-    d: "L'équipe active propose un échange à une équipe adverse : X₽ contre Y₽. Si l'adversaire accepte, l'échange est fait.",
-    tip: "L'équipe adverse peut refuser. L'offre doit être décidée avant de voir les montants.",
-    apply: "manual",
+    e: "💣", n: "Héritage", count: 1,
+    d: "L'équipe la plus riche en pièces en donne la moitié aux autres équipes (à parts égales, arrondi vers le bas).",
+    tip: "Le reste éventuel disparaît. Effet nul si le plus riche a 0 ou 1₽.",
+    apply: "inheritance",
+  },
+  {
+    e: "🎰", n: "Jackpot", count: 1,
+    d: "Une équipe est tirée au sort et reçoit 8₽ immédiatement.",
+    tip: "Complètement aléatoire — même l'équipe active peut perdre !",
+    apply: "jackpot",
+  },
+  {
+    e: "🌀", n: "Échange de positions", count: 1,
+    d: "L'équipe active désigne un adversaire : les deux équipes échangent IMMÉDIATEMENT leurs cases sur le plateau.",
+    tip: "Les pièces et étoiles ne changent pas. Peut forcer un adversaire sur une mauvaise case.",
+    apply: "swap_pos",
   },
 ];
 
