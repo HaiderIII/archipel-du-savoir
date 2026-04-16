@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { CT, LC, CC, SI, AW, TC, TE } from "./data/gameData";
 import { Q } from "./data/questions";
 import { MG, FORMAT, RANK_COINS } from "./data/miniGames";
@@ -39,10 +39,10 @@ const i2 = {
     { id: "2f", x: 490, y: 240, r: "chaos",       v: "shield"    },
     { id: "2g", x: 452, y: 172, r: "question",   v: "double"    },
     { id: "2h", x: 490, y: 106, r: "teleport",   v: "teleport"  },
-    { id: "2x", x: 530, y: 145, r: "shop",        v: "duel"      },
+    { id: "2x", x: 530, y: 145, r: "shop",        v: "chaos"     },
     { id: "2y", x: 608, y: 145, r: "question",   v: "chaos"     },
     { id: "2z", x: 608, y: 205, r: "coins_plus",  v: "coins_minus"},
-    { id: "2w", x: 530, y: 205, r: "duel",        v: "question"  },
+    { id: "2w", x: 530, y: 205, r: "chaos",       v: "question"  },
   ],
   mp:  ["2a","2b","2c","2d","2e","2f","2g","2h"],
   sc:  [
@@ -55,17 +55,17 @@ const i2 = {
 const i3 = {
   name: "ÎLE CORAIL", icon: "🐚", cx: 348, cy: 438, rx: 162, ry: 110, rot: -2, color: "#1B2A3A",
   cases: [
-    { id: "3a", x: 256, y: 373, r: "duel",        v: "question"  },
+    { id: "3a", x: 256, y: 373, r: "question",    v: "question"  },
     { id: "3b", x: 348, y: 346, r: "question",   v: "steal"     },
     { id: "3c", x: 440, y: 373, r: "question",   v: "shield"    },
     { id: "3d", x: 480, y: 438, r: "chaos",       v: "coins_plus"},
     { id: "3e", x: 440, y: 500, r: "coins_minus", v: "double"    },
     { id: "3f", x: 348, y: 520, r: "teleport",   v: "teleport"  },
-    { id: "3g", x: 256, y: 500, r: "question",   v: "duel"      },
+    { id: "3g", x: 256, y: 500, r: "question",   v: "question"  },
     { id: "3h", x: 216, y: 438, r: "shop",        v: "chaos"     },
     { id: "3x", x: 310, y: 408, r: "question",   v: "coins_minus"},
     { id: "3y", x: 392, y: 408, r: "coins_plus",  v: "duel"      },
-    { id: "3z", x: 348, y: 465, r: "duel",        v: "bonus"     },
+    { id: "3z", x: 348, y: 465, r: "coins_plus",  v: "bonus"     },
   ],
   mp:  ["3a","3b","3c","3d","3e","3f","3g","3h"],
   sc:  [
@@ -103,7 +103,8 @@ function segs() {
       if (a && b) s.push({ f: a, t: b, sid: `sc-${sc.id}` });
     });
   });
-  bridges.forEach((b, i) => s.push({ f: b.f, t: b.t, sid: `br-${i}` }));
+  const BR_IDS = [["1e","2g"],["1h","3a"],["2e","3d"]];
+  bridges.forEach((b, i) => s.push({ f: b.f, t: b.t, sid: `br-${i}`, fId: BR_IDS[i][0], tId: BR_IDS[i][1] }));
   return s;
 }
 const AS = segs();
@@ -112,6 +113,106 @@ const AS = segs();
 // CHAOS DECK  (multiple copies per card based on count)
 // ═══════════════════════════════════════════════════════
 const CC_DECK = CC.flatMap((card, i) => Array(card.count || 1).fill(i));
+
+// ═══════════════════════════════════════════════════════
+// BRIDGE / TELEPORT CONSTANTS
+// ═══════════════════════════════════════════════════════
+const BRIDGE_CONNECTIONS = [["1e","2g"],["1h","3a"],["2e","3d"]];
+const TELEPORT_IDS = ["1i","2h","3f"];
+const BRIDGE_COST = 2;
+const TELEPORT_COST = 5;
+function getCaseIsland(caseId) {
+  return islands.findIndex(il => il.cases.some(c => c.id === caseId));
+}
+
+// ── Board graph helpers ────────────────────────────────
+function getNeighbors(caseId, side) {
+  const neighbors = [];
+  for (const isl of islands) {
+    const idx = isl.mp.indexOf(caseId);
+    if (idx !== -1) {
+      neighbors.push(isl.mp[(idx + 1) % isl.mp.length]);
+    }
+    for (const sc of isl.sc) {
+      const dir = isl.cfg[side]?.[sc.id] ?? 1;
+      if (dir === 1  && sc.f === caseId) neighbors.push(sc.t);
+      if (dir === -1 && sc.t === caseId) neighbors.push(sc.f);
+    }
+  }
+  for (const [f, t] of BRIDGE_CONNECTIONS) {
+    if (f === caseId) neighbors.push(t);
+    if (t === caseId) neighbors.push(f); // bidirectional
+  }
+  return neighbors;
+}
+
+// BFS shortest path (directed graph) — returns full path including start and end
+function findShortestPath(fromId, toId, side) {
+  if (fromId === toId) return [toId];
+  const queue = [{ id: fromId, path: [fromId] }];
+  const visited = new Set([fromId]);
+  while (queue.length > 0) {
+    const { id, path } = queue.shift();
+    if (path.length > 35) continue;
+    for (const n of getNeighbors(id, side)) {
+      if (n === toId) return [...path, n];
+      if (!visited.has(n)) { visited.add(n); queue.push({ id: n, path: [...path, n] }); }
+    }
+  }
+  return null; // no path found
+}
+
+// Returns the bridge index (0-2) if edge a→b or b→a is a bridge, else -1
+function bridgeBit(a, b) {
+  return BRIDGE_CONNECTIONS.findIndex(([f, t]) => (f === a && t === b) || (t === a && f === b));
+}
+
+// Returns [{id, path, usesBridge}] reachable in exactly `steps` moves.
+// Uses a bridge-bitmask per state (3 bridges → 8 states) to prevent
+// bridge oscillation (2-cycles like 1e↔2g inflating the reachable set).
+function getReachableCases(fromId, steps, side) {
+  if (steps <= 0) return [];
+
+  // BFS layered by depth; state = (nodeId, bridgeMask)
+  // bridgeMask: bit i set → bridge i already used in this path
+  let frontier = [{ id: fromId, path: [], bridges: 0 }];
+
+  for (let depth = 0; depth < steps; depth++) {
+    const next = [];
+    const seen = new Set(); // deduplicate (id, bridges) at this depth
+
+    for (const { id, path, bridges } of frontier) {
+      for (const n of getNeighbors(id, side)) {
+        const bit = bridgeBit(id, n);
+        if (bit !== -1 && (bridges >> bit & 1)) continue; // this bridge already used
+        const nb = bit !== -1 ? bridges | (1 << bit) : bridges;
+        const key = `${n}:${nb}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          next.push({ id: n, path: [...path, n], bridges: nb });
+        }
+      }
+    }
+
+    frontier = next;
+    if (frontier.length === 0) break;
+  }
+
+  // For each destination keep the path that crosses the fewest bridges
+  // (prefer non-bridge path so affordability filter works correctly)
+  const best = new Map(); // id → { path, bridgeCount }
+  for (const { id, path, bridges } of frontier) {
+    const bc = BRIDGE_CONNECTIONS.reduce((n, _, i) => n + (bridges >> i & 1), 0);
+    const prev = best.get(id);
+    if (!prev || bc < prev.bridgeCount) best.set(id, { path, bridgeCount: bc });
+  }
+
+  return [...best.entries()].map(([id, { path, bridgeCount }]) => ({
+    id,
+    path,
+    usesBridge: bridgeCount > 0,
+  }));
+}
 
 // ═══════════════════════════════════════════════════════
 // LOCALSTORAGE HOOK
@@ -644,113 +745,185 @@ function MiniGameCard({ game, defaultOpen = false, teams = null, setTeams = null
 
 // ═══════════════════════════════════════════════════════
 // PAWN SHAPE — classic board-game pion silhouette
+// Uses CSS transform so position transitions animate smoothly
 // ═══════════════════════════════════════════════════════
 function PawnShape({ cx, cy, color, active }) {
   return (
-    <g style={{ pointerEvents: "none" }}>
-      {active && <circle cx={cx} cy={cy-2} r={22} fill={color} opacity={0.15} />}
+    <g style={{
+      transform: `translate(${cx}px, ${cy}px)`,
+      transition: "transform 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+      pointerEvents: "none",
+    }}>
+      {active && <circle cy={-2} r={22} fill={color} opacity={0.15} />}
       {/* Drop shadow */}
-      <ellipse cx={cx+1.5} cy={cy+17} rx={11} ry={4} fill="rgba(0,0,0,0.4)" />
+      <ellipse cx={1.5} cy={17} rx={11} ry={4} fill="rgba(0,0,0,0.4)" />
       {/* Base platform */}
-      <rect x={cx-10} y={cy+10} width={20} height={7} rx={4}
+      <rect x={-10} y={10} width={20} height={7} rx={4}
         fill={color}
         stroke={active ? "#fff" : "rgba(0,0,0,0.3)"} strokeWidth={active ? 2 : 1} />
       {/* Stem */}
-      <path d={`M ${cx-4} ${cy+10} L ${cx-3} ${cy} L ${cx+3} ${cy} L ${cx+4} ${cy+10} Z`}
+      <path d="M -4 10 L -3 0 L 3 0 L 4 10 Z"
         fill={color}
         stroke={active ? "#fff" : "rgba(0,0,0,0.3)"} strokeWidth={active ? 2 : 1} />
       {/* Head */}
-      <circle cx={cx} cy={cy-9} r={9}
+      <circle cy={-9} r={9}
         fill={color}
         stroke={active ? "#fff" : "rgba(0,0,0,0.28)"} strokeWidth={active ? 2.5 : 1} />
       {/* Shine */}
-      <circle cx={cx-3} cy={cy-13} r={3} fill="rgba(255,255,255,0.5)" />
+      <circle cx={-3} cy={-13} r={3} fill="rgba(255,255,255,0.5)" />
     </g>
   );
 }
 
 // ═══════════════════════════════════════════════════════
 // MINI-GAME RANKING — distributes rewards after a game
+// Supports ties: multiple teams can share the same rank.
+// ranks[teamIdx] = 0..3  (0 = 1er, 1 = 2e, …)
 // ═══════════════════════════════════════════════════════
-function MiniGameRanking({ teams, setTeams }) {
-  const [ranking, setRanking] = useState([null, null, null, null]);
-  const [done, setDone] = useState(false);
+function MiniGameRanking({ teams, setTeams, onDone }) {
+  // ranks[teamIdx] = rankPos (0–3) or null
+  const [ranks, setRanks] = useState([null, null, null, null]);
+  const [done, setDone]   = useState(false);
 
-  const assign = (teamIdx, rankPos) => {
+  const setRank = (teamIdx, pos) => {
     if (done) return;
-    setRanking(prev => {
-      const next = [...prev];
-      const old = next.indexOf(teamIdx);
-      if (old !== -1) next[old] = null;
-      next[rankPos] = teamIdx;
-      return next;
-    });
+    setRanks(prev => { const n = [...prev]; n[teamIdx] = pos; return n; });
   };
+
+  const allAssigned = ranks.every(r => r !== null);
 
   const distribute = () => {
     setTeams(prev => prev.map((t, i) => {
-      const pos = ranking.indexOf(i);
-      if (pos === -1) return t;
-      return {
-        ...t,
-        coins: t.coins + RANK_COINS[pos],
-        mgWon: pos === 0 ? t.mgWon + 1 : t.mgWon,
-      };
+      const pos = ranks[i];
+      if (pos === null) return t;
+      return { ...t, coins: t.coins + RANK_COINS[pos], mgWon: pos === 0 ? t.mgWon + 1 : t.mgWon };
     }));
     setDone(true);
+    onDone?.();
   };
 
-  const rankColors = ["#F1C40F", "#BDC3C7", "#CD7F32", "rgba(255,255,255,0.25)"];
-  const rankLabels = ["🥇 1er", "🥈 2e", "🥉 3e", "4️⃣ 4e"];
+  const rankColors = ["#F1C40F", "#BDC3C7", "#CD7F32", "rgba(180,180,180,0.35)"];
+  const rankEmoji  = ["🥇", "🥈", "🥉", "4️⃣"];
+  const rankLabel  = ["1er", "2e", "3e", "4e"];
+
+  // Which rank positions have ties?
+  const tiedPositions = new Set(
+    [0,1,2,3].filter(pos => ranks.filter(r => r === pos).length > 1)
+  );
 
   return (
     <div style={{ marginTop: 14, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 12 }}>
-      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
-        🏆 RÉSULTATS DU MINI-JEU
+      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
+        🏆 RÉSULTATS DU MINI-JEU — cliquez le rang de chaque équipe
       </div>
-      {[0, 1, 2, 3].map(pos => (
-        <div key={pos} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ color: rankColors[pos], fontSize: 12, fontWeight: 700, minWidth: 36 }}>{rankLabels[pos]}</span>
-          <span style={{ color: "#D4A017", fontSize: 11, minWidth: 30 }}>
-            {RANK_COINS[pos] > 0 ? `+${RANK_COINS[pos]}₽` : "—"}
+
+      {teams.map((tm, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          {/* Team label */}
+          <span style={{ color: TC[i], fontWeight: 700, fontSize: 12, minWidth: 58, flexShrink: 0 }}>
+            {TE[i]} {tm.name}
           </span>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-            {teams.map((t, i) => {
-              const isHere = ranking[pos] === i;
-              const placed = ranking.indexOf(i) !== -1 && !isHere;
+
+          {/* Rank buttons */}
+          <div style={{ display: "flex", gap: 3 }}>
+            {[0,1,2,3].map(pos => {
+              const sel = ranks[i] === pos;
               return (
-                <button key={i} onClick={() => assign(i, pos)} style={{
-                  padding: "3px 9px", borderRadius: 7, fontSize: 11, fontWeight: 700,
-                  cursor: done ? "default" : "pointer", fontFamily: "inherit",
-                  background: isHere ? `${TC[i]}30` : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${isHere ? TC[i]+"70" : "rgba(255,255,255,0.08)"}`,
-                  color: isHere ? TC[i] : "rgba(255,255,255,0.35)",
-                  opacity: placed ? 0.3 : 1,
-                }}>
-                  {TE[i]} {t.name}
+                <button key={pos} onClick={() => setRank(i, pos)} title={`${rankLabel[pos]} (+${RANK_COINS[pos]}₽)`}
+                  style={{
+                    width: 32, height: 28, borderRadius: 7, fontSize: 13,
+                    cursor: done ? "default" : "pointer", fontFamily: "inherit",
+                    background: sel ? `${rankColors[pos]}40` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${sel ? rankColors[pos] : "rgba(255,255,255,0.08)"}`,
+                    color: sel ? rankColors[pos] : "rgba(255,255,255,0.28)",
+                    fontWeight: sel ? 800 : 400,
+                  }}>
+                  {rankEmoji[pos]}
                 </button>
               );
             })}
           </div>
+
+          {/* Reward preview */}
+          {ranks[i] !== null && (
+            <span style={{ color: "#D4A017", fontSize: 11, minWidth: 28 }}>
+              +{RANK_COINS[ranks[i]]}₽
+            </span>
+          )}
+
+          {/* Tie badge */}
+          {ranks[i] !== null && tiedPositions.has(ranks[i]) && (
+            <span style={{ color: "#F1C40F", fontSize: 10, fontWeight: 700 }}>⚖️ ex-æquo</span>
+          )}
         </div>
       ))}
+
+      {/* Tie explanation when ties exist */}
+      {tiedPositions.size > 0 && (
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontStyle: "italic",
+          marginBottom: 8, lineHeight: 1.5 }}>
+          En cas d&apos;ex-æquo, chaque équipe reçoit la récompense de leur rang partagé.
+        </div>
+      )}
+
       {done ? (
         <div style={{ color: "#2ECC71", fontSize: 12, fontWeight: 700, textAlign: "center", marginTop: 8 }}>
           ✓ Récompenses distribuées !
         </div>
       ) : (
-        <button disabled={ranking.some(r => r === null)} onClick={distribute} style={{
+        <button disabled={!allAssigned} onClick={distribute} style={{
           marginTop: 8, width: "100%", padding: "8px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-          cursor: ranking.some(r => r === null) ? "not-allowed" : "pointer", fontFamily: "inherit",
-          background: ranking.some(r => r === null) ? "rgba(80,80,80,0.1)" : "rgba(212,160,23,0.15)",
-          border: `1px solid ${ranking.some(r => r === null) ? "rgba(80,80,80,0.2)" : "rgba(212,160,23,0.4)"}`,
-          color: ranking.some(r => r === null) ? "#555" : "#D4A017",
+          cursor: allAssigned ? "pointer" : "not-allowed", fontFamily: "inherit",
+          background: allAssigned ? "rgba(212,160,23,0.15)" : "rgba(80,80,80,0.1)",
+          border: `1px solid ${allAssigned ? "rgba(212,160,23,0.4)" : "rgba(80,80,80,0.2)"}`,
+          color: allAssigned ? "#D4A017" : "#555",
         }}>
           💰 Distribuer les récompenses
         </button>
       )}
     </div>
   );
+}
+
+// ─── MJ popup renderer ────────────────────────────────
+function renderMJWindow(w, q, level) {
+  const lc = { college: { emoji: "🟢", label: "COLLÈGE" }, lycee: { emoji: "🟡", label: "LYCÉE" }, expert: { emoji: "🔴", label: "EXPERT" } };
+  const lv = lc[level] || lc.college;
+  const qText = q ? q.q.replace(/'/g, "&apos;") : "…";
+  const rText = q ? q.r.replace(/'/g, "&apos;") : "—";
+  const cat   = q ? q.cat : "";
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>MJ — Duel</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c1525;color:#fff;font-family:system-ui,sans-serif;padding:20px;min-height:100vh}
+  h1{color:#E74C3C;font-size:18px;font-weight:800;margin-bottom:14px;letter-spacing:1px}
+  .meta{color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:1px;margin-bottom:8px}
+  .q{font-size:17px;font-weight:600;line-height:1.55;margin-bottom:14px}
+  .ans{background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.35);border-radius:10px;padding:12px 16px;margin-bottom:18px}
+  .ans-lbl{color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:1px;margin-bottom:5px}
+  .ans-val{color:#D4A017;font-size:19px;font-weight:700;line-height:1.4}
+  .btns{display:flex;gap:10px}
+  button{flex:1;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border:none}
+  .ok{background:rgba(46,204,113,0.18);border:1px solid rgba(46,204,113,0.45)!important;color:#2ECC71}
+  .ok:hover{background:rgba(46,204,113,0.3)}
+  .err{background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.4)!important;color:#E74C3C}
+  .err:hover{background:rgba(231,76,60,0.25)}
+</style>
+</head><body>
+  <h1>⚔️ DUEL — Vue MJ</h1>
+  <div class="meta">${lv.emoji} ${lv.label} · ${cat}</div>
+  <div class="q">${qText}</div>
+  <div class="ans">
+    <div class="ans-lbl">RÉPONSE</div>
+    <div class="ans-val">${rText}</div>
+  </div>
+  <div class="btns">
+    <button class="ok" onclick="window.opener._duelAction(true)">✓ Bonne réponse — passe la main</button>
+    <button class="err" onclick="window.opener._duelAction(false)">✗ Erreur — continue</button>
+  </div>
+</body></html>`);
+  w.document.close();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -770,6 +943,8 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
   const [qPool, setQPool] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [activeQ, setActiveQ] = useState(null);
+  const [prevQ, setPrevQ]     = useState(null); // answer shown below current question
+  const mjWin = useRef(null);
 
   // Tick active clock
   useEffect(() => {
@@ -804,11 +979,32 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
   };
 
   const nextQ = (switchHand) => {
+    setPrevQ(activeQ); // remember answer of outgoing question
     const ni = qIdx + 1;
+    const nq = qPool[ni % Math.max(1, qPool.length)] || null;
     setQIdx(ni);
-    setActiveQ(qPool[ni % Math.max(1, qPool.length)] || null);
+    setActiveQ(nq);
     if (switchHand) setHand(h => 1 - h);
+    // Update MJ window with new question
+    if (mjWin.current && !mjWin.current.closed) renderMJWindow(mjWin.current, nq, duelLevel);
   };
+
+  // Expose nextQ to MJ popup via window global (stays fresh on every render)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { window._duelAction = (sw) => nextQ(sw); });
+
+  const openMJWindow = () => {
+    const w = window.open("", "_duelMJ",
+      "width=560,height=360,top=80,left=80,resizable=yes,scrollbars=no");
+    mjWin.current = w;
+    renderMJWindow(w, activeQ, duelLevel);
+  };
+
+  // Sync MJ window whenever activeQ changes
+  useEffect(() => {
+    if (mjWin.current && !mjWin.current.closed) renderMJWindow(mjWin.current, activeQ, duelLevel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeQ]);
 
   const applyAndClose = () => {
     let winnerIdx = null;
@@ -838,8 +1034,17 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ color: "#E74C3C", fontWeight: 800, fontSize: 22, letterSpacing: 1 }}>⚔️ DUEL</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)",
-            fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {phase === "duel" && (
+              <button onClick={openMJWindow} style={{
+                background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.35)",
+                color: "#D4A017", padding: "5px 12px", borderRadius: 8, fontSize: 11,
+                fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>📋 Vue MJ</button>
+            )}
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)",
+              fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+          </div>
         </div>
 
         {/* ── SETUP ── */}
@@ -933,29 +1138,45 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
               </strong>
             </div>
 
-            {/* Question */}
+            {/* Previous question answer — shown below current question */}
+            {prevQ && (
+              <div style={{ marginBottom: 10, padding: "7px 12px", borderRadius: 9,
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, flexShrink: 0 }}>
+                  ↩ Rép. précédente :
+                </span>
+                <span style={{ color: "rgba(212,160,23,0.75)", fontSize: 12, fontWeight: 600 }}>
+                  {prevQ.r}
+                </span>
+              </div>
+            )}
+
+            {/* Current question */}
             {activeQ && (
               <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px",
                 marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>
                   {LC[duelLevel]?.emoji} {LC[duelLevel]?.label.toUpperCase()} · {activeQ.cat}
                 </div>
-                <div style={{ color: "#fff", fontSize: 15, fontWeight: 600, lineHeight: 1.55 }}>{activeQ.q}</div>
+                <div style={{ color: "#fff", fontSize: 15, fontWeight: 600, lineHeight: 1.55 }}>
+                  {activeQ.q}
+                </div>
               </div>
             )}
 
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => nextQ(false)} style={{
+              <button onClick={() => nextQ(true)} style={{
                 flex: 2, background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)",
                 color: "#2ECC71", padding: "13px", borderRadius: 12, fontSize: 13, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit",
-              }}>✓ Bonne réponse — garde la main</button>
-              <button onClick={() => nextQ(true)} style={{
+              }}>✓ Bonne réponse → passe la main</button>
+              <button onClick={() => nextQ(false)} style={{
                 flex: 1, background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)",
                 color: "#E74C3C", padding: "13px", borderRadius: 12, fontSize: 12, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit",
-              }}>✗ Erreur</button>
+              }}>✗ Erreur — continue</button>
             </div>
           </div>
         )}
@@ -1148,6 +1369,106 @@ function AimantPicker({ teams, onApply }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// CHAOS BONUS Q — inline Expert question for "Question bonus" card
+// ═══════════════════════════════════════════════════════
+function ChaosBonusQ({ pool, teams, turn, upT }) {
+  const [q, setQ] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const draw = () => {
+    if (!pool.length) return;
+    const idx = Math.floor(Math.random() * pool.length);
+    setQ(pool[idx]);
+    setRevealed(false);
+    setDone(false);
+  };
+
+  return (
+    <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+      {!q ? (
+        <button onClick={draw} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.4)", color: "#E74C3C",
+        }}>📚 Tirer la question Expert</button>
+      ) : (
+        <div>
+          <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.25)",
+            borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+            <div style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, marginBottom: 6, letterSpacing: 1 }}>
+              🔴 EXPERT · {q.cat}
+            </div>
+            <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{q.q}</div>
+          </div>
+          {revealed ? (
+            <div>
+              <div style={{ color: "#2ECC71", fontWeight: 700, fontSize: 14, marginBottom: 12,
+                background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.3)",
+                borderRadius: 10, padding: "10px 14px" }}>
+                → {q.r}
+              </div>
+              {!done && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { upT(turn, "coins", 8); setDone(true); }} style={{
+                    flex: 2, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                    background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)", color: "#2ECC71",
+                  }}>✓ Bonne réponse +8₽</button>
+                  <button onClick={() => { upT(turn, "coins", -2); setDone(true); }} style={{
+                    flex: 1, padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                    background: "rgba(231,76,60,0.12)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
+                  }}>✗ Faux −2₽</button>
+                </div>
+              )}
+              {done && <div style={{ color: "#2ECC71", fontSize: 12, fontWeight: 700, textAlign: "center" }}>✓ Appliqué !</div>}
+            </div>
+          ) : (
+            <button onClick={() => setRevealed(true)} style={{
+              width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+              background: "rgba(241,196,15,0.14)", border: "1px solid rgba(241,196,15,0.35)", color: "#F1C40F",
+            }}>Révéler la réponse</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// COIN FLASH — animated floating value overlay
+// ═══════════════════════════════════════════════════════
+function CoinFlash({ value, color }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.animate([
+      { opacity: 1, transform: "translate(-50%,-50%) scale(1)" },
+      { opacity: 0, transform: "translate(-50%,-160%) scale(1.4)" },
+    ], { duration: 1600, easing: "cubic-bezier(0.2,0.8,0.4,1)", fill: "forwards" });
+  }, []);
+  const label = value > 0 ? `+${value}₽` : `${value}₽`;
+  return (
+    <div ref={ref} style={{
+      position: "fixed", top: "48%", left: "50%",
+      transform: "translate(-50%,-50%)",
+      fontSize: 72, fontWeight: 900, color,
+      pointerEvents: "none", zIndex: 9998,
+      fontFamily: "inherit",
+      textShadow: `0 0 40px ${color}99, 0 2px 8px rgba(0,0,0,0.8)`,
+    }}>
+      {label}
+    </div>
+  );
+}
+
+// Weighted random coin values (Gaussian-like)
+const PLUS_WEIGHTS  = [1, 2, 2, 2, 2, 2, 2, 3, 3, 6];   // mean ≈ +2.4
+const MINUS_WEIGHTS = [1, 2, 2, 2, 2, 2, 2, 3, 3, 10];  // mean ≈ −2.9
+
+// ═══════════════════════════════════════════════════════
 // SHOP MODAL — opened when landing on a shop case
 // ═══════════════════════════════════════════════════════
 function ShopModal({ team, onBuy, onClose }) {
@@ -1265,6 +1586,321 @@ function StarBuyModal({ team, onBuy, onSkip }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// TELEPORT MODAL — ask if team wants to teleport (5₽)
+// ═══════════════════════════════════════════════════════
+function TeleportModal({ team, onUse, onSkip }) {
+  const canAfford = team.coins >= TELEPORT_COST;
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:902,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#0c1525", border:"2px solid rgba(0,188,212,0.5)", borderRadius:20,
+        padding:28, maxWidth:360, width:"100%", textAlign:"center" }}>
+        <div style={{ fontSize:52, marginBottom:8 }}>⚡</div>
+        <div style={{ color:"#00BCD4", fontWeight:800, fontSize:20, marginBottom:10 }}>
+          Téléporteur !
+        </div>
+        <div style={{ color:"rgba(255,255,255,0.55)", fontSize:13, marginBottom:20, lineHeight:1.8 }}>
+          Utiliser le téléporteur ?<br/>
+          Coût : <strong style={{ color:"#00BCD4" }}>{TELEPORT_COST}₽</strong>
+          &nbsp;·&nbsp;
+          Budget : <strong style={{ color: canAfford ? "#27AE60" : "#E74C3C" }}>{team.coins}₽</strong>
+        </div>
+        {!canAfford && (
+          <div style={{ marginBottom:14, color:"#E74C3C", fontSize:12, fontStyle:"italic" }}>
+            Pas assez de pièces pour téléporter.
+          </div>
+        )}
+        <div style={{ display:"flex", gap:10 }}>
+          <button disabled={!canAfford} onClick={onUse} style={{
+            flex:2, padding:"12px", borderRadius:12, fontSize:14, fontWeight:700,
+            cursor: canAfford ? "pointer" : "not-allowed", fontFamily:"inherit",
+            background: canAfford ? "rgba(0,188,212,0.18)" : "rgba(80,80,80,0.1)",
+            border:`2px solid ${canAfford ? "rgba(0,188,212,0.5)" : "rgba(80,80,80,0.2)"}`,
+            color: canAfford ? "#00BCD4" : "#555",
+          }}>⚡ Utiliser ({TELEPORT_COST}₽)</button>
+          <button onClick={onSkip} style={{
+            flex:1, padding:"12px", borderRadius:12, fontSize:13, fontWeight:700,
+            cursor:"pointer", fontFamily:"inherit",
+            background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)",
+            color:"rgba(255,255,255,0.45)",
+          }}>Passer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// QUESTION MODAL — pops when pion lands on a question case
+// Shows question for the active team; no team picker needed
+// ═══════════════════════════════════════════════════════
+function QuestionModal({ teams, turn, setTeams, onClose }) {
+  const [level, setLevel] = useState(null);
+  const [q, setQ] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const draw = (lv) => {
+    const pool = window._Q?.[lv] ?? [];
+    if (!pool.length) return;
+    const idx = Math.floor(Math.random() * pool.length);
+    setQ({ ...pool[idx], level: lv });
+    setLevel(lv);
+    setRevealed(false);
+    setDone(false);
+  };
+
+  const giveCoins = () => {
+    const coins = LC[level]?.val ?? 1;
+    setTeams(prev => prev.map((t, i) => i === turn
+      ? { ...t, coins: t.coins + coins, qOk: t.qOk + 1 }
+      : t));
+    setDone(true);
+  };
+
+  const applyPenalty = () => {
+    setTeams(prev => prev.map((t, i) => i === turn
+      ? { ...t, coins: Math.max(0, t.coins - 2) }
+      : t));
+    setDone(true);
+  };
+
+  const activeTeam = teams[turn];
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:906,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#0c1525", border:"2px solid rgba(52,152,219,0.45)", borderRadius:20,
+        padding:24, maxWidth:520, width:"100%", maxHeight:"92vh", overflowY:"auto" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ color:"#3498DB", fontWeight:800, fontSize:20, letterSpacing:1 }}>❓ QUESTION</div>
+            <span style={{ padding:"3px 10px", borderRadius:8,
+              background:`${TC[turn]}22`, border:`1px solid ${TC[turn]}40`,
+              color:TC[turn], fontSize:12, fontWeight:700 }}>
+              {TE[turn]} {activeTeam.name}
+            </span>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none",
+            color:"rgba(255,255,255,0.3)", fontSize:20, cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+        </div>
+
+        {/* Level selector */}
+        {!q && (
+          <div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:13, marginBottom:14, textAlign:"center" }}>
+              Choisir le niveau
+            </div>
+            <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
+              {Object.entries(LC).map(([k, c]) => (
+                <button key={k} onClick={() => draw(k)} style={{
+                  padding:"12px 24px", borderRadius:14, fontSize:14, fontWeight:700,
+                  cursor:"pointer", fontFamily:"inherit",
+                  background:`${c.color}18`, border:`2px solid ${c.color}42`, color:c.color,
+                }}>
+                  {c.emoji} {c.label}
+                  <br /><span style={{ fontSize:10, opacity:0.7 }}>{c.coins}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Question card */}
+        {q && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+              marginBottom:16, flexWrap:"wrap", gap:8 }}>
+              <span style={{
+                padding:"4px 14px", borderRadius:8,
+                background:`${LC[q.level].color}22`, color:LC[q.level].color,
+                fontSize:12, fontWeight:700, letterSpacing:1,
+              }}>
+                {LC[q.level].emoji} {LC[q.level].label.toUpperCase()} · {LC[q.level].coins}
+              </span>
+              <span style={{
+                padding:"4px 12px", borderRadius:8,
+                background:"rgba(255,255,255,0.07)", color:"rgba(255,255,255,0.5)",
+                fontSize:11, fontWeight:600,
+              }}>{q.cat}</span>
+            </div>
+
+            <div style={{
+              fontSize:"clamp(16px,3vw,24px)", fontWeight:600, color:"#fff",
+              marginBottom:24, lineHeight:1.5, textAlign:"center",
+            }}>
+              {q.q}
+            </div>
+
+            {!revealed ? (
+              <div style={{ textAlign:"center" }}>
+                <button onClick={() => setRevealed(true)} style={{
+                  background:"rgba(241,196,15,0.14)", border:"2px solid rgba(241,196,15,0.3)",
+                  color:"#F1C40F", padding:"12px 38px", borderRadius:14,
+                  fontSize:16, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                }}>Révéler la réponse</button>
+              </div>
+            ) : (
+              <div>
+                <div style={{
+                  padding:"14px 20px", borderRadius:12, marginBottom:18,
+                  background:"rgba(46,204,113,0.12)", border:"1px solid rgba(46,204,113,0.3)",
+                  textAlign:"center", fontSize:"clamp(18px,3vw,28px)", fontWeight:800, color:"#2ECC71",
+                }}>
+                  {q.r}
+                </div>
+
+                {!done ? (
+                  <div style={{ display:"flex", gap:10, marginBottom:12 }}>
+                    <button onClick={giveCoins} style={{
+                      flex:2, padding:"12px", borderRadius:12, fontSize:14, fontWeight:700,
+                      cursor:"pointer", fontFamily:"inherit",
+                      background:"rgba(46,204,113,0.18)", border:"1px solid rgba(46,204,113,0.4)", color:"#2ECC71",
+                    }}>✓ Bonne réponse {LC[q.level].coins}</button>
+                    {q.level === "expert" ? (
+                      <button onClick={applyPenalty} style={{
+                        flex:1, padding:"12px", borderRadius:12, fontSize:13, fontWeight:700,
+                        cursor:"pointer", fontFamily:"inherit",
+                        background:"rgba(231,76,60,0.12)", border:"1px solid rgba(231,76,60,0.35)", color:"#E74C3C",
+                      }}>✗ Faux −2₽</button>
+                    ) : (
+                      <button onClick={() => setDone(true)} style={{
+                        flex:1, padding:"12px", borderRadius:12, fontSize:13, fontWeight:700,
+                        cursor:"pointer", fontFamily:"inherit",
+                        background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)",
+                        color:"rgba(255,255,255,0.45)",
+                      }}>✗ Mauvaise</button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ color:"#2ECC71", fontSize:13, fontWeight:700,
+                    textAlign:"center", marginBottom:12 }}>✓ Appliqué !</div>
+                )}
+
+                <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
+                  <button onClick={() => { setQ(null); setDone(false); }} style={{
+                    padding:"8px 18px", borderRadius:10, fontSize:12, fontWeight:700,
+                    cursor:"pointer", fontFamily:"inherit",
+                    background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)",
+                    color:"rgba(255,255,255,0.5)",
+                  }}>↩ Autre niveau</button>
+                  <button onClick={onClose} style={{
+                    padding:"8px 22px", borderRadius:10, fontSize:12, fontWeight:700,
+                    cursor:"pointer", fontFamily:"inherit",
+                    background:"rgba(52,152,219,0.18)", border:"1px solid rgba(52,152,219,0.4)",
+                    color:"#3498DB",
+                  }}>✓ Fermer</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// MINI-GAME MODAL — pops automatically at end of turn
+// Phases: rules → ranking → close + advance turn
+// ═══════════════════════════════════════════════════════
+function MiniGameModal({ teams, setTeams, onDone }) {
+  const [game] = useState(() => MG[Math.floor(Math.random() * MG.length)]);
+  const [phase, setPhase] = useState("rules"); // rules | ranking
+  const [distributed, setDistributed] = useState(false);
+  const fmt = FORMAT[game.format] || {};
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:907,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#0c1525", border:`2px solid ${fmt.color || "#D4A0F5"}55`,
+        borderRadius:20, padding:24, maxWidth:580, width:"100%", maxHeight:"94vh", overflowY:"auto" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <div style={{ color:fmt.color || "#D4A0F5", fontWeight:800, fontSize:20, letterSpacing:1 }}>
+            {game.emoji} MINI-JEU
+          </div>
+          <span style={{ padding:"2px 9px", borderRadius:7, fontSize:10, fontWeight:700,
+            background:`${fmt.color || "#D4A0F5"}20`, color:fmt.color || "#D4A0F5" }}>
+            {fmt.emoji} {fmt.short}
+          </span>
+        </div>
+
+        {phase === "rules" && (
+          <div>
+            <div style={{ fontSize:42, textAlign:"center", marginBottom:8 }}>{game.emoji}</div>
+            <div style={{ color:"#fff", fontWeight:800, fontSize:18, textAlign:"center", marginBottom:6 }}>
+              {game.name}
+            </div>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, lineHeight:1.6, textAlign:"center", marginBottom:14 }}>
+              {game.desc}
+            </p>
+
+            {game.rules && game.rules.length > 0 && (
+              <div style={{ marginBottom:14, padding:"12px 16px", borderRadius:12,
+                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontWeight:700,
+                  letterSpacing:1, marginBottom:8 }}>RÈGLES</div>
+                {game.rules.map((r, i) => (
+                  <div key={i} style={{ display:"flex", gap:8, marginBottom:4 }}>
+                    <span style={{ color:fmt.color || "#D4A0F5", fontWeight:700, fontSize:11, flexShrink:0 }}>{i+1}.</span>
+                    <span style={{ color:"rgba(255,255,255,0.65)", fontSize:12, lineHeight:1.5 }}>{r}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {game.material && (
+              <div style={{ marginBottom:14, padding:"6px 12px", borderRadius:8,
+                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)" }}>
+                <span style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontWeight:700, letterSpacing:1 }}>MATÉRIEL · </span>
+                <span style={{ color:"rgba(255,255,255,0.55)", fontSize:11 }}>{game.material}</span>
+              </div>
+            )}
+
+            <div style={{ marginBottom:14, display:"inline-flex", alignItems:"center", gap:6,
+              padding:"4px 12px", borderRadius:8,
+              background:"rgba(212,160,23,0.1)", border:"1px solid rgba(212,160,23,0.2)" }}>
+              <span style={{ fontSize:13 }}>🪙</span>
+              <span style={{ color:"#D4A017", fontWeight:600, fontSize:12 }}>{game.reward}</span>
+            </div>
+
+            <ContentRenderer content={game.content} gameId={game.id} />
+
+            <button onClick={() => setPhase("ranking")} style={{
+              marginTop:18, width:"100%", padding:"13px", borderRadius:12,
+              fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit",
+              background:`${fmt.color || "#D4A0F5"}22`,
+              border:`2px solid ${fmt.color || "#D4A0F5"}50`,
+              color:fmt.color || "#D4A0F5",
+            }}>▶ Commencer</button>
+          </div>
+        )}
+
+        {phase === "ranking" && (
+          <div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:13, textAlign:"center", marginBottom:16 }}>
+              🏆 Entrez le classement du mini-jeu
+            </div>
+            <MiniGameRanking teams={teams} setTeams={setTeams} onDone={() => setDistributed(true)} />
+            <button onClick={onDone} disabled={!distributed} style={{
+              marginTop:14, width:"100%", padding:"12px", borderRadius:12,
+              fontSize:14, fontWeight:700, cursor: distributed ? "pointer" : "not-allowed", fontFamily:"inherit",
+              background: distributed ? "rgba(46,204,113,0.18)" : "rgba(80,80,80,0.1)",
+              border: `1px solid ${distributed ? "rgba(46,204,113,0.4)" : "rgba(80,80,80,0.2)"}`,
+              color: distributed ? "#2ECC71" : "#555",
+            }}>
+              {distributed ? "✓ Valider et passer au tour suivant →" : "⬆ Distribuez d'abord les récompenses"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // PION OFFSETS
 // ═══════════════════════════════════════════════════════
 const PION_OFFSETS = [
@@ -1278,7 +1914,9 @@ const PION_OFFSETS = [
 // BOARD SVG (shared pure visual component)
 // ═══════════════════════════════════════════════════════
 function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = false,
-  onHoverChange, onCaseClick, onStarClick, pawns = [], activePawnTeamIdx = -1 }) {
+  onHoverChange, onCaseClick, onStarClick, pawns = [], activePawnTeamIdx = -1,
+  tpHighlights = [], highlightCases = [], bridgeCostOverride = null,
+  hoveredPath = [], onCaseHover }) {
   const [hov, setHov] = useState(null);
   const [tpH, setTpH] = useState(false);
 
@@ -1317,7 +1955,7 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
   const islandColors = mario ? mIslandColors : islands.map(il => il.color);
 
   return (
-    <svg viewBox="0 0 760 580" style={{ width: "100%", display: "block", borderRadius: mario ? 16 : 0 }}
+    <svg viewBox="0 0 760 580" style={{ width: "100%", maxHeight: "82vh", display: "block", borderRadius: mario ? 16 : 0 }}
       onMouseLeave={handleSVGLeave}>
       <defs>
         <radialGradient id="wm" cx="50%" cy="45%">
@@ -1377,52 +2015,69 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
               fill="rgba(255,255,255,0.06)"
               transform={`rotate(${il.rot},${il.cx},${il.cy - il.ry * 0.3})`} />
           )}
-          <text x={il.cx} y={il.cy - il.ry + 20}
-            textAnchor="middle" fill={mario ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)"} fontSize={9.5}
-            fontWeight="600" letterSpacing="1.5">
-            {il.icon} {il.name}
-          </text>
-          <text x={il.cx} y={il.cy + il.ry - 12}
-            textAnchor="middle" fill={`${sideColor}55`} fontSize={8}
-            fontWeight="700" letterSpacing="2">
-            {isRecto ? "RECTO" : "VERSO"}
-          </text>
+          {/* island name rendered in separate pass above cases — removed from here */}
         </g>
       ))}
 
-      {/* Bridges */}
-      {bridges.map((b, i) => (
-        <g key={`br${i}`}>
-          <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
-            stroke="#5C4A1A" strokeWidth={9} strokeLinecap="round" opacity={0.28} />
-          <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
-            stroke="#A07C28" strokeWidth={3.5} strokeLinecap="round"
-            strokeDasharray="10,7" opacity={0.55} />
-          <g onMouseEnter={withHover ? () => handleEnter(`br${i}`, "bridge") : undefined}
-             onMouseLeave={withHover ? handleLeave : undefined}
-             style={{ cursor: withHover ? "pointer" : "default" }}>
-            {hov === `br${i}` && <circle cx={b.m.x} cy={b.m.y} r={26} fill="#8B6914" opacity={0.18} />}
-            <circle cx={b.m.x+1.5} cy={b.m.y+2} r={14} fill="rgba(0,0,0,0.28)" />
-            <circle cx={b.m.x} cy={b.m.y} r={14} fill="#8B6914"
-              stroke={hov === `br${i}` ? "#fff" : "rgba(0,0,0,0.2)"}
-              strokeWidth={hov === `br${i}` ? 2.5 : 1.5} />
-            <text x={b.m.x} y={b.m.y+1} textAnchor="middle" dominantBaseline="central"
-              fill="#fff" fontWeight="700" fontSize={10}>→</text>
+      {/* Bridges — bidirectional arrows, no case circle */}
+      {bridges.map((b, i) => {
+        const dx = b.t.x - b.f.x, dy = b.t.y - b.f.y;
+        const ln = Math.sqrt(dx*dx + dy*dy) || 1;
+        const nx = dx/ln, ny = dy/ln;
+        const px = -ny, py = nx; // perpendicular
+        // Arrow at 35% (f→t direction)
+        const a1x = b.f.x + dx*0.35, a1y = b.f.y + dy*0.35;
+        // Arrow at 65% (t→f direction, reversed)
+        const a2x = b.f.x + dx*0.65, a2y = b.f.y + dy*0.65;
+        // cost label at midpoint
+        const mx = b.m.x, my = b.m.y;
+        return (
+          <g key={`br${i}`}>
+            <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
+              stroke="#5C4A1A" strokeWidth={9} strokeLinecap="round" opacity={0.28} />
+            <line x1={b.f.x} y1={b.f.y} x2={b.t.x} y2={b.t.y}
+              stroke="#A07C28" strokeWidth={3.5} strokeLinecap="round"
+              strokeDasharray="10,7" opacity={0.55} />
+            {/* f→t arrow (upper lane) */}
+            <polygon
+              points={`${a1x+7*nx+3*px},${a1y+7*ny+3*py} ${a1x-5*nx+3*px},${a1y-5*ny+3*py+4} ${a1x-5*nx+3*px},${a1y-5*ny+3*py-4}`}
+              fill="rgba(255,200,80,0.75)" />
+            {/* t→f arrow (lower lane) */}
+            <polygon
+              points={`${a2x-7*nx-3*px},${a2y-7*ny-3*py} ${a2x+5*nx-3*px},${a2y+5*ny-3*py+4} ${a2x+5*nx-3*px},${a2y+5*ny-3*py-4}`}
+              fill="rgba(255,200,80,0.75)" />
+            {/* Cost badge */}
+            <rect x={mx-12} y={my-8} width={24} height={16} rx={6}
+              fill="rgba(0,0,0,0.65)" stroke="rgba(160,124,40,0.5)" strokeWidth={1} />
+            <text x={mx} y={my+1} textAnchor="middle" dominantBaseline="central"
+              fill={bridgeCostOverride && bridgeCostOverride > BRIDGE_COST ? "#FF6B35" : "#D4A017"}
+              fontWeight="800" fontSize={9}>{bridgeCostOverride ?? BRIDGE_COST}₽</text>
           </g>
-        </g>
-      ))}
+        );
+      })}
 
-      {/* Main path segments */}
+      {/* Main path segments + direction arrows */}
       {islands.map(il => il.mp.map((cid, idx) => {
         const nid = il.mp[(idx + 1) % il.mp.length];
         const f = gc(cid), t = gc(nid);
         if (!f || !t) return null;
         const sid = `m-${cid}-${nid}`;
         const hasStar = starSeg?.sid === sid;
+        const mx = (f.x + t.x) / 2, my = (f.y + t.y) / 2;
+        const dx = t.x - f.x, dy = t.y - f.y;
+        const ln = Math.sqrt(dx*dx + dy*dy) || 1;
+        const nx = dx/ln, ny = dy/ln;
         return (
-          <line key={sid} x1={f.x} y1={f.y} x2={t.x} y2={t.y}
-            stroke={hasStar ? "rgba(241,196,15,0.22)" : "rgba(255,255,255,0.12)"}
-            strokeWidth={hasStar ? 3 : 2.5} strokeDasharray="5,4" />
+          <g key={sid}>
+            <line x1={f.x} y1={f.y} x2={t.x} y2={t.y}
+              stroke={hasStar ? "rgba(241,196,15,0.22)" : "rgba(255,255,255,0.12)"}
+              strokeWidth={hasStar ? 3 : 2.5} strokeDasharray="5,4" />
+            {/* Direction arrow at midpoint */}
+            <polygon
+              points={`${mx+7*nx},${my+7*ny} ${mx-4*ny-3*nx},${my+4*nx-3*ny} ${mx+4*ny-3*nx},${my-4*nx-3*ny}`}
+              fill={hasStar ? "rgba(241,196,15,0.5)" : "rgba(255,255,255,0.22)"}
+            />
+          </g>
         );
       }))}
 
@@ -1453,7 +2108,7 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
         );
       }))}
 
-      {/* Star token */}
+      {/* Star token — pulsing */}
       {!buying && starSeg && (() => {
         const mx = (starSeg.f.x + starSeg.t.x) / 2;
         const my = (starSeg.f.y + starSeg.t.y) / 2;
@@ -1462,16 +2117,72 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
              onMouseEnter={withHover ? () => handleEnter("star", "star") : undefined}
              onMouseLeave={withHover ? handleLeave : undefined}
              style={{ cursor: onStarClick ? "pointer" : "default" }}>
-            {hov === "star" && <circle cx={mx} cy={my} r={28} fill="rgba(241,196,15,0.12)" />}
+            {/* Outer pulsing ring */}
+            <circle cx={mx} cy={my} r={26} fill="none" stroke="#F1C40F" strokeWidth={2} opacity={0.4}>
+              <animate attributeName="r" values="24;32;24" dur="1.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;0;0.5" dur="1.8s" repeatCount="indefinite" />
+            </circle>
+            {hov === "star" && <circle cx={mx} cy={my} r={30} fill="rgba(241,196,15,0.12)" />}
             <circle cx={mx+1.5} cy={my+2} r={19} fill="rgba(0,0,0,0.32)" />
             <circle cx={mx} cy={my} r={19} fill="#F1C40F"
               stroke={hov === "star" ? "#fff" : "rgba(0,0,0,0.15)"}
-              strokeWidth={hov === "star" ? 2.5 : 1.5} />
+              strokeWidth={hov === "star" ? 2.5 : 1.5}>
+              <animate attributeName="r" values="19;21;19" dur="1.8s" repeatCount="indefinite" />
+            </circle>
             <circle cx={mx-4} cy={my-5} r={4.5} fill="rgba(255,255,255,0.3)" />
             <text x={mx} y={my+2} textAnchor="middle" dominantBaseline="central"
               fill="#fff" fontWeight="800" fontSize={18}>★</text>
           </g>
         );
+      })()}
+
+      {/* Reachable case highlights (die roller) */}
+      {highlightCases.length > 0 && islands.map(il => il.cases.map(c => {
+        if (!highlightCases.includes(c.id)) return null;
+        const isPathDest = hoveredPath.length > 0 && hoveredPath[hoveredPath.length - 1] === c.id;
+        return (
+          <circle key={`hl-${c.id}`} cx={c.x} cy={c.y} r={isPathDest ? 26 : 23}
+            fill={isPathDest ? "rgba(241,196,15,0.35)" : "rgba(241,196,15,0.22)"}
+            stroke="#F1C40F" strokeWidth={isPathDest ? 3 : 2.5}
+            style={{ pointerEvents: onCaseHover ? "all" : "none", cursor: "pointer" }}
+            onMouseEnter={onCaseHover ? () => onCaseHover(c.id) : undefined}
+            onMouseLeave={onCaseHover ? () => onCaseHover(null) : undefined} />
+        );
+      }))}
+
+      {/* Hovered path lines */}
+      {hoveredPath.length > 1 && (() => {
+        const nodes = hoveredPath.map(id => gc(id)).filter(Boolean);
+        return nodes.slice(0, -1).map((f, k) => {
+          const t = nodes[k + 1];
+          const dx = t.x - f.x, dy = t.y - f.y;
+          const ln = Math.sqrt(dx * dx + dy * dy) || 1;
+          const nx = dx / ln, ny = dy / ln;
+          const px = -ny, py = nx;
+          const pad = 20;
+          const x1 = f.x + nx * pad, y1 = f.y + ny * pad;
+          const x2 = t.x - nx * pad, y2 = t.y - ny * pad;
+          const ax = 9, ab = 5;
+          return (
+            <g key={`hp-${k}`} style={{ pointerEvents: "none" }}>
+              {/* Glow */}
+              <line x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="#F1C40F" strokeWidth={8} strokeLinecap="round" opacity={0.15} />
+              {/* Main line */}
+              <line x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="#F1C40F" strokeWidth={3} strokeLinecap="round" opacity={0.9} />
+              {/* Arrow head */}
+              <polygon
+                points={`${x2 + nx * ax},${y2 + ny * ax} ${x2 - nx * 3 + px * ab},${y2 - ny * 3 + py * ab} ${x2 - nx * 3 - px * ab},${y2 - ny * 3 - py * ab}`}
+                fill="#F1C40F" opacity={0.9} />
+              {/* Step dot on intermediate nodes */}
+              {k > 0 && (
+                <circle cx={f.x} cy={f.y} r={5}
+                  fill="#F1C40F" opacity={0.75} />
+              )}
+            </g>
+          );
+        });
       })()}
 
       {/* Case circles */}
@@ -1502,6 +2213,48 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
           </g>
         );
       }))}
+
+      {/* Teleport-select highlights (red pulsing ring) — click forwards to onCaseClick */}
+      {tpHighlights.map(cid => {
+        const c = gc(cid);
+        if (!c) return null;
+        return (
+          <circle key={`tph-${cid}`} cx={c.x} cy={c.y} r={26}
+            fill="rgba(231,76,60,0.22)" stroke="#E74C3C" strokeWidth={3}
+            strokeDasharray="6,4" opacity={0.9}
+            style={{ cursor: "pointer" }}
+            onClick={() => onCaseClick?.(cid)} />
+        );
+      })}
+
+      {/* Island name labels — rendered above all cases */}
+      {islands.map((il, i) => {
+        const lx = il.cx;
+        const ly = il.cy - il.ry - 6;
+        const label = `${il.icon} ${il.name}`;
+        return (
+          <g key={`iname${i}`} style={{ pointerEvents: "none" }}>
+            <rect x={lx - 56} y={ly - 12} width={112} height={19} rx={7}
+              fill="rgba(0,0,0,0.65)" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+            <text x={lx} y={ly + 1}
+              textAnchor="middle" dominantBaseline="central"
+              fill="rgba(255,255,255,0.82)" fontSize={9.5}
+              fontWeight="700" letterSpacing="1.5">
+              {label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* FACE A / FACE B badge — top right */}
+      <g>
+        <rect x={660} y={8} width={90} height={26} rx={9}
+          fill={sideColor + "22"} stroke={sideColor + "60"} strokeWidth={1.5} />
+        <text x={705} y={25} textAnchor="middle"
+          fill={sideColor} fontWeight="800" fontSize={12} letterSpacing="1.5">
+          {isRecto ? "FACE  A" : "FACE  B"}
+        </text>
+      </g>
 
       {/* Pions — rendered on top, pointer-events off so clicks pass through */}
       {Object.entries(pionsByCase).map(([caseId, tIdxs]) => {
@@ -1664,105 +2417,398 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// DIE PANEL — die roller sidebar for the plateau
+// ═══════════════════════════════════════════════════════
+function DiePanel({ values, onChange, onRoll, onAddDie, onRemoveDie, reachableCount }) {
+  const faces = ["⚀","⚁","⚂","⚃","⚄","⚅"];
+  const total = values.reduce((s, v) => s + (v || 0), 0);
+
+  return (
+    <div style={{
+      padding: "14px 12px", borderRadius: 14,
+      background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)",
+      marginBottom: 10,
+    }}>
+      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
+        🎲 DÉ
+      </div>
+
+      {values.map((v, di) => (
+        <div key={di} style={{ marginBottom: di < values.length - 1 ? 12 : 0 }}>
+          <div style={{ fontSize: 44, textAlign: "center", lineHeight: 1, marginBottom: 6 }}>
+            {v ? faces[v - 1] : <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 32 }}>?</span>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 4 }}>
+            {[1,2,3,4,5,6].map(n => (
+              <button key={n} onClick={() => onChange(di, n)} style={{
+                padding: "6px 0", borderRadius: 8, fontSize: 14, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                background: v === n ? "rgba(241,196,15,0.28)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${v === n ? "rgba(241,196,15,0.6)" : "rgba(255,255,255,0.09)"}`,
+                color: v === n ? "#F1C40F" : "rgba(255,255,255,0.45)",
+              }}>{n}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div style={{ display: "flex", gap: 4, marginTop: 10, marginBottom: 6 }}>
+        <button onClick={onRoll} style={{
+          flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(241,196,15,0.16)", border: "1px solid rgba(241,196,15,0.38)", color: "#F1C40F",
+        }}>🎲 Lancer</button>
+        {values.length < 2 && (
+          <button onClick={onAddDie} title="Ajouter un dé (Double dé)" style={{
+            padding: "9px 10px", borderRadius: 10, fontSize: 11, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.35)",
+          }}>+🎲</button>
+        )}
+        {values.length > 1 && (
+          <button onClick={onRemoveDie} title="Retirer un dé" style={{
+            padding: "9px 10px", borderRadius: 10, fontSize: 11, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.22)", color: "#E74C3C",
+          }}>−🎲</button>
+        )}
+      </div>
+
+      {total > 0 && (
+        <div style={{ textAlign: "center", padding: "6px 0" }}>
+          <span style={{ color: "#F1C40F", fontWeight: 900, fontSize: 22 }}>{total}</span>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}> case{total > 1 ? "s" : ""}</span>
+          {reachableCount > 0 && (
+            <div style={{ color: "#2ECC71", fontSize: 11, marginTop: 2, fontWeight: 700 }}>
+              {reachableCount} destination{reachableCount > 1 ? "s" : ""} possibles
+            </div>
+          )}
+          {total > 0 && reachableCount === 0 && (
+            <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, marginTop: 2 }}>
+              calcul en cours…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // PAWN MAP (Plateau tab)
 // ═══════════════════════════════════════════════════════
 function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
-  tourNum, setTourNum, maxTours, onDuel, onFinale }) {
-  const [toast, setToast] = useState(null);
-  const [showShop, setShowShop] = useState(false);
+  tourNum, setTourNum, maxTours, onDuel, onFinale,
+  bridgeTaxTurns = 0, setBridgeTaxTurns,
+  pendingPoisons = [], setPendingPoisons }) {
+
+  // Die roller
+  const [dieValues, setDieValues] = useState([null]);
+  const [reachable, setReachable]  = useState([]); // [{id, path:[]}]
+
+  // Hop animation
+  const [displayPos, setDisplayPos] = useState(null);
+  const animTimers = useRef([]);
+
+  // Modals
+  const [toast, setToast]           = useState(null);
+  const [showShop, setShowShop]     = useState(false);
   const [showStarBuy, setShowStarBuy] = useState(false);
+  const [tpState, setTpState]       = useState(null);   // null | "pending" | "selecting"
+  const [tpOrigin, setTpOrigin]     = useState(null);
+  const [showQuestion, setShowQuestion] = useState(false);
+  const [showMiniGame, setShowMiniGame] = useState(false);
+  const [coinFlash, setCoinFlash] = useState(null); // { value, color }
+  const [itemPickModal, setItemPickModal] = useState(null); // { teamIdx, instanceIdx, itemIdx }
+  const [hoveredCaseId, setHoveredCaseId] = useState(null);
 
-  const show = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
+  // Effective bridge cost (raised by Péage chaos card)
+  const effectiveBridgeCost = bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
 
-  const handleCaseClick = useCallback((caseId) => {
-    const c = gc(caseId);
-    const tp = c ? (c.r === c.v ? c.r : (side === 0 ? c.r : c.v)) : null;
+  // Stable ref so callbacks always have fresh state
+  const stateRef = useRef({ teams, turn, side, starIdx, bridgeTaxTurns });
+  useEffect(() => { stateRef.current = { teams, turn, side, starIdx, bridgeTaxTurns }; });
 
-    // Always move the pawn and track visited
-    setTeams(prev => prev.map((t, i) => {
-      if (i !== turn) return t;
-      const visited = t.visitedCases ?? [];
-      const nv = visited.includes(caseId) ? visited : [...visited, caseId];
-      return { ...t, pos: caseId, visitedCases: nv };
+  const show = (msg, dur = 3200) => { setToast(msg); setTimeout(() => setToast(null), dur); };
+
+  // ── Item use ──────────────────────────────────────────
+  const useItem = (teamIdx, instanceIdx, itemIdx) => {
+    if (teamIdx !== turn) return; // only active team
+    if (itemIdx === 1) {
+      // Activate shield: move from bag to shields counter
+      setTeams(prev => prev.map((tm, i) => {
+        if (i !== teamIdx) return tm;
+        const items = [...tm.items]; items.splice(instanceIdx, 1);
+        return { ...tm, items, shields: tm.shields + 1 };
+      }));
+      show(`${TE[teamIdx]} 🛡️ Bouclier activé !`);
+      return;
+    }
+    if (itemIdx === 0) {
+      // Double dé: roll an extra die and add to current dieValues
+      const extra = Math.ceil(Math.random() * 6);
+      setDieValues(prev => {
+        const cleaned = prev.filter(v => v !== null);
+        return [...cleaned, extra];
+      });
+      setTeams(prev => prev.map((tm, i) => {
+        if (i !== teamIdx) return tm;
+        const items = [...tm.items]; items.splice(instanceIdx, 1);
+        return { ...tm, items };
+      }));
+      show(`🎲 Double dé ! +${extra}`);
+    } else {
+      // Poison, Voleur, Échangeur need a target
+      setItemPickModal({ teamIdx, instanceIdx, itemIdx });
+    }
+  };
+
+  const applyItem = (targetIdx) => {
+    if (!itemPickModal) return;
+    const { teamIdx, instanceIdx, itemIdx } = itemPickModal;
+    setTeams(prev => {
+      const t = prev.map(x => ({ ...x }));
+      const items = [...t[teamIdx].items]; items.splice(instanceIdx, 1);
+      t[teamIdx].items = items;
+      if (itemIdx === 3) { // Voleur — steal 5₽, blocked by shield
+        if (t[targetIdx].shields > 0) {
+          t[targetIdx].shields -= 1;
+          show(`🫳 Voleur bloqué par le bouclier de ${TE[targetIdx]} !`);
+        } else {
+          const stolen = Math.min(5, t[targetIdx].coins);
+          t[teamIdx].coins += stolen; t[targetIdx].coins -= stolen;
+          show(`🫳 ${TE[teamIdx]} vole ${stolen}₽ à ${TE[targetIdx]}`);
+        }
+      } else if (itemIdx === 4) { // Échangeur — swap positions
+        const [pa, pb] = [t[teamIdx].pos, t[targetIdx].pos];
+        t[teamIdx].pos = pb; t[targetIdx].pos = pa;
+        show(`🔄 ${TE[teamIdx]} et ${TE[targetIdx]} échangent leur position !`);
+      }
+      return t;
+    });
+    if (itemIdx === 2) { // Poison — deferred (item already removed in setTeams above)
+      setPendingPoisons(prev => [...prev, targetIdx]);
+      show(`🍄 Poison posé sur ${TE[targetIdx]} — effet au prochain tour !`);
+    }
+    setItemPickModal(null);
+  };
+
+  // Recompute reachable when die total or active team changes
+  useEffect(() => {
+    const total = dieValues.reduce((s, v) => s + (v || 0), 0);
+    if (total > 0) {
+      const { teams: t, turn: tr, side: s } = stateRef.current;
+      const pos = t[tr]?.pos ?? "1a";
+      const coins = t[tr]?.coins ?? 0;
+      const all = getReachableCases(pos, total, s);
+      // Hide destinations that require a bridge the team can't afford
+      setReachable(all.filter(({ usesBridge }) => !usesBridge || coins >= effectiveBridgeCost));
+    } else {
+      setReachable([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dieValues, turn]);
+
+  // Clear animation timers on unmount
+  useEffect(() => () => animTimers.current.forEach(clearTimeout), []);
+
+  const clearAnim = () => { animTimers.current.forEach(clearTimeout); animTimers.current = []; };
+
+  const hopTo = (path, onFinish) => {
+    clearAnim();
+    path.forEach((caseId, i) => {
+      const t = setTimeout(() => {
+        setDisplayPos(caseId);
+        if (i === path.length - 1) {
+          const t2 = setTimeout(() => { setDisplayPos(null); onFinish(); }, 260);
+          animTimers.current.push(t2);
+        }
+      }, i * 230);
+      animTimers.current.push(t);
+    });
+  };
+
+  // Core arrival handler (after pawn animation finishes)
+  const applyArrival = useCallback((caseId, traversedPath) => {
+    const { teams: t, turn: tr, side: s, starIdx: si } = stateRef.current;
+    const c  = gc(caseId);
+    const tp = c ? (c.r === c.v ? c.r : (s === 0 ? c.r : c.v)) : null;
+    const currentPos = t[tr]?.pos ?? "1a";
+
+    // Bridge cost — check traversed path for any bridge crossing (bidirectional)
+    const effBridgeCost = stateRef.current.bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
+    let bridgeCost = 0;
+    if (traversedPath && traversedPath.length > 1) {
+      for (let k = 0; k < traversedPath.length - 1; k++) {
+        const pa = traversedPath[k], pb = traversedPath[k + 1];
+        const usesBridge = BRIDGE_CONNECTIONS.some(([bf, bt]) =>
+          (bf === pa && bt === pb) || (bt === pa && bf === pb));
+        if (usesBridge) {
+          if ((t[tr]?.coins ?? 0) < effBridgeCost) {
+            show(`${TE[tr]} ❌ Pas assez pour le pont (${effBridgeCost}₽) !`);
+            return;
+          }
+          bridgeCost = effBridgeCost;
+          show(`${TE[tr]} 🌉 Pont −${effBridgeCost}₽`);
+          break;
+        }
+      }
+    }
+
+    // Star traversal detection
+    const st    = AS[si];
+    const sfId  = st?.f?.id || st?.fId;
+    const stId  = st?.t?.id || st?.tId;
+    let starHit = false;
+    if (sfId && stId && traversedPath && traversedPath.length > 1) {
+      for (let k = 0; k < traversedPath.length - 1; k++) {
+        if ((traversedPath[k] === sfId && traversedPath[k+1] === stId) ||
+            (traversedPath[k] === stId  && traversedPath[k+1] === sfId)) {
+          starHit = true; break;
+        }
+      }
+    } else if (sfId && stId && (caseId === sfId || caseId === stId)) {
+      // Fallback when no path info
+      starHit = true;
+    }
+
+    // Random coin values (Gaussian-like weighted distribution)
+    let plusVal  = 0, minusVal = 0;
+    if (tp === "coins_plus")  plusVal  = PLUS_WEIGHTS[Math.floor(Math.random() * PLUS_WEIGHTS.length)];
+    if (tp === "coins_minus") minusVal = MINUS_WEIGHTS[Math.floor(Math.random() * MINUS_WEIGHTS.length)];
+
+    // Batch all state updates
+    setTeams(prev => prev.map((tm, i) => {
+      if (i !== tr) return tm;
+      let coins   = Math.max(0, tm.coins - bridgeCost);
+      let shields = tm.shields;
+      if (tp === "coins_plus")  coins += plusVal;
+      if (tp === "coins_minus") coins  = Math.max(0, coins - minusVal);
+      if (tp === "bonus")       coins += 5;
+      if (tp === "shield")      shields += 1;
+      const visited = tm.visitedCases ?? [];
+      return {
+        ...tm, coins, shields, pos: caseId,
+        visitedCases: visited.includes(caseId) ? visited : [...visited, caseId],
+      };
     }));
 
-    // Auto-apply simple coin cases
+    // Toast + coin flash for auto-applied effects
     if (tp === "coins_plus") {
-      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: t.coins + 2 }));
-      show(`${TE[turn]} atterrit sur 🪙 +2₽ !`);
-      return;
-    }
-    if (tp === "coins_minus") {
-      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: Math.max(0, t.coins - 3) }));
-      show(`${TE[turn]} atterrit sur 💀 −3₽ !`);
-      return;
-    }
-    if (tp === "bonus") {
-      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, coins: t.coins + 5 }));
-      show(`${TE[turn]} atterrit sur 💎 Bonus +5₽ !`);
-      return;
-    }
-    if (tp === "shield") {
-      setTeams(prev => prev.map((t, i) => i !== turn ? t : { ...t, shields: t.shields + 1 }));
-      show(`${TE[turn]} atterrit sur 🛡️ +1 bouclier !`);
-      return;
-    }
-    if (tp === "shop") {
-      setShowShop(true);
-      return;
-    }
-    if (tp === "duel") {
-      onDuel?.();
+      setCoinFlash({ value: plusVal, color: "#D4A017" });
+      setTimeout(() => setCoinFlash(null), 1700);
+    } else if (tp === "coins_minus") {
+      setCoinFlash({ value: -minusVal, color: "#E74C3C" });
+      setTimeout(() => setCoinFlash(null), 1700);
+    } else if (tp === "bonus") {
+      setCoinFlash({ value: 5, color: "#1ABC9C" });
+      setTimeout(() => setCoinFlash(null), 1700);
+    } else if (tp === "shield") {
+      show(`${TE[tr]} 🛡️ +1 bouclier !`);
+    } else if (tp === "shop")   { setShowShop(true); return; }
+    else if (tp === "duel")   { onDuel?.(); return; }
+    else if (tp === "teleport") { setTpOrigin(caseId); setTpState("pending"); return; }
+    else if (tp === "question") { setShowQuestion(true); return; }
+
+    if (starHit) { setShowStarBuy(true); return; }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setTeams, onDuel, setCoinFlash]);
+
+  const handleCaseClick = useCallback((caseId) => {
+    // Teleport selection
+    if (tpState === "selecting") {
+      if (!TELEPORT_IDS.includes(caseId) || caseId === tpOrigin) return;
+      const { turn: tr } = stateRef.current;
+      setTeams(prev => prev.map((tm, i) => i !== tr ? tm : {
+        ...tm, pos: caseId, coins: Math.max(0, tm.coins - TELEPORT_COST),
+        visitedCases: (tm.visitedCases ?? []).includes(caseId)
+          ? (tm.visitedCases ?? []) : [...(tm.visitedCases ?? []), caseId],
+      }));
+      setTpState(null); setTpOrigin(null);
+      show(`⚡ Téléporté vers ${caseId} ! −${TELEPORT_COST}₽`);
       return;
     }
 
-    // Star detection — show purchase popup if landing on a star segment endpoint
-    const st = AS[starIdx];
-    if (st && (st.f?.id === caseId || st.t?.id === caseId)) {
-      setShowStarBuy(true);
-      return;
+    const reachEntry = reachable.find(r => r.id === caseId);
+    if (reachEntry && reachEntry.path.length > 0) {
+      // Hop animation
+      const { turn: tr } = stateRef.current;
+      const fullPath = [stateRef.current.teams[tr]?.pos ?? "1a", ...reachEntry.path];
+      setDieValues([null]);
+      setReachable([]);
+      setHoveredCaseId(null);
+      hopTo(reachEntry.path, () => applyArrival(caseId, fullPath));
+    } else {
+      // Direct click (no die set) — hop case-by-case along shortest path
+      const { turn: tr, teams: t, side: s } = stateRef.current;
+      const currentPos = t[tr]?.pos ?? "1a";
+      if (currentPos === caseId) return;
+      const path = findShortestPath(currentPos, caseId, s);
+      if (!path) { show("❌ Aucun chemin disponible vers cette case dans ce sens."); return; }
+      const coins = t[tr]?.coins ?? 0;
+      const effCost = stateRef.current.bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
+      const needsBridge = path.some((p, k) => k < path.length - 1 &&
+        BRIDGE_CONNECTIONS.some(([bf, bt]) =>
+          (bf === path[k] && bt === path[k + 1]) || (bt === path[k] && bf === path[k + 1])));
+      if (needsBridge && coins < effCost) {
+        show(`❌ Pas assez de pièces pour traverser le pont (${effCost}₽ nécessaires)`);
+        return;
+      }
+      hopTo(path.slice(1), () => applyArrival(caseId, path));
     }
-
-    const ct = tp ? CT[tp] : null;
-    show(`${TE[turn]} → ${caseId}${ct ? ` · ${ct.e} ${ct.d}` : ""}`);
-  }, [turn, side, starIdx, setTeams, onDuel]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tpState, tpOrigin, reachable, applyArrival]);
 
   const buyItem = (itemIdx) => {
     const item = SI[itemIdx];
-    setTeams(prev => prev.map((t, i) => {
-      if (i !== turn) return t;
+    setTeams(prev => prev.map((tm, i) => {
+      if (i !== turn) return tm;
       return {
-        ...t,
-        coins: t.coins - item.c,
-        items: [...(t.items ?? []), itemIdx],
-        shields: itemIdx === 1 ? t.shields + 1 : t.shields,
+        ...tm, coins: tm.coins - item.c,
+        items: [...(tm.items ?? []), itemIdx],
       };
     }));
     show(`${TE[turn]} 🛒 ${item.e} ${item.n} acheté !`);
   };
 
   const buyStar = () => {
-    setTeams(prev => prev.map((t, i) => i !== turn ? t : {
-      ...t, coins: t.coins - STAR_COST, stars: t.stars + 1,
+    setTeams(prev => prev.map((tm, i) => i !== turn ? tm : {
+      ...tm, coins: tm.coins - STAR_COST, stars: tm.stars + 1,
     }));
     let n;
     do { n = Math.floor(Math.random() * AS.length); } while (n === starIdx);
     setStarIdx(n);
     setShowStarBuy(false);
-    show(`${TE[turn]} ⭐ Étoile achetée ! +1⭐ — l'étoile se déplace.`);
+    show(`${TE[turn]} ⭐ +1⭐ — l'étoile se déplace !`);
   };
 
-  const pawns = teams.map((t, i) => ({ teamIdx: i, caseId: t.pos ?? "1a" }));
-  const tourPct = Math.round((tourNum / maxTours) * 100);
-  const estMin = maxTours * 8;
+  const tourPct      = Math.round((tourNum / maxTours) * 100);
+  const estMin       = maxTours * 8;
+  const tpHighlights = tpState === "selecting" ? TELEPORT_IDS.filter(id => id !== tpOrigin) : [];
+  const highlightCases = reachable.map(r => r.id);
+  // Full path (currentPos + steps) for the hovered reachable destination
+  const hoveredPathFull = (() => {
+    if (!hoveredCaseId) return [];
+    const entry = reachable.find(r => r.id === hoveredCaseId);
+    if (!entry) return [];
+    return [teams[turn]?.pos ?? "1a", ...entry.path];
+  })();
+  const dieTotal     = dieValues.reduce((s, v) => s + (v || 0), 0);
+
+  // Pawn positions: use displayPos for active team during animation
+  const pawns = teams.map((tm, i) => ({
+    teamIdx: i,
+    caseId: (i === turn && displayPos) ? displayPos : (tm.pos ?? "1a"),
+  }));
 
   return (
-    <div>
+    <div style={{ paddingBottom: 8 }}>
       {/* ── Tour counter ── */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 12, marginBottom: 10,
-        padding: "10px 16px", borderRadius: 14,
-        background: "linear-gradient(90deg,rgba(241,196,15,0.1),rgba(52,152,219,0.06))",
+        display: "flex", alignItems: "center", gap: 12, marginBottom: 12,
+        padding: "10px 18px", borderRadius: 14,
+        background: "linear-gradient(90deg,rgba(241,196,15,0.09),rgba(52,152,219,0.05))",
         border: "1px solid rgba(241,196,15,0.2)",
       }}>
         <span style={{ fontSize: 18 }}>🗺️</span>
@@ -1781,112 +2827,195 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <button onClick={() => setTourNum(p => Math.max(1, p - 1))} style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.5)", borderRadius: 6, padding: "2px 7px",
-            fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+            background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)",
+            borderRadius: 6, padding: "2px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
           }}>−</button>
           <button onClick={() => setTourNum(p => Math.min(maxTours, p + 1))} style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.5)", borderRadius: 6, padding: "2px 7px",
-            fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+            background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)",
+            borderRadius: 6, padding: "2px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
           }}>+</button>
-        </div>
-      </div>
-
-      {/* ── Team stats grid ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
-        {teams.map((t, i) => (
-          <div key={i} style={{
-            padding: "8px 8px", borderRadius: 12,
-            background: i === turn ? `${TC[i]}18` : "rgba(255,255,255,0.025)",
-            border: `2px solid ${i === turn ? TC[i]+"70" : "rgba(255,255,255,0.06)"}`,
-            boxShadow: i === turn ? `0 0 12px ${TC[i]}20` : "none",
-            transition: "all 0.2s",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 4 }}>
-              <span style={{ fontSize: 12 }}>{TE[i]}</span>
-              <span style={{
-                color: i === turn ? TC[i] : "rgba(255,255,255,0.65)",
-                fontWeight: 700, fontSize: 10, flex: 1,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>{t.name}</span>
-              {i === turn && <span style={{ fontSize: 7, color: TC[i], fontWeight: 700 }}>▶</span>}
-            </div>
-            <div style={{ display: "flex", gap: 5, justifyContent: "center", flexWrap: "wrap" }}>
-              <span style={{ color: "#D4A017", fontWeight: 700, fontSize: 12 }}>🪙{t.coins}</span>
-              <span style={{ color: "#F1C40F", fontWeight: 700, fontSize: 12 }}>⭐{t.stars}</span>
-              {t.shields > 0 && <span style={{ color: "#607D8B", fontSize: 11 }}>🛡{t.shields}</span>}
-            </div>
-            {/* Items bag */}
-            {(t.items ?? []).length > 0 && (
-              <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
-                {(t.items ?? []).map((idx, j) => (
-                  <span key={j} title={SI[idx]?.n} style={{ fontSize: 11 }}>{SI[idx]?.e}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Active team bar ── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
-        padding: "8px 12px", borderRadius: 12,
-        background: `${TC[turn]}12`, border: `1px solid ${TC[turn]}35`,
-        flexWrap: "wrap",
-      }}>
-        <span style={{ color: TC[turn], fontWeight: 700, fontSize: 13 }}>{TE[turn]} {teams[turn].name}</span>
-        <span style={{ color: "rgba(255,255,255,0.28)", fontSize: 11, flex: 1 }}>— clique une case</span>
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-          <button onClick={() => onDuel?.()} style={{
-            background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.35)",
-            color: "#E74C3C", padding: "4px 10px", borderRadius: 8, fontSize: 11,
-            fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-          }}>⚔️ Duel</button>
-          <button onClick={() => onFinale?.()} style={{
-            background: "rgba(241,196,15,0.12)", border: "1px solid rgba(241,196,15,0.3)",
-            color: "#F1C40F", padding: "4px 10px", borderRadius: 8, fontSize: 11,
-            fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-          }}>🏁 Fin</button>
-          <button onClick={() => setTurn(p => (p + 1) % 4)} style={{
-            background: `${TC[turn]}20`, border: `1px solid ${TC[turn]}40`, color: TC[turn],
-            padding: "4px 12px", borderRadius: 8, fontSize: 11,
-            fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-          }}>Suivant →</button>
         </div>
       </div>
 
       {toast && (
         <div style={{
-          textAlign: "center", background: "rgba(10,12,24,0.96)",
-          border: "1px solid rgba(255,255,255,0.14)", padding: "6px 16px",
-          borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, marginBottom: 8,
+          textAlign: "center", background: "rgba(10,12,24,0.97)",
+          border: "1px solid rgba(255,255,255,0.13)", padding: "8px 20px",
+          borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, marginBottom: 10,
         }}>
           {toast}
         </div>
       )}
 
-      <div style={{ margin: "0 -14px" }}>
-        <BoardSVG
-          side={side} starIdx={starIdx} buying={false}
-          withHover={false} mario={true}
-          onCaseClick={handleCaseClick}
-          pawns={pawns}
-          activePawnTeamIdx={turn}
-        />
+      {/* ── Main layout: left side-panel + right board ── */}
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+
+        {/* ── LEFT PANEL ──────────────────────────────── */}
+        <div style={{ flex: "0 0 196px", minWidth: 180, display: "flex", flexDirection: "column", gap: 10 }}>
+
+          {/* Die roller */}
+          <DiePanel
+            values={dieValues}
+            onChange={(di, v) => setDieValues(prev => { const nxt = [...prev]; nxt[di] = v; return nxt; })}
+            onRoll={() => setDieValues(prev => prev.map(() => Math.floor(Math.random() * 6) + 1))}
+            onAddDie={() => setDieValues(prev => [...prev, null])}
+            onRemoveDie={() => setDieValues(prev => prev.slice(0, -1))}
+            reachableCount={dieTotal > 0 ? highlightCases.length : 0}
+          />
+
+          {/* Team stats */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {teams.map((tm, i) => (
+              <div key={i} style={{
+                padding: "8px 10px", borderRadius: 12,
+                background: i === turn ? `${TC[i]}18` : "rgba(255,255,255,0.025)",
+                border: `2px solid ${i === turn ? TC[i]+"70" : "rgba(255,255,255,0.06)"}`,
+                boxShadow: i === turn ? `0 0 10px ${TC[i]}20` : "none",
+                transition: "all 0.2s",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                  <span style={{ fontSize: 13 }}>{TE[i]}</span>
+                  <span style={{
+                    color: i === turn ? TC[i] : "rgba(255,255,255,0.7)",
+                    fontWeight: 700, fontSize: 12, flex: 1,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{tm.name}</span>
+                  {i === turn && <span style={{ color: TC[i], fontSize: 8, fontWeight: 800 }}>▶ JOUE</span>}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ color: "#D4A017", fontWeight: 700, fontSize: 13 }}>🪙{tm.coins}</span>
+                  <span style={{ color: "#F1C40F", fontWeight: 700, fontSize: 13 }}>⭐{tm.stars}</span>
+                  {tm.shields > 0 && <span style={{ color: "#607D8B", fontSize: 12 }}>🛡{tm.shields}</span>}
+                </div>
+                {(tm.items ?? []).length > 0 && (
+                  <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 4 }}>
+                    {(tm.items ?? []).map((idx, j) => {
+                      const isActive = i === turn;
+                      const hasPending = idx === 2 && pendingPoisons.includes(i);
+                      return (
+                        <span key={j} title={SI[idx]?.n + (isActive ? " (clic pour utiliser)" : "")}
+                          onClick={isActive ? () => useItem(i, j, idx) : undefined}
+                          style={{
+                            fontSize: 13, cursor: isActive ? "pointer" : "default",
+                            padding: "1px 3px", borderRadius: 4,
+                            background: hasPending ? "rgba(231,76,60,0.3)" : (isActive ? "rgba(39,174,96,0.15)" : "transparent"),
+                            border: isActive ? "1px solid rgba(39,174,96,0.35)" : "1px solid transparent",
+                            opacity: hasPending ? 0.5 : 1,
+                          }}>{SI[idx]?.e}</span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Bridge tax indicator */}
+          {bridgeTaxTurns > 0 && (
+            <div style={{
+              padding: "6px 10px", borderRadius: 9, marginBottom: 6,
+              background: "rgba(255,140,0,0.12)", border: "1px solid rgba(255,140,0,0.35)",
+              color: "#FFA040", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
+            }}>
+              🚧 Péage actif — ponts 4₽
+              <span style={{ marginLeft: "auto", opacity: 0.7 }}>{bridgeTaxTurns} tour{bridgeTaxTurns > 1 ? "s" : ""}</span>
+            </div>
+          )}
+
+          {/* Active team controls */}
+          <div style={{
+            padding: "10px 10px", borderRadius: 12,
+            background: `${TC[turn]}10`, border: `1px solid ${TC[turn]}30`,
+          }}>
+            <div style={{ color: TC[turn], fontWeight: 800, fontSize: 13, marginBottom: 8 }}>
+              {TE[turn]} {teams[turn].name}
+            </div>
+            {tpState === "selecting" ? (
+              <div style={{ color: "#00BCD4", fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
+                ⚡ Clique une case téléport rouge sur le plateau
+              </div>
+            ) : dieTotal > 0 ? (
+              <div style={{ color: "#F1C40F", fontSize: 11, marginBottom: 8 }}>
+                {highlightCases.length > 0
+                  ? `Clique une case jaune (${dieTotal} pas)`
+                  : "Calcul des cases…"}
+              </div>
+            ) : (
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginBottom: 8 }}>
+                Lance le dé, puis clique une case
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {tpState === "selecting" && (
+                <button onClick={() => { setTpState(null); setTpOrigin(null); }} style={{
+                  width: "100%", padding: "7px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                  background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
+                }}>✕ Annuler téléport</button>
+              )}
+              <button onClick={() => {
+                const newTurn = (turn + 1) % 4;
+                // Apply pending poison before the new team's turn starts
+                if (pendingPoisons.includes(newTurn)) {
+                  setTeams(prev => prev.map((tm, i) => i === newTurn
+                    ? { ...tm, coins: Math.max(0, tm.coins - 4) } : tm));
+                  setPendingPoisons(prev => prev.filter(x => x !== newTurn));
+                  show(`🍄 Poison ! ${TE[newTurn]} perd 4₽`);
+                }
+                // Decrement bridge tax counter
+                setBridgeTaxTurns(p => Math.max(0, p - 1));
+                setTurn(newTurn);
+                if (newTurn === 0) {
+                  setTourNum(p => p + 1);
+                  setShowMiniGame(true);
+                }
+              }} style={{
+                width: "100%", padding: "8px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                background: `${TC[turn]}22`, border: `1px solid ${TC[turn]}45`, color: TC[turn],
+              }}>Équipe suivante →</button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Board ─────────────────────────────── */}
+        <div style={{ flex: 1, minWidth: 0, maxWidth: "calc(100% - 200px)" }}>
+          <BoardSVG
+            side={side} starIdx={starIdx} buying={false}
+            withHover={false} mario={true}
+            onCaseClick={handleCaseClick}
+            pawns={pawns}
+            activePawnTeamIdx={turn}
+            tpHighlights={tpHighlights}
+            highlightCases={highlightCases}
+            bridgeCostOverride={effectiveBridgeCost}
+            hoveredPath={hoveredPathFull}
+            onCaseHover={highlightCases.length > 0 ? setHoveredCaseId : undefined}
+          />
+        </div>
       </div>
 
-      {/* Shop modal */}
+      {/* ── Fin de Partie — absolutely below the board ── */}
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <button onClick={() => onFinale?.()} style={{
+          padding: "12px 40px",
+          background: "linear-gradient(135deg,rgba(241,196,15,0.16),rgba(230,126,34,0.1))",
+          border: "2px solid rgba(241,196,15,0.35)", color: "#F1C40F",
+          borderRadius: 14, fontSize: 14, fontWeight: 800,
+          cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
+        }}>
+          🏁 FIN DE PARTIE
+        </button>
+      </div>
+
+      {/* Modals */}
       {showShop && (
         <ShopModal
           team={teams[turn]}
-          onBuy={(idx) => { buyItem(idx); }}
+          onBuy={buyItem}
           onClose={() => setShowShop(false)}
         />
       )}
-
-      {/* Star purchase modal */}
       {showStarBuy && (
         <StarBuyModal
           team={teams[turn]}
@@ -1894,6 +3023,71 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
           onSkip={() => setShowStarBuy(false)}
         />
       )}
+      {tpState === "pending" && (
+        <TeleportModal
+          team={teams[turn]}
+          onUse={() => setTpState("selecting")}
+          onSkip={() => { setTpState(null); setTpOrigin(null); }}
+        />
+      )}
+      {showQuestion && (
+        <QuestionModal
+          teams={teams}
+          turn={turn}
+          setTeams={setTeams}
+          onClose={() => setShowQuestion(false)}
+        />
+      )}
+      {showMiniGame && (
+        <MiniGameModal
+          teams={teams}
+          setTeams={setTeams}
+          onDone={() => setShowMiniGame(false)}
+        />
+      )}
+      {coinFlash && <CoinFlash key={`${coinFlash.value}-${Date.now()}`} value={coinFlash.value} color={coinFlash.color} />}
+
+      {/* Item use target picker */}
+      {itemPickModal && (() => {
+        const item = SI[itemPickModal.itemIdx];
+        const labels = { 2: "Empoisonner", 3: "Voler 5₽ à", 4: "Échanger position avec" };
+        return (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+          }}>
+            <div style={{
+              background: "#1a1a2e", border: "2px solid rgba(39,174,96,0.4)",
+              borderRadius: 18, padding: "24px 28px", maxWidth: 340, width: "90%",
+            }}>
+              <div style={{ textAlign: "center", fontSize: 36, marginBottom: 6 }}>{item?.e}</div>
+              <div style={{ textAlign: "center", fontWeight: 800, fontSize: 16, color: "#2ECC71", marginBottom: 4 }}>{item?.n}</div>
+              <div style={{ textAlign: "center", color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 16 }}>
+                {labels[itemPickModal.itemIdx]} :
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {teams.map((tm, i) => i !== turn && (
+                  <button key={i} onClick={() => applyItem(i)} style={{
+                    background: `${TC[i]}20`, border: `1px solid ${TC[i]}50`,
+                    color: TC[i], padding: "10px 16px", borderRadius: 10,
+                    fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <span>{TE[i]}</span>
+                    <span style={{ flex: 1 }}>{tm.name}</span>
+                    <span style={{ opacity: 0.6, fontSize: 11 }}>🪙{tm.coins} ⭐{tm.stars}</span>
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setItemPickModal(null)} style={{
+                width: "100%", marginTop: 14, padding: "8px", borderRadius: 9,
+                background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.35)",
+                color: "#E74C3C", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>Annuler</button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1918,8 +3112,10 @@ export default function App() {
   const [mapSide,  setMapSide]  = useLS("archi_side",   0);
   const [mgCount,  setMgCount]  = useLS("archi_mg",     0);
   const [starIdx,  setStarIdx]  = useLS("archi_star",   4);
-  const [usedCC,   setUsedCC]   = useLS("archi_cc",     []);
-  const [mgFilter, setMgFilter] = useLS("archi_mgf",    "all");
+  const [usedCC,       setUsedCC]       = useLS("archi_cc",        []);
+  const [mgFilter,     setMgFilter]     = useLS("archi_mgf",       "all");
+  const [bridgeTaxTurns, setBridgeTaxTurns] = useLS("archi_bridgetax", 0);
+  const [pendingPoisons, setPendingPoisons] = useLS("archi_poisons",   []);
 
   // ── Transient state ───────────────────────────────────
   const [curQ,       setCurQ]       = useState(null);
@@ -2030,16 +3226,24 @@ export default function App() {
           if (targetIdx === null || targetIdx2 === null) return t;
           { const [ca, cb] = [t[targetIdx].coins, t[targetIdx2].coins];
             t[targetIdx].coins = cb; t[targetIdx2].coins = ca; return t; }
+        case "Vol d'étoile":
+          if (targetIdx === null) return t;
+          if (t[targetIdx].stars > 0) {
+            t[targetIdx].stars -= 1;
+            t[turn].stars += 1;
+          }
+          return t;
         default: return t;
       }
     });
     if (cardName === "Retournement") setMapSide(s => s === 0 ? 1 : 0);
-  }, [turn, setTeams, setMapSide]);
+    if (cardName === "Péage") setBridgeTaxTurns(4);
+  }, [turn, setTeams, setMapSide, setBridgeTaxTurns]);
 
   // ── Award apply ───────────────────────────────────────
   const applyAward = useCallback((awardIdx) => {
     const teamsWithIdx = teams.map((t, i) => ({ ...t, idx: i }));
-    const { award } = AW[awardIdx];
+    const award = AW[awardIdx];
     const max = Math.max(...teamsWithIdx.map(t => getStatVal(t, award.stat)));
     if (max === 0) return;
     const winners = teamsWithIdx.filter(t => getStatVal(t, award.stat) === max);
@@ -2168,7 +3372,7 @@ export default function App() {
       </nav>
 
       {/* ── Content ───────────────────────────────────────── */}
-      <main style={{ maxWidth: 940, margin: "0 auto", padding: "12px 14px 80px" }}>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "10px 10px 80px" }}>
 
         {/* ════════════ TABLEAU ════════════════════════════ */}
         {tab === "dashboard" && (
@@ -2545,6 +3749,8 @@ export default function App() {
             maxTours={maxTours}
             onDuel={() => setShowDuel(true)}
             onFinale={() => setShowFinale(true)}
+            bridgeTaxTurns={bridgeTaxTurns} setBridgeTaxTurns={setBridgeTaxTurns}
+            pendingPoisons={pendingPoisons} setPendingPoisons={setPendingPoisons}
           />
         )}
 
@@ -2621,6 +3827,23 @@ export default function App() {
         {/* ════════════ CHAOS ══════════════════════════════ */}
         {tab === "chaos" && (
           <div>
+            {/* Active effects banner */}
+            {bridgeTaxTurns > 0 && (
+              <div style={{
+                padding: "8px 14px", borderRadius: 10, marginBottom: 14,
+                background: "rgba(255,140,0,0.12)", border: "1px solid rgba(255,140,0,0.4)",
+                color: "#FFA040", fontSize: 12, fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 8,
+              }}>
+                🚧 Péage actif — ponts coûtent 4₽
+                <span style={{ marginLeft: "auto", opacity: 0.7 }}>encore {bridgeTaxTurns} tour{bridgeTaxTurns > 1 ? "s" : ""}</span>
+                <button onClick={() => setBridgeTaxTurns(0)} style={{
+                  background: "rgba(255,100,0,0.2)", border: "1px solid rgba(255,100,0,0.4)",
+                  color: "#FF6B35", borderRadius: 6, padding: "2px 8px", fontSize: 11,
+                  cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+                }}>✕ Annuler</button>
+              </div>
+            )}
             {/* Draw section */}
             <div style={{
               textAlign: "center", marginBottom: 20, padding: "20px",
@@ -2671,9 +3894,9 @@ export default function App() {
                     </div>
                   )}
                   {/* Auto-apply for simple cards */}
-                  {["Tempête","Solidarité","Aubaine","Bénédiction","Peur du vide","Tsunami","Arc-en-ciel","Échange royal","Ricochet"].includes(curCC.n) && (
+                  {["Tempête","Solidarité","Aubaine","Bénédiction","Peur du vide","Tsunami","Arc-en-ciel","Échange royal","Ricochet","Péage"].includes(curCC.n) && (
                     <button onClick={() => applyChaos(curCC.n)} style={{
-                      width: "100%", padding: "9px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                      width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
                       cursor: "pointer", fontFamily: "inherit",
                       background: "rgba(142,68,173,0.25)", border: "1px solid rgba(142,68,173,0.5)", color: "#D4A0F5",
                     }}>⚡ Appliquer l&apos;effet</button>
@@ -2681,7 +3904,7 @@ export default function App() {
                   {/* Retournement */}
                   {curCC.n === "Retournement" && (
                     <button onClick={() => applyChaos("Retournement")} style={{
-                      width: "100%", padding: "9px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                      width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
                       cursor: "pointer", fontFamily: "inherit",
                       background: "rgba(142,68,173,0.25)", border: "1px solid rgba(142,68,173,0.5)", color: "#D4A0F5",
                     }}>🔄 Retourner le plateau ({mapSide === 0 ? "RECTO→VERSO" : "VERSO→RECTO"})</button>
@@ -2694,17 +3917,51 @@ export default function App() {
                         {teams.map((t, i) => i !== turn && (
                           <button key={i} onClick={() => applyChaos(curCC.n, i)} style={{
                             background: `${TC[i]}20`, border: `1px solid ${TC[i]}50`,
-                            color: TC[i], padding: "6px 12px", borderRadius: 8, fontSize: 12,
+                            color: TC[i], padding: "8px 14px", borderRadius: 9, fontSize: 12,
                             fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                           }}>{TE[i]} {t.name}</button>
                         ))}
                       </div>
                     </div>
                   )}
+                  {/* Vol d'étoile — only show opponents who have stars */}
+                  {curCC.n === "Vol d'étoile" && (
+                    <div>
+                      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginBottom: 8 }}>
+                        Voler 1 étoile à :
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {teams.map((t, i) => i !== turn && (
+                          <button key={i}
+                            disabled={t.stars === 0}
+                            onClick={() => applyChaos("Vol d'étoile", i)} style={{
+                            background: t.stars > 0 ? `${TC[i]}20` : "rgba(80,80,80,0.1)",
+                            border: `1px solid ${t.stars > 0 ? TC[i]+"50" : "rgba(80,80,80,0.2)"}`,
+                            color: t.stars > 0 ? TC[i] : "#555",
+                            padding: "8px 14px", borderRadius: 9, fontSize: 12,
+                            fontWeight: 700, cursor: t.stars > 0 ? "pointer" : "not-allowed",
+                            fontFamily: "inherit",
+                          }}>
+                            {TE[i]} {t.name} <span style={{ opacity: 0.7 }}>⭐{t.stars}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {teams.every((t, i) => i === turn || t.stars === 0) && (
+                        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 6, fontStyle: "italic" }}>
+                          Aucune équipe adverse n'a d'étoile — carte sans effet.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {/* Aimant — pick 2 targets via AimantPicker */}
                   {curCC.n === "Aimant" && (
                     <AimantPicker teams={teams} onApply={(a, b) => applyChaos("Aimant", a, b)} />
                   )}
+                  {/* Question bonus — inline Expert question */}
+                  {curCC.n === "Question bonus" && (() => {
+                    const pool = window._Q?.expert ?? [];
+                    return <ChaosBonusQ pool={pool} teams={teams} turn={turn} upT={upT} />;
+                  })()}
                 </div>
               )}
             </div>
@@ -2832,7 +4089,7 @@ export default function App() {
               <h3 style={{ color: "#D4A017", fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>🪙 Référence rapide — Pièces</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 6 }}>
                 {[
-                  ["🟢 Question Collège", "+1₽"], ["🟡 Question Lycée", "+3₽"],
+                  ["🟢 Question Collège", "+3₽"], ["🟡 Question Lycée", "+3₽"],
                   ["🔴 Question Expert (juste)", "+5₽"], ["🔴 Question Expert (faux)", "−2₽"],
                   ["🪙 Case +2₽", "+2₽"], ["💀 Case −3₽", "−3₽"],
                   ["💎 Bonus case", "+5₽"], ["🌉 Pont", "−3₽"],

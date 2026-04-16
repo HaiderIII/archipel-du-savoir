@@ -2,8 +2,8 @@
 // CASE TYPES
 // ═══════════════════════════════════════════════════════
 export const CT = {
-  coins_plus: { l: "+2", c: "#D4A017", e: "🪙", d: "Pièces +2" },
-  coins_minus: { l: "−3", c: "#C0392B", e: "💀", d: "Pièces −3" },
+  coins_plus: { l: "?₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires +1/+2/+3/+6" },
+  coins_minus: { l: "?₽", c: "#C0392B", e: "💀", d: "Pièces aléatoires −1/−2/−3/−10" },
   question:    { l: "?",  c: "#2980B9", e: "❓", d: "Question" },
   duel:        { l: "⚔",  c: "#D35400", e: "⚔️", d: "Duel" },
   chaos:       { l: "✦",  c: "#8E44AD", e: "🌀", d: "Chaos" },
@@ -20,7 +20,7 @@ export const CT = {
 // DIFFICULTY LEVELS
 // ═══════════════════════════════════════════════════════
 export const LC = {
-  college: { label: "Collège", emoji: "🟢", color: "#2ECC71", coins: "+1₽", val: 1, penalty: 0 },
+  college: { label: "Collège", emoji: "🟢", color: "#2ECC71", coins: "+3₽", val: 3, penalty: 0 },
   lycee:   { label: "Lycée",   emoji: "🟡", color: "#F1C40F", coins: "+3₽", val: 3, penalty: 0 },
   expert:  { label: "Expert",  emoji: "🔴", color: "#E74C3C", coins: "+5₽ / −2₽", val: 5, penalty: -2 },
 };
@@ -111,6 +111,12 @@ export const CC = [
     apply: "stars_to_coins",
   },
   {
+    e: "🚧", n: "Péage", count: 2,
+    d: "Les ponts coûtent 4₽ au lieu de 2₽ pendant 4 tours d'équipe. L'effet s'annule automatiquement.",
+    tip: "Chaque fois qu'une équipe passe son tour, le compteur descend d'un. À 0 : retour au tarif normal.",
+    apply: "bridge_tax",
+  },
+  {
     e: "🎲", n: "Double ou rien", count: 2,
     d: "L'équipe active peut parier jusqu'à 6₽ sur la prochaine question tirée. Bonne réponse = mise doublée. Faux = mise perdue.",
     tip: "Le pari est optionnel ; s'annonce avant de tirer la question.",
@@ -128,6 +134,12 @@ export const CC = [
     d: "L'équipe active choisit 2 équipes adverses. Ces 2 équipes s'échangent TOUTES leurs pièces.",
     tip: "Stratégique : force deux adversaires à se déstabiliser mutuellement.",
     apply: "magnet",
+  },
+  {
+    e: "⭐", n: "Vol d'étoile", count: 1,
+    d: "Désignez une équipe adverse possédant au moins 1 étoile : volez-lui 1 étoile immédiatement.",
+    tip: "Si aucune équipe adverse n'a d'étoile, la carte n'a aucun effet.",
+    apply: "steal_star",
   },
   {
     e: "🃏", n: "Retournement", count: 1,

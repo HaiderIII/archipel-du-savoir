@@ -1,8 +1,12 @@
 // ═══════════════════════════════════════════════════════════════════
-// MINI-JEUX  —  33 jeux, 6 formats
+// MINI-JEUX  —  30 jeux, 5 formats
 // ✏️  Pour modifier un jeu : trouver son id et changer les champs.
 //    Pour ajouter un jeu : copier un bloc existant et incrémenter l'id.
 //    Pour supprimer : retirer l'objet du tableau.
+//
+// RÉCOMPENSES : tous les mini-jeux utilisent le classement par score.
+//   Le MJ attribue les rangs 🥇🥈🥉4e en fin de jeu.
+//   RANK_COINS = [8, 4, 2, 0] — voir MiniGameRanking dans App.jsx
 //
 // Types de contenu :
 //   "questions"  → { q, r, cat }        questions avec réponses cachées
@@ -13,7 +17,7 @@
 //   "debate"     → { topic, cat }        sujets de débat
 //   "definitions"→ { word, def }         mots rares
 //   "clues"      → { name, answer, clues }  indices progressifs
-//   "series"     → { title, cat, items }    Timeline / Fil Rouge
+//   "series"     → { title, cat, items }    Timeline
 //   "taboo"      → { word, forbidden[] }    Tabou
 //   "top5"       → { q, answers[], cat }    classement
 // ═══════════════════════════════════════════════════════════════════
@@ -24,7 +28,6 @@ export const FORMAT = {
   solo:     { label: "1 vs 3",           color: "#2ECC71", emoji: "🟢", short: "1v3"  },
   tournoi:  { label: "Tournoi 1v1",      color: "#8E44AD", emoji: "🟣", short: "1v1"  },
   coop:     { label: "Coopératif",       color: "#D35400", emoji: "🟤", short: "COOP" },
-  comeback: { label: "Comeback (Tour 7+)", color: "#F1C40F", emoji: "⭐", short: "T7+" },
 };
 
 // Récompenses par rang (utilisées par le système de classement en fin de mini-jeu)
@@ -43,11 +46,11 @@ export const MG = [
     rules: [
       "Le MJ lit la question lentement.",
       "Première équipe qui tape la table a 5 secondes pour répondre.",
-      "Bonne réponse → +2₽. Mauvaise réponse → éliminée pour cette question.",
+      "Bonne réponse → +1 point. Mauvaise réponse → éliminée pour cette question.",
       "Les autres équipes peuvent répondre si la première est éliminée.",
       "10 questions par manche.",
     ],
-    reward: "+2₽ par bonne réponse",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "12 questions buzzer",
@@ -79,7 +82,7 @@ export const MG = [
       "Réponse répétée, hors thème ou délai dépassé → équipe éliminée.",
       "Dernière équipe restante = gagnante.",
     ],
-    reward: "1er : +5₽ · 2e : +3₽ · 3e : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "themes", title: "14 thèmes (12 légitimes / 2 pop)",
@@ -116,7 +119,7 @@ export const MG = [
       "Premier à atteindre son bord opposé gagne.",
       "Temps max : 10 min. Sinon : joueur le plus avancé gagne.",
     ],
-    reward: "1er : +6₽ · 2e : +3₽ · 3e : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: "📦 Plateau 7×7 (carton), 4 pions, 16 barrières (bâtonnets de glace / allumettes)",
     content: {
       type: "themes", title: "Disposition de départ",
@@ -138,10 +141,10 @@ export const MG = [
       "3 joueurs ont le mot A, 1 joueur a le mot B (proche mais différent).",
       "Chacun donne 1 indice en UN seul mot — pas trop évident !",
       "Puis vote : qui est l'Undercover ?",
-      "Si l'Undercover est éliminé → les autres gagnent (+3₽ chacun).",
-      "Si l'Undercover survit → il gagne seul (+6₽).",
+      "Si l'Undercover est éliminé → les équipes qui l'ont démasqué gagnent (+3 pts chacune).",
+      "Si l'Undercover survit → il gagne seul (+6 pts).",
     ],
-    reward: "Undercover survivant : +6₽ · Démasqué : +3₽ à chaque devinant",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "pairs", title: "20 paires de mots (15 légitimes / 5 pop)",
@@ -173,14 +176,14 @@ export const MG = [
   {
     id: 5, emoji: "✍️", name: "Le Petit Bac Savant",
     format: "tous", duration: "~7 min",
-    desc: "Lettre tirée au sort + 8 catégories (6 légitimes, 2 pop). 2 minutes chrono. +1₽ par réponse valide, +2₽ si réponse unique dans la catégorie.",
+    desc: "Lettre tirée au sort + 8 catégories (6 légitimes, 2 pop). 2 minutes chrono. +1 pt par réponse valide, +2 pts si réponse unique dans la catégorie.",
     rules: [
       "Tirer une lettre au sort (éviter X, W, K, Y).",
       "8 catégories à remplir en 2 minutes.",
       "Réponse valide = réel, accepté par le groupe.",
-      "+1₽ par réponse valide. +2₽ si personne d'autre n'a la même.",
+      "+1 pt par réponse valide. +2 pts si personne d'autre n'a la même.",
     ],
-    reward: "1er : +5₽ · 2e : +3₽ · 3e : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "themes", title: "8 catégories",
@@ -208,7 +211,7 @@ export const MG = [
       "La plus proche de la vraie valeur gagne.",
       "En cas d'égalité : point partagé.",
     ],
-    reward: "1er : +4₽ · 2e : +2₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "12 questions chiffrées (9 légitimes / 3 pop)",
@@ -236,10 +239,10 @@ export const MG = [
     rules: [
       "Le MJ lit l'affirmation. Chaque équipe répond simultanément.",
       "VRAI = pouces en l'air. FAUX = pouces en bas.",
-      "Bonne réponse → +1₽.",
+      "Bonne réponse → +1 point.",
       "Tolérance zéro : la première gestuelle compte.",
     ],
-    reward: "1er : +4₽ · 2e : +2₽ (cumul de points)",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "statements", title: "16 affirmations (12 légitimes / 4 pop)",
@@ -275,7 +278,7 @@ export const MG = [
       "Mauvaise justification ou temps dépassé → éliminé.",
       "Dernière équipe restante = gagnante.",
     ],
-    reward: "1er : +5₽ · 2e : +3₽ · 3e : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "words", title: "12 mots de départ (9 légitimes / 3 pop)",
@@ -291,10 +294,10 @@ export const MG = [
       "Le MJ montre la carte à l'équipe qui joue (sans que les autres voient).",
       "L'équipe a 45s pour faire deviner le mot en évitant les 3 interdits.",
       "Mots de même famille = interdit. Gestes = interdit.",
-      "Si l'équipe utilise un interdit → passage à la carte suivante, 0₽.",
-      "+1₽ par mot deviné.",
+      "Si l'équipe utilise un interdit → passage à la carte suivante, 0 point.",
+      "+1 point par mot deviné.",
     ],
-    reward: "+1₽ par mot deviné correctement",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "taboo", title: "20 cartes Tabou (17 légitimes / 3 pop)",
@@ -326,13 +329,13 @@ export const MG = [
   {
     id: 10, emoji: "🏆", name: "Top 5",
     format: "tous", duration: "~6 min",
-    desc: "Question de classement posée. 60s pour écrire ses 5 réponses dans l'ordre. +1₽ par bonne réponse, +2₽ pour celle en n°1 exact.",
+    desc: "Question de classement posée. 60s pour écrire ses 5 réponses dans l'ordre. +1 pt par bonne réponse, +2 pts si n°1 exact.",
     rules: [
       "Le MJ lit la question de classement.",
       "Chaque équipe écrit ses 5 réponses classées en 60 secondes.",
-      "Comparaison : +1₽ par réponse dans la liste officielle. +2₽ si n°1 exact.",
+      "Comparaison : +1 pt par réponse dans la liste officielle. +2 pts si n°1 exact.",
     ],
-    reward: "Variable — maximum ~+7₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "top5", title: "8 questions Top 5",
@@ -360,10 +363,10 @@ export const MG = [
     rules: [
       "Le MJ lit les indices dans l'ordre, du plus vague au plus précis.",
       "Les équipes peuvent buzzer à tout moment entre deux indices.",
-      "Bonne réponse au 1er indice : +5₽. 2e : +4₽. 3e : +3₽. 4e : +2₽. 5e : +1₽.",
+      "Bonne réponse au 1er indice : +5 pts. 2e : +4 pts. 3e : +3 pts. 4e : +2 pts. 5e : +1 pt.",
       "Mauvaise réponse : interdit de répondre pour cette manche.",
     ],
-    reward: "Indice 1 : +5₽ · 2 : +4₽ · 3 : +3₽ · 4 : +2₽ · 5 : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "clues", title: "6 sujets (5 légitimes / 1 pop)",
@@ -386,9 +389,9 @@ export const MG = [
       "Les 4 équipes jouent en 2v2 : 1 dessinateur + 1 devineur (ou 2) par alliance.",
       "60 secondes par carte.",
       "Interdit d'écrire, de parler, de mimer.",
-      "+2₽ par mot trouvé.",
+      "+2 pts par mot trouvé.",
     ],
-    reward: "+2₽ par mot trouvé",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: "📦 Feuilles et stylos",
     content: {
       type: "words", title: "20 mots à dessiner (15 légitimes / 5 pop)",
@@ -408,10 +411,10 @@ export const MG = [
     rules: [
       "1 joueur par alliance fredonne / tapeà le rythme du morceau.",
       "L'alliance adverse a 20 secondes pour deviner titre + artiste.",
-      "+2₽ pour le titre seul. +1₽ bonus pour l'artiste.",
+      "+2 pts pour le titre seul. +1 pt bonus pour l'artiste.",
       "Si personne ne trouve en 20s : l'alliance qui fredonnait peut voler le point.",
     ],
-    reward: "+3₽ par morceau trouvé (titre + artiste)",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "16 morceaux (12 légitimes / 4 pop)",
@@ -446,7 +449,7 @@ export const MG = [
       "Le deuxième joueur devine le concept mimé.",
       "Interdit : parler, souffler, écrire, montrer du doigt un objet réel.",
     ],
-    reward: "+4₽ par concept trouvé",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "words", title: "12 concepts à mimer (10 légitimes / 2 pop)",
@@ -466,10 +469,10 @@ export const MG = [
     rules: [
       "Utiliser une carte muette (monde ou continent, imprimée ou projetée).",
       "Le MJ pointe successivement des pays.",
-      "Première alliance à nommer correctement = +2₽.",
+      "Première alliance à nommer correctement = +2 pts.",
       "Mauvaise réponse = silencieux, pas de pénalité.",
     ],
-    reward: "+2₽ par bonne réponse",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: "📦 Carte muette du monde imprimée (ou projetée)",
     content: {
       type: "words", title: "15 pays à pointer (100% géographie)",
@@ -488,11 +491,11 @@ export const MG = [
     rules: [
       "Chaque alliance reçoit le même mot secret (le MJ le montre en secret).",
       "Un joueur donne UN seul mot comme indice à son partenaire.",
-      "Si le partenaire trouve : +3₽.",
-      "Si raté : l'alliance adverse peut tenter avec SON propre indice. Réussite = vol +2₽.",
+      "Si le partenaire trouve : +3 pts.",
+      "Si raté : l'alliance adverse peut tenter avec SON propre indice. Réussite = vol +2 pts.",
       "Mots de la même famille interdits.",
     ],
-    reward: "+3₽ trouvé · Vol réussi : +2₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "words", title: "20 mots secrets (15 légitimes / 5 pop)",
@@ -508,14 +511,14 @@ export const MG = [
   {
     id: 17, emoji: "⏳", name: "Timeline",
     format: "teams", duration: "~5 min",
-    desc: "5 événements à classer dans l'ordre chronologique. 60 secondes de concertation en équipe. Parfait = +6₽, sinon +1₽ par bonne position.",
+    desc: "5 événements à classer dans l'ordre chronologique. 60 secondes de concertation en équipe. Parfait = +6 pts, sinon +1 pt par bonne position.",
     rules: [
       "Le MJ annonce les 5 événements dans le désordre.",
       "60 secondes de concertation interne.",
       "Chaque équipe écrit son classement de 1 (le plus ancien) à 5 (le plus récent).",
-      "Parfait (ordre exact) : +6₽. Sinon : +1₽ par événement bien positionné.",
+      "Parfait (ordre exact) : +6 pts. Sinon : +1 pt par événement bien positionné.",
     ],
-    reward: "Parfait : +6₽ · +1₽ par bonne position",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "series", title: "4 séries de 5 événements",
@@ -524,73 +527,6 @@ export const MG = [
         { title: "Série B — Sciences", cat: "SCIENCE", items: ["Copernic et l'héliocentrisme (1543)", "Jenner invente le vaccin (1796)", "Darwin publie De l'origine des espèces (1859)", "Fleming découvre la pénicilline (1928)", "Première greffe du cœur (1967)"] },
         { title: "Série C — Histoire politique et sociale", cat: "HIST", items: ["Déclaration des droits de l'Homme (1789)", "Abolition de l'esclavage en France (1848)", "Suffrage universel féminin en France (1944)", "Indépendance de l'Algérie (1962)", "Chute du mur de Berlin (1989)"] },
         { title: "Série D — Technologie et culture pop", cat: "POP", items: ["Lancement de Facebook (2004)", "Création de YouTube (2005)", "Sortie du premier iPhone (2007)", "Lancement de Fortnite (2017)", "TikTok devient la 1ère app mondiale (2020)"] },
-      ],
-    },
-  },
-
-  {
-    id: 18, emoji: "🏓", name: "Quiz Ping-Pong",
-    format: "teams", duration: "~7 min",
-    desc: "Deux alliances s'affrontent. Bonne réponse = la 'balle' passe chez l'adversaire qui doit répondre. Mauvaise réponse = l'adversaire marque. Premier à 5 points.",
-    rules: [
-      "Deux alliances s'affrontent en duo.",
-      "Le MJ pose une question à l'alliance A.",
-      "Bonne réponse → balle chez B, qui répond à une nouvelle question.",
-      "Mauvaise réponse → l'autre alliance marque 1 point et reçoit la balle.",
-      "Premier à 5 points gagne. Les deux autres alliances observent et notent.",
-    ],
-    reward: "Gagnant : +5₽ · Perdant : +1₽ · Observateurs qui trouvent une erreur : +1₽",
-    material: null,
-    content: {
-      type: "questions", title: "16 questions (12 légitimes / 4 pop)",
-      items: [
-        { q: "Quel philosophe a écrit « Le Prince » ?", r: "Machiavel", cat: "PHILO" },
-        { q: "Quel organe produit l'insuline ?", r: "Le pancréas", cat: "SCIENCE" },
-        { q: "Quel fleuve traverse l'Égypte du sud au nord ?", r: "Le Nil", cat: "GÉO" },
-        { q: "Qui a peint « Le Radeau de la Méduse » ?", r: "Théodore Géricault", cat: "ART" },
-        { q: "Dans quelle ville se trouve le Colisée romain ?", r: "Rome", cat: "HIST" },
-        { q: "Quelle est la formule chimique de l'eau ?", r: "H₂O", cat: "SCIENCE" },
-        { q: "Qui a écrit « Les Misérables » ?", r: "Victor Hugo", cat: "LIT" },
-        { q: "Quel savant est à l'origine du concept d'algèbre ?", r: "Al-Khwarizmi", cat: "SCIENCE" },
-        { q: "Quel héros mythologique était invulnérable sauf au talon ?", r: "Achille", cat: "MYTH" },
-        { q: "Quel est le plus petit pays du monde ?", r: "Le Vatican", cat: "GÉO" },
-        { q: "Quel est le symbole chimique de l'or ?", r: "Au", cat: "SCIENCE" },
-        { q: "Quelle est la devise de la République française ?", r: "Liberté, Égalité, Fraternité", cat: "POL" },
-        { q: "Quel Suédois a créé Minecraft ?", r: "Notch (Markus Persson)", cat: "TECH" },
-        { q: "Combien de joueurs dans une équipe de tennis (simple) ?", r: "1 joueur par côté", cat: "SPORT" },
-        { q: "Dans quel pays est né Tintin ?", r: "Belgique (personnage belge)", cat: "POP" },
-        { q: "Quelle est la spécialité culinaire japonaise à base de riz vinaigré ?", r: "Les sushis", cat: "FOOD" },
-      ],
-    },
-  },
-
-  {
-    id: 19, emoji: "💬", name: "Débat Express",
-    format: "teams", duration: "~7 min",
-    desc: "Un sujet de débat est annoncé. Chaque alliance défend un côté pendant 90 secondes. Le MJ et les observateurs votent pour l'alliance la plus convaincante.",
-    rules: [
-      "Le MJ tire un sujet et désigne quel côté chaque alliance défend.",
-      "90 secondes de préparation silencieuse.",
-      "Alliance A argumente 90s. Alliance B répond 90s.",
-      "Vote : observateurs + MJ désignent l'alliance la plus convaincante.",
-    ],
-    reward: "Gagnant : +4₽",
-    material: null,
-    content: {
-      type: "debate", title: "12 sujets (11 légitimes / 1 pop)",
-      items: [
-        { topic: "La colonisation européenne a-t-elle eu des aspects positifs pour les colonisés ?", cat: "HIST" },
-        { topic: "La démocratie est-elle le meilleur système politique ?", cat: "POL" },
-        { topic: "Les mathématiques sont-elles une invention humaine ou une découverte ?", cat: "PHILO" },
-        { topic: "L'art moderne mérite-t-il d'être dans les musées ?", cat: "ART" },
-        { topic: "Les œuvres d'art volées doivent-elles être restituées à leur pays d'origine ?", cat: "POL" },
-        { topic: "L'homme est-il fondamentalement bon (Rousseau) ou mauvais (Hobbes) ?", cat: "PHILO" },
-        { topic: "L'exploration spatiale en vaut-elle le coût financier et humain ?", cat: "SCIENCE" },
-        { topic: "Les frontières ouvertes seraient-elles bénéfiques pour l'humanité ?", cat: "POL" },
-        { topic: "Le progrès scientifique rend-il nécessairement l'humanité plus heureuse ?", cat: "PHILO" },
-        { topic: "Les réseaux sociaux renforcent-ils la démocratie ?", cat: "TECH" },
-        { topic: "La peine de mort peut-elle être justifiée dans certains cas ?", cat: "DROIT" },
-        { topic: "Les jeux vidéo sont-ils une forme d'art au même titre que le cinéma ?", cat: "POP" },
       ],
     },
   },
@@ -608,9 +544,9 @@ export const MG = [
       "Elle énonce ses 3 faits calmement.",
       "Les 3 autres équipes débattent entre elles (1 min).",
       "Vote simultané : quelle affirmation est fausse ?",
-      "Si le faux n'est pas trouvé → solo +7₽. Si trouvé → chaque équipe qui a voté juste +3₽.",
+      "Si le faux n'est pas trouvé → solo +7 pts. Si trouvé → chaque équipe qui a voté juste +3 pts.",
     ],
-    reward: "Non démasqué : +7₽ · Démasqué : +3₽ à chaque équipe qui a trouvé",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "statements", title: "6 séries prêtes (2 vrais + 1 faux)",
@@ -639,9 +575,9 @@ export const MG = [
       "L'équipe solo s'installe face aux 3 autres.",
       "Chaque autre équipe prépare 2 questions (toutes catégories).",
       "Minuteur 90 secondes. Les équipes posent leurs questions dans l'ordre.",
-      "Solo : +2₽ par bonne réponse. Adverse : +1₽ par question ratée.",
+      "Solo : +2 pts par bonne réponse. Chaque adverse : +1 pt par question ratée.",
     ],
-    reward: "Solo : +2₽/bonne réponse · Chaque adverse : +1₽/question ratée",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "themes", title: "Catégories suggérées pour les questions",
@@ -666,9 +602,9 @@ export const MG = [
       "1 minute de préparation (peut bluffer librement).",
       "L'équipe solo parle 60 secondes sur le sujet.",
       "Les 3 autres discutent 30s puis votent : expert ou imposteur ?",
-      "Si jugé crédible (2+ votes expert) : +7₽. Si démasqué : +2₽ à chaque équipe adverse.",
+      "Si jugé crédible (2+ votes expert) : +7 pts. Si démasqué : +2 pts à chaque équipe adverse.",
     ],
-    reward: "Crédible (2+ votes expert) : +7₽ · Démasqué : +2₽ à chaque adverse",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "themes", title: "12 sujets (11 légitimes / 1 pop)",
@@ -697,9 +633,9 @@ export const MG = [
       "L'équipe solo reçoit une série de 3 statistiques et identifie laquelle est fausse (ou invente une variante).",
       "Elle les énonce à voix haute avec assurance.",
       "Les 3 équipes adverses débattent 1 minute puis votent.",
-      "Si le faux n'est pas trouvé → solo +6₽. Si trouvé → +3₽ à chaque équipe gagnante.",
+      "Si le faux n'est pas trouvé → solo +6 pts. Si trouvé → +3 pts à chaque équipe gagnante.",
     ],
-    reward: "Bluff réussi : +6₽ · Trouvé : +3₽ à chaque équipe qui a voté juste",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "statements", title: "4 séries prêtes (2 vraies + 1 fausse par série)",
@@ -729,9 +665,9 @@ export const MG = [
       "L'équipe solo a 1 minute pour inventer une définition plausible.",
       "Le MJ lit les deux définitions (vraie + fausse) dans un ordre aléatoire.",
       "Les 3 équipes votent : laquelle est la vraie ?",
-      "Si 2 équipes ou plus se trompent : solo +6₽. Sinon : +2₽ à chaque équipe qui a trouvé.",
+      "Si 2 équipes ou plus se trompent : solo +6 pts. Sinon : +2 pts à chaque équipe qui a trouvé.",
     ],
-    reward: "Trompé la majorité : +6₽ · Trouvé : +2₽ à chaque équipe correcte",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "definitions", title: "12 mots rares (100% légitimes)",
@@ -760,9 +696,9 @@ export const MG = [
       "Le MJ lit les questions rapidement, l'une après l'autre.",
       "L'équipe solo répond immédiatement.",
       "30 secondes au total.",
-      "Solo : +1₽ par bonne réponse. Les adversaires : +1₽ par question ratée.",
+      "Solo : +1 pt par bonne réponse. Les adversaires : +1 pt par question ratée.",
     ],
-    reward: "Solo : +1₽/bonne réponse · Adversaires : +1₽/ratée",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "20 questions rapides (15 légitimes / 5 pop)",
@@ -800,9 +736,9 @@ export const MG = [
       "L'équipe solo dispose de 30s pour préparer ses arguments.",
       "Elle défend l'affirmation pendant 60s.",
       "Chaque équipe adverse peut contra-argumenter pendant 20s.",
-      "Le MJ juge : défense convaincante → solo +5₽. Sinon +2₽ à la meilleure contradiction.",
+      "Le MJ juge : défense convaincante → solo +5 pts. Sinon +2 pts à la meilleure contradiction.",
     ],
-    reward: "Défense convaincante : +5₽ · Meilleure contradiction : +2₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "debate", title: "10 hot takes culturels",
@@ -835,7 +771,7 @@ export const MG = [
       "Le MJ pose la question ; buzzer = main levée. Bonne réponse → point.",
       "Mauvaise réponse → l'adversaire répond librement.",
     ],
-    reward: "Champion : +6₽ · Finaliste : +3₽ · Demi-finalistes : +1₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "12 questions (9 légitimes / 3 pop)",
@@ -867,7 +803,7 @@ export const MG = [
       "Bonne réponse → marque 1 point. Mauvaise → l'adversaire marque.",
       "Premier à 5 points gagne.",
     ],
-    reward: "Champion : +5₽ · Finaliste : +2₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "10 questions (8 légitimes / 2 pop)",
@@ -898,7 +834,7 @@ export const MG = [
       "Sinon : remettre face cachée, tour adverse.",
       "Plus de paires au total = gagnant.",
     ],
-    reward: "+2₽ par paire · Champion (plus de paires) : +3₽ bonus",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: "📦 16 cartes imprimées ou écrites à la main",
     content: {
       type: "pairs", title: "8 paires (100% légitimes)",
@@ -926,7 +862,7 @@ export const MG = [
       "Bonne réponse → +1 point à l'équipe.",
       "L'équipe avec le plus de points gagne.",
     ],
-    reward: "1er : +5₽ · 2e : +3₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "12 questions relais (9 légitimes / 3 pop)",
@@ -958,7 +894,7 @@ export const MG = [
       "Première main levée avec bonne réponse = point.",
       "Mauvaise réponse = point à l'adversaire.",
     ],
-    reward: "Champion : +6₽ · Finaliste : +2₽",
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     material: null,
     content: {
       type: "questions", title: "6 questions par catégorie (exemples)",
@@ -977,55 +913,6 @@ export const MG = [
   // FORMAT : COOPÉRATIF  (2 jeux)
   // ═══════════════════════════════════════════
 
-  {
-    id: 32, emoji: "🧩", name: "Le Cadavre Exquis Culturel",
-    format: "coop", duration: "~5 min",
-    desc: "Chaque équipe écrit secrètement : un personnage historique, un lieu, une action, une époque. On assemble les 4 morceaux pour une combinaison absurde. Vote pour le plus drôle et le plus plausible.",
-    rules: [
-      "4 rôles : personnage historique, lieu historique, action historique (verbe + complément), époque précise.",
-      "Chaque équipe écrit son élément en SECRET.",
-      "Révélation et lecture de la combinaison complète.",
-      "Vote : le plus drôle → +4₽ à l'équipe gagnante. Le plus plausible → +2₽.",
-      "Toutes les équipes participantes → +1₽ (participation).",
-    ],
-    reward: "Plus drôle : +4₽ · Plus plausible : +2₽ · Participation : +1₽",
-    material: "📦 Feuilles coupées en 4 bandes",
-    content: {
-      type: "themes", title: "4 rôles à écrire",
-      items: [
-        { label: "Un penseur, savant, artiste ou chef d'État historique réel", cat: "HIST", emoji: "👤" },
-        { label: "Un monument, ville ou lieu historique réel", cat: "GÉO", emoji: "🏛️" },
-        { label: "Une action historique : verbe à l'infinitif + complément", cat: "HIST", emoji: "⚡" },
-        { label: "Une époque précise (siècle, décennie, date)", cat: "HIST", emoji: "⏳" },
-      ],
-    },
-  },
-
-  {
-    id: 33, emoji: "🔗", name: "Le Fil Rouge",
-    format: "coop", duration: "~6 min",
-    desc: "5 indices liés par un thème caché. Toutes les équipes collaborent et peuvent buzzer dès qu'elles pensent avoir trouvé le lien commun. Plus tôt = plus de points.",
-    rules: [
-      "Toutes les équipes jouent ensemble.",
-      "Le MJ lit les indices un par un, avec des pauses.",
-      "Une équipe peut buzzer à tout moment pour proposer le thème commun.",
-      "Bonne réponse au 1er indice → +5₽ pour TOUS (collaboration). 2e → +3₽. 3e → +2₽. 4e+ → +1₽.",
-      "Mauvaise réponse → 0₽ et on continue les indices.",
-    ],
-    reward: "Tous : +5₽ (1er indice) · +3₽ (2e) · +2₽ (3e) · +1₽ (4e+)",
-    material: null,
-    content: {
-      type: "series", title: "5 fils rouges (100% légitimes)",
-      items: [
-        { title: "Fil 1 — L'Angleterre", cat: "HIST", items: ["Montesquieu s'y est inspiré pour sa théorie de la séparation des pouvoirs.", "Elle a le plus vieux parlement encore fonctionnel du monde.", "La Magna Carta y fut signée en 1215.", "Elle a colonisé un empire sur lequel le soleil ne se couchait jamais.", "La Tamise la traverse du sud au nord."] },
-        { title: "Fil 2 — L'Azote", cat: "SCIENCE", items: ["Il représente 78 % de l'air que nous respirons.", "Lavoisier l'a nommé ainsi car il ne supporte pas la vie.", "Il est utilisé dans les engrais agricoles.", "Il est à l'état liquide à −196 °C.", "Sans lui, les protéines et l'ADN n'existeraient pas."] },
-        { title: "Fil 3 — Le Livre", cat: "HIST", items: ["Gutenberg l'a révolutionné en Europe au XVe siècle.", "Les Chinois l'imprimaient déjà au IXe siècle.", "Il a permis de diffuser les idées des Lumières.", "Il peut être en codex, rouleau ou tablette.", "Il est l'outil principal des écrivains, philosophes et historiens."] },
-        { title: "Fil 4 — La Démocratie", cat: "POL", items: ["Aristote la considérait comme une forme dégénérée de gouvernement.", "Elle est née à Athènes au Ve siècle av. J.-C.", "Montesquieu a théorisé sa séparation des pouvoirs.", "Son contraire est la tyrannie ou l'autocratie.", "Elle vient du grec demo (peuple) + kratos (pouvoir)."] },
-        { title: "Fil 5 — L'Eau", cat: "SCIENCE", items: ["Archimède en a découvert une propriété fondamentale dans son bain.", "Elle couvre 71 % de la surface de la Terre.", "Sa formule chimique est H₂O.", "Elle existe naturellement sous 3 états : liquide, solide et gazeux.", "On ne peut vivre que 3 jours sans elle."] },
-      ],
-    },
-  },
-
   // ═══════════════════════════════════════════
   // FORMAT : COOP  (1 jeu)
   // ═══════════════════════════════════════════
@@ -1043,40 +930,8 @@ export const MG = [
       "Comparez les temps entre les équipes — la plus rapide sans erreur gagne.",
     ],
     material: "Jeu The Mind (cartes 1–100) · Chronomètre",
-    reward: "Équipe la plus rapide sans erreur : +8₽. Si égalité ou aucun succès : +4₽ à chaque équipe.",
+    reward: "Classement par temps (+ rapide sans erreur = 🥇) → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
     content: null,
   },
 
-  // ═══════════════════════════════════════════
-  // FORMAT : COMEBACK  (1 jeu)
-  // ═══════════════════════════════════════════
-
-  {
-    id: 34, emoji: "🥊", name: "Le Duel de l'Espoir",
-    format: "comeback", duration: "~3 min",
-    desc: "Disponible à partir du tour 7. La DERNIÈRE équipe peut défier la PREMIÈRE sur une question Expert. Victoire = vol d'une étoile. Aucune pénalité en cas de défaite.",
-    rules: [
-      "Disponible uniquement dès le tour 7.",
-      "La dernière équipe (moins d'étoiles) défie la première (plus d'étoiles).",
-      "Une question Expert est tirée. Réponse simultanée sur papier.",
-      "Dernière répond juste + Première répond faux → DERNIÈRE VOLE 1 ÉTOILE.",
-      "Les deux répondent juste → Dernière +3₽.",
-      "Dernière répond faux → Première +3₽. Aucune autre pénalité.",
-    ],
-    reward: "⭐ Vol d'étoile possible · Sinon : +3₽ au vainqueur",
-    material: null,
-    content: {
-      type: "questions", title: "8 questions Expert (100% légitimes)",
-      items: [
-        { q: "La Grande Muraille de Chine est-elle une des Sept Merveilles du monde antique ?", r: "Non — les Sept Merveilles antiques sont : Pyramides, Jardins de Babylone, Temple d'Artémis, Mausolée d'Halicarnasse, Colosse de Rhodes, Phare d'Alexandrie, Statue de Zeus.", cat: "HIST" },
-        { q: "Quelles sont les 3 lois du mouvement de Newton ?", r: "Inertie · Action-réaction · F = ma (force = masse × accélération)", cat: "SCIENCE" },
-        { q: "Quel était le vrai nom de Voltaire ?", r: "François-Marie Arouet", cat: "LIT" },
-        { q: "Quel est le plus long fleuve d'Europe ?", r: "La Volga (3 692 km, en Russie)", cat: "GÉO" },
-        { q: "En quelle année Nelson Mandela a-t-il été libéré de prison ?", r: "1990", cat: "HIST" },
-        { q: "En quelle année Magellan a-t-il terminé le premier tour du monde (son expédition) ?", r: "1522 (après la mort de Magellan en 1521, l'expédition s'est achevée sous Elcano)", cat: "HIST" },
-        { q: "Qu'est-ce que l'allégorie de la caverne de Platon ?", r: "Des prisonniers enchaînés ne voient que des ombres et croient que c'est la réalité — métaphore sur l'ignorance et la philosophie.", cat: "PHILO" },
-        { q: "Quelle civilisation a inventé le concept du zéro et les chiffres dits arabes ?", r: "La civilisation indienne (transmis en Europe via les savants arabes)", cat: "SCIENCE" },
-      ],
-    },
-  },
 ];
