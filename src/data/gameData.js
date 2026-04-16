@@ -2,16 +2,13 @@
 // CASE TYPES
 // ═══════════════════════════════════════════════════════
 export const CT = {
-  coins:       { l: "?₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires (±)" },
-  coins_plus:  { l: "+₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires +1/+2/+3/+6" },
-  coins_minus: { l: "−₽", c: "#C0392B", e: "💀", d: "Pièces aléatoires −1/−2/−3/−10" },
-  question:    { l: "?",  c: "#2980B9", e: "❓", d: "Question" },
-  duel:        { l: "⚔",  c: "#D35400", e: "⚔️", d: "Duel" },
-  chaos:       { l: "✦",  c: "#8E44AD", e: "🌀", d: "Chaos" },
-  shop:        { l: "$",  c: "#27AE60", e: "🛒", d: "Boutique" },
-  bridge:      { l: "→",  c: "#8B6914", e: "🌉", d: "Pont (2₽)" },
-  teleport:    { l: "◎",  c: "#00BCD4", e: "⚡", d: "Téléporteur (5₽)" },
-  shield:      { l: "🛡", c: "#607D8B", e: "🛡️", d: "Bouclier" },
+  coins:    { l: "?₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires (±)" },
+  question: { l: "?",  c: "#2980B9", e: "❓", d: "Question" },
+  duel:     { l: "⚔",  c: "#D35400", e: "⚔️", d: "Duel" },
+  chaos:    { l: "✦",  c: "#8E44AD", e: "🌀", d: "Chaos" },
+  shop:     { l: "$",  c: "#27AE60", e: "🛒", d: "Boutique" },
+  bridge:   { l: "→",  c: "#8B6914", e: "🌉", d: "Pont (2₽)" },
+  teleport: { l: "◎",  c: "#00BCD4", e: "⚡", d: "Téléporteur (5₽)" },
 };
 
 // ═══════════════════════════════════════════════════════
@@ -140,7 +137,7 @@ export const CC = [
     apply: "steal_star",
   },
   {
-    e: "🃏", n: "Retournement", count: 1,
+    e: "🃏", n: "Retournement", count: 4,
     d: "Retournez IMMÉDIATEMENT le plateau (Recto ↔ Verso), sans attendre le prochain résultat de dé de mini-jeu.",
     tip: "N'oubliez pas d'inverser aussi le sens de tous les raccourcis !",
     apply: "flip_board",

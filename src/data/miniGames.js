@@ -934,4 +934,87 @@ export const MG = [
     content: null,
   },
 
+  // ═══════════════════════════════════════════
+  // FORMAT : TOUS CONTRE TOUS — Je suis...
+  // ═══════════════════════════════════════════
+
+  {
+    id: 36, emoji: "🏷️", name: "Je suis… — Post-it",
+    format: "tous", duration: "~8 min",
+    desc: "Chaque équipe reçoit le nom d'une personnalité célèbre qu'elle ne voit pas. Les autres équipes donnent des indices, et l'équipe doit deviner son identité en posant des questions OUI/NON. Moins de questions = plus de points.",
+    rules: [
+      "Le MJ écrit (ou annonce discrètement) un nom de personnalité à chaque équipe — sans que les autres voient.",
+      "À son tour, une équipe pose des questions fermées (réponse OUI ou NON) aux autres équipes combinées.",
+      "Bonne réponse en ≤5 questions : 5 pts. 6-10 questions : 3 pts. 11-20 : 1 pt. Pas trouvé : 0 pt.",
+      "Les 4 équipes jouent chacune leur tour.",
+      "Les autres équipes doivent répondre honnêtement — pas d'indices supplémentaires.",
+    ],
+    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
+    material: "Post-its ou papier + stylo (facultatif)",
+    content: {
+      type: "clues", title: "20 personnalités pour les cartes",
+      items: [
+        { answer: "Elon Musk", clues: ["Je suis un entrepreneur milliardaire contemporain.", "Je vends des voitures électriques.", "J'ai racheté un grand réseau social.", "J'envoie des fusées dans l'espace.", "Mon entreprise s'appelle SpaceX."] },
+        { answer: "Beyoncé", clues: ["Je suis une artiste féminine américaine.", "J'ai fait partie d'un groupe avant ma carrière solo.", "J'ai sorti l'album Lemonade en 2016.", "Mon mari est aussi une star de la musique.", "Je suis reine de la scène mondiale depuis les années 2000."] },
+        { answer: "Barack Obama", clues: ["Je suis une personnalité politique.", "J'ai dirigé le pays le plus puissant du monde.", "Je suis le premier de ma caractéristique à ce poste.", "J'ai reçu le Prix Nobel de la Paix en 2009.", "Mon mandat a duré de 2009 à 2017."] },
+        { answer: "Cristiano Ronaldo", clues: ["Je suis un sportif professionnel.", "Je suis né sur une île atlantique.", "Je porte souvent le numéro 7.", "J'ai joué pour Manchester United, le Real Madrid et la Juventus.", "Je suis l'un des deux meilleurs joueurs de mon sport au monde."] },
+        { answer: "Albert Einstein", clues: ["Je suis un scientifique.", "Je suis né en Allemagne.", "J'ai fui l'Europe pendant la montée du nazisme.", "Ma formule la plus connue a 5 symboles.", "J'ai reçu le Prix Nobel de Physique en 1921."] },
+        { answer: "Taylor Swift", clues: ["Je suis une artiste musicale américaine.", "J'ai commencé dans la musique country.", "Mes albums portent souvent des titres courts : 1989, Folklore, Midnights.", "Mes fans s'appellent les Swifties.", "En 2023, ma tournée a été la plus rentable de l'histoire."] },
+        { answer: "Zlatan Ibrahimovic", clues: ["Je suis un sportif professionnel.", "Je suis né en Suède d'origine balkanique.", "Je me parle souvent à la troisième personne.", "J'ai joué dans les plus grands clubs européens.", "Je suis célèbre pour mes buts acrobatiques."] },
+        { answer: "Malala Yousafzai", clues: ["Je suis une militante.", "Je viens du Pakistan.", "J'ai survécu à une tentative d'assassinat.", "Je me bats pour le droit à l'éducation des filles.", "J'ai reçu le Prix Nobel de la Paix à 17 ans."] },
+        { answer: "Steve Jobs", clues: ["Je suis un entrepreneur technologique américain.", "J'ai cofondé une entreprise avec un fruit dans le logo.", "J'ai revolutionné la musique, le téléphone et l'ordinateur personnel.", "Mes présentations en col roulé noir sont légendaires.", "Je suis décédé en 2011."] },
+        { answer: "Simone de Beauvoir", clues: ["Je suis une intellectuelle française.", "J'ai vécu au XXe siècle.", "Je suis connue pour une phrase sur le fait de devenir une femme.", "J'étais la compagne d'un philosophe existentialiste célèbre.", "Mon œuvre principale s'appelle Le Deuxième Sexe."] },
+        { answer: "Michael Jackson", clues: ["Je suis un artiste américain.", "Je faisais de la musique et de la danse.", "Mon geste signature est le moonwalk.", "Mon album Thriller est l'un des plus vendus de l'histoire.", "J'ai commencé enfant avec des frères."] },
+        { answer: "Frida Kahlo", clues: ["Je suis une artiste.", "Je suis mexicaine.", "Je me suis blessée gravement dans un accident de bus.", "Je suis connue pour mes autoportraits aux sourcils épais.", "Mon mari était aussi un peintre célèbre."] },
+        { answer: "Lionel Messi", clues: ["Je suis un sportif argentin.", "J'ai grandi en Espagne.", "J'ai longtemps joué pour le FC Barcelone.", "Je suis l'un des deux meilleurs joueurs de mon sport.", "J'ai remporté la Coupe du monde 2022."] },
+        { answer: "Tupac Shakur", clues: ["Je suis un artiste américain décédé jeune.", "Je suis connu dans la musique.", "Je suis né en 1971 à New York.", "Je suis considéré comme une légende de ma discipline.", "Mon nom signifie 'guerrier brillant' en quechua."] },
+        { answer: "Marie Curie", clues: ["Je suis une scientifique.", "Je suis née en Pologne.", "J'ai découvert deux éléments chimiques.", "J'ai reçu deux Prix Nobel.", "Mes recherches m'ont exposée à des radiations."] },
+        { answer: "Keanu Reeves", clues: ["Je suis un acteur.", "Je suis né à Beyrouth mais ai grandi au Canada.", "J'ai joué Neo dans une trilogie de science-fiction.", "Je joue un tueur à gages dans une autre saga.", "Je suis connu pour être très humble malgré ma célébrité."] },
+        { answer: "Nelson Mandela", clues: ["Je suis un leader politique africain.", "J'ai passé 27 ans en prison pour mes convictions.", "Je me suis battu contre l'apartheid.", "Je suis devenu le premier président démocratiquement élu de mon pays.", "J'ai reçu le Prix Nobel de la Paix en 1993."] },
+        { answer: "Rihanna", clues: ["Je suis une artiste barbadienne.", "Je suis aussi cheffe d'une marque de cosmétiques.", "Mon vrai prénom est Robyn.", "J'ai performé au Super Bowl en 2023.", "Mes albums incluent Umbrella et We Found Love."] },
+        { answer: "Alan Turing", clues: ["Je suis un mathématicien britannique.", "J'ai travaillé pendant la Seconde Guerre mondiale.", "J'ai contribué à casser un code de cryptage nazi.", "Je suis considéré comme le père de l'informatique.", "Ma vie a été racontée dans le film The Imitation Game."] },
+        { answer: "Oprah Winfrey", clues: ["Je suis une personnalité médiatique américaine.", "J'ai animé l'un des talk-shows les plus regardés de l'histoire.", "Je viens d'un milieu très modeste.", "J'ai lancé mon propre réseau télévisé.", "Mon prénom est devenu un titre de célébrité à lui seul."] },
+      ],
+    },
+  },
+
+  // ═══════════════════════════════════════════
+  // FORMAT : TEAMS — Mimes Express
+  // ═══════════════════════════════════════════
+
+  {
+    id: 37, emoji: "🎭", name: "Mimes Express",
+    format: "teams", duration: "~7 min",
+    desc: "Un joueur mime, son alliance devine. 2 minutes par équipe, le plus de mots trouvés gagne. Aucun son, aucune lettre tracée, aucun pointage d'objet réel.",
+    rules: [
+      "L'équipe désigne son mimeur pour le premier round.",
+      "Le MJ montre la liste — le mimeur pioche les mots dans l'ordre.",
+      "Le mimeur a 2 minutes pour faire deviner le maximum de mots.",
+      "Interdit : parler, souffler, fredonnner, écrire, montrer un objet réel, faire signe de longueur.",
+      "Chaque mot trouvé = +1 pt. Mot passé = 0 pt (max 3 passes).",
+      "Toutes les équipes jouent. L'équipe avec le plus de points gagne.",
+    ],
+    reward: "Classement par mots trouvés → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
+    material: "Chronomètre · La liste de mots ci-dessous",
+    content: {
+      type: "words", title: "40 mots à mimer — culture générale & pop",
+      items: [
+        // Scènes & actions
+        "Nager", "Ski", "Éruption volcanique", "Tremblement de terre", "Astronaute en apesanteur",
+        // Personnages historiques (à mimer par action clé)
+        "Napoléon se couronnant", "Cléopâtre", "Chevalier en duel", "Pharaon sur un trône", "Viking",
+        // Pop culture — films & séries
+        "Harry Potter (baguette magique)", "Terminator", "Matrix (esquiver des balles)", "Star Wars (duel au sabre laser)", "Spiderman (lancer de toile)",
+        // Animaux
+        "Singe qui se gratte", "Pingouin qui marche", "Chameau dans le désert", "Pieuvre",  "Paresseux",
+        // Objets & concepts
+        "Microscope", "Boussole", "Imprimante", "Parachute", "Sous-marin",
+        // Émotions & états
+        "Ennui profond", "Terreur", "Fierté", "Jalousie", "Confusion totale",
+        // Pop icons (à mimer par un geste signature)
+        "Michael Jackson (moonwalk)", "Rocky Balboa (entraînement)", "James Bond (viser avec un pistolet)", "Superman (s'envoler)", "Gollum (caresser l'Anneau)",
+      ],
+    },
+  },
+
 ];
