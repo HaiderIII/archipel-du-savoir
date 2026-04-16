@@ -3107,7 +3107,6 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   const [showLastTour, setShowLastTour] = useState(false);
   const [itemPickModal, setItemPickModal] = useState(null); // { teamIdx, instanceIdx, itemIdx }
   const [hoveredCaseId, setHoveredCaseId] = useState(null);
-  const [amnesiaActive, setAmnesiaActive] = useState(false); // Carte Amnésie — prochaine question sans gain
 
   // Effective bridge cost (raised by Péage chaos card)
   const effectiveBridgeCost = bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
@@ -3810,6 +3809,7 @@ export default function App() {
   const [usedMG,     setUsedMG]     = useState([]);
   const [qMJView,    setQMJView]    = useState(false);
   const [qMJFilter,  setQMJFilter]  = useState({ level: "all", cat: "all", used: "all" });
+  const [amnesiaActive, setAmnesiaActive] = useState(false); // Carte Amnésie — prochaine question sans gain
   const duelNextTurnRef = useRef(null);
 
   // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal)
