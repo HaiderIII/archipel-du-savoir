@@ -10,13 +10,13 @@ const i1 = {
   name: "ÎLE MYSTÈRE", icon: "🏝", cx: 200, cy: 148, rx: 158, ry: 128, rot: -5, color: "#1B3A22",
   cases: [
     { id: "1a", x: 100, y: 88,  r: "question",   v: "duel"      },
-    { id: "1b", x: 160, y: 56,  r: "coins_minus", v: "bonus"     },
-    { id: "1c", x: 228, y: 46,  r: "question",   v: "steal"     },
+    { id: "1b", x: 160, y: 56,  r: "coins",       v: "chaos"     },
+    { id: "1c", x: 228, y: 46,  r: "question",   v: "duel"      },
     { id: "1d", x: 298, y: 66,  r: "duel",        v: "question"  },
     { id: "1e", x: 328, y: 128, r: "question",   v: "chaos"     },
-    { id: "1f", x: 292, y: 195, r: "chaos",       v: "coins_plus"},
-    { id: "1g", x: 220, y: 222, r: "coins_plus",  v: "coins_minus"},
-    { id: "1h", x: 142, y: 208, r: "question",   v: "double"    },
+    { id: "1f", x: 292, y: 195, r: "chaos",       v: "coins"     },
+    { id: "1g", x: 220, y: 222, r: "coins",       v: "coins"     },
+    { id: "1h", x: 142, y: 208, r: "question",   v: "question"  },
     { id: "1i", x: 85,  y: 152, r: "teleport",   v: "teleport"  },
     { id: "1x", x: 205, y: 118, r: "question",   v: "shield"    },
     { id: "1y", x: 255, y: 148, r: "shop",        v: "chaos"     },
@@ -31,17 +31,17 @@ const i1 = {
 const i2 = {
   name: "ÎLE VOLCANIQUE", icon: "🌋", cx: 568, cy: 172, rx: 148, ry: 122, rot: 4, color: "#3A1B1B",
   cases: [
-    { id: "2a", x: 568, y: 70,  r: "question",   v: "steal"     },
+    { id: "2a", x: 568, y: 70,  r: "question",   v: "duel"      },
     { id: "2b", x: 646, y: 106, r: "duel",        v: "question"  },
-    { id: "2c", x: 688, y: 172, r: "question",   v: "coins_minus"},
-    { id: "2d", x: 646, y: 240, r: "coins_minus", v: "bonus"     },
+    { id: "2c", x: 688, y: 172, r: "question",   v: "coins"     },
+    { id: "2d", x: 646, y: 240, r: "coins",       v: "chaos"     },
     { id: "2e", x: 568, y: 270, r: "question",   v: "duel"      },
     { id: "2f", x: 490, y: 240, r: "chaos",       v: "shield"    },
-    { id: "2g", x: 452, y: 172, r: "question",   v: "double"    },
+    { id: "2g", x: 452, y: 172, r: "question",   v: "coins"     },
     { id: "2h", x: 490, y: 106, r: "teleport",   v: "teleport"  },
     { id: "2x", x: 530, y: 145, r: "shop",        v: "chaos"     },
     { id: "2y", x: 608, y: 145, r: "question",   v: "chaos"     },
-    { id: "2z", x: 608, y: 205, r: "coins_plus",  v: "coins_minus"},
+    { id: "2z", x: 608, y: 205, r: "coins",       v: "coins"     },
     { id: "2w", x: 530, y: 205, r: "chaos",       v: "question"  },
   ],
   mp:  ["2a","2b","2c","2d","2e","2f","2g","2h"],
@@ -56,16 +56,16 @@ const i3 = {
   name: "ÎLE CORAIL", icon: "🐚", cx: 348, cy: 438, rx: 162, ry: 110, rot: -2, color: "#1B2A3A",
   cases: [
     { id: "3a", x: 256, y: 373, r: "question",    v: "question"  },
-    { id: "3b", x: 348, y: 346, r: "question",   v: "steal"     },
+    { id: "3b", x: 348, y: 346, r: "question",   v: "duel"      },
     { id: "3c", x: 440, y: 373, r: "question",   v: "shield"    },
-    { id: "3d", x: 480, y: 438, r: "chaos",       v: "coins_plus"},
-    { id: "3e", x: 440, y: 500, r: "coins_minus", v: "double"    },
+    { id: "3d", x: 480, y: 438, r: "chaos",       v: "coins"     },
+    { id: "3e", x: 440, y: 500, r: "coins",       v: "question"  },
     { id: "3f", x: 348, y: 520, r: "teleport",   v: "teleport"  },
     { id: "3g", x: 256, y: 500, r: "question",   v: "question"  },
     { id: "3h", x: 216, y: 438, r: "shop",        v: "chaos"     },
-    { id: "3x", x: 310, y: 408, r: "question",   v: "coins_minus"},
-    { id: "3y", x: 392, y: 408, r: "coins_plus",  v: "duel"      },
-    { id: "3z", x: 348, y: 465, r: "coins_plus",  v: "bonus"     },
+    { id: "3x", x: 310, y: 408, r: "question",   v: "coins"     },
+    { id: "3y", x: 392, y: 408, r: "coins",       v: "duel"      },
+    { id: "3z", x: 348, y: 465, r: "coins",       v: "coins"     },
   ],
   mp:  ["3a","3b","3c","3d","3e","3f","3g","3h"],
   sc:  [
@@ -935,88 +935,86 @@ function renderMJWindow(w, q, level) {
 function DuelModal({ teams, turn, setTeams, onClose }) {
   const [challenger, setChallenger] = useState(null);
   const [duelLevel, setDuelLevel] = useState("college");
-  const [phase, setPhase] = useState("setup"); // setup | duel | result
-  // clocks[0] = défiant (turn), clocks[1] = challenger
-  const [clocks, setClocks] = useState([55, 60]);
-  // hand: 0 = défiant a la main, 1 = challenger a la main (challenger commence)
+  // phases: setup → ready (questions drawn, timer not started) → duel (timer running) → result
+  const [phase, setPhase] = useState("setup");
+  // clocks in centiseconds: 5500 = 55.00s, 6000 = 60.00s
+  const [clocks, setClocks] = useState([5500, 6000]);
+  // hand: 0 = défiant, 1 = challenger (challenger starts)
   const [hand, setHand] = useState(1);
   const [qPool, setQPool] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [activeQ, setActiveQ] = useState(null);
-  const [prevQ, setPrevQ]     = useState(null); // answer shown below current question
+  const [prevQ, setPrevQ]     = useState(null);
   const mjWin = useRef(null);
+  const handRef = useRef(1);
+  useEffect(() => { handRef.current = hand; }, [hand]);
 
-  // Tick active clock
+  // Centisecond ticker — only runs in "duel" phase
   useEffect(() => {
     if (phase !== "duel") return;
-    if (clocks[hand] <= 0) return;
-    const timer = setTimeout(() => {
-      setClocks(prev => { const nc = [...prev]; nc[hand] = nc[hand] - 1; return nc; });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [phase, clocks, hand]);
+    const timer = setInterval(() => {
+      setClocks(prev => {
+        const nc = [...prev];
+        const h = handRef.current;
+        if (nc[h] > 0) nc[h] -= 1;
+        return nc;
+      });
+    }, 10);
+    return () => clearInterval(timer);
+  }, [phase]);
 
-  // End of game when a clock hits 0
+  // End when a clock hits 0
   useEffect(() => {
-    if (phase === "duel" && (clocks[0] <= 0 || clocks[1] <= 0)) {
-      setPhase("result");
-    }
+    if (phase === "duel" && (clocks[0] <= 0 || clocks[1] <= 0)) setPhase("result");
   }, [phase, clocks]);
 
-  const startDuel = () => {
+  const prepDuel = () => {
     if (challenger === null) return;
     const allPool = window._Q?.[duelLevel] ?? [];
     const usedIdxs = window._usedQ?.[duelLevel] ?? [];
-    const available = allPool
-      .map((q, i) => ({ ...q, __idx: i }))
-      .filter(q => !usedIdxs.includes(q.__idx));
+    const available = allPool.map((q, i) => ({ ...q, __idx: i })).filter(q => !usedIdxs.includes(q.__idx));
     const source = available.length ? available : allPool.map((q, i) => ({ ...q, __idx: i }));
     const pool = [...source];
     for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+      const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    // Mark all drawn questions as used
     pool.forEach(q => window._markUsed?.(duelLevel, q.__idx));
-    setQPool(pool);
-    setQIdx(0);
-    setActiveQ(pool[0] || null);
-    setClocks([55, 60]);
-    setHand(1); // challenger starts
-    setPhase("duel");
+    setQPool(pool); setQIdx(0); setActiveQ(pool[0] || null);
+    setClocks([5500, 6000]); setHand(1); handRef.current = 1;
+    setPhase("ready"); // show questions but don't start timer yet
   };
 
+  const startTimer = () => setPhase("duel");
+
   const nextQ = (switchHand) => {
-    setPrevQ(activeQ); // remember answer of outgoing question
+    setPrevQ(activeQ);
     const ni = qIdx + 1;
     const nq = qPool[ni % Math.max(1, qPool.length)] || null;
-    setQIdx(ni);
-    setActiveQ(nq);
+    setQIdx(ni); setActiveQ(nq);
     if (switchHand) setHand(h => 1 - h);
-    // Update MJ window with new question
     if (mjWin.current && !mjWin.current.closed) renderMJWindow(mjWin.current, nq, duelLevel);
   };
 
-  // Expose nextQ to MJ popup via window global (stays fresh on every render)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { window._duelAction = (sw) => nextQ(sw); });
 
   const openMJWindow = () => {
-    const w = window.open("", "_duelMJ",
-      "width=560,height=360,top=80,left=80,resizable=yes,scrollbars=no");
-    mjWin.current = w;
-    renderMJWindow(w, activeQ, duelLevel);
+    const w = window.open("", "_duelMJ", "width=560,height=360,top=80,left=80,resizable=yes,scrollbars=no");
+    mjWin.current = w; renderMJWindow(w, activeQ, duelLevel);
   };
-
-  // Sync MJ window whenever activeQ changes
   useEffect(() => {
     if (mjWin.current && !mjWin.current.closed) renderMJWindow(mjWin.current, activeQ, duelLevel);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeQ]);
 
+  const fmtClock = (cs) => {
+    const s = Math.floor(cs / 100);
+    const c = cs % 100;
+    return `${s < 10 ? "0" : ""}${s}.${c < 10 ? "0" : ""}${c}`;
+  };
+
   const applyAndClose = () => {
     let winnerIdx = null;
-    // Who still has time?
     if (clocks[0] > 0 && clocks[1] <= 0) winnerIdx = turn;
     else if (clocks[1] > 0 && clocks[0] <= 0) winnerIdx = challenger;
     else if (clocks[0] > clocks[1]) winnerIdx = turn;
@@ -1032,7 +1030,7 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
     onClose();
   };
 
-  const handTeamIdx = hand === 0 ? turn : challenger;
+  const handTeamIdx = hand === 0 ? turn : (challenger ?? turn);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 999,
@@ -1043,15 +1041,15 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ color: "#E74C3C", fontWeight: 800, fontSize: 22, letterSpacing: 1 }}>⚔️ DUEL</div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {phase === "duel" && (
+            {(phase === "ready" || phase === "duel") && (
               <button onClick={openMJWindow} style={{
                 background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.35)",
                 color: "#D4A017", padding: "5px 12px", borderRadius: 8, fontSize: 11,
                 fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}>📋 Vue MJ</button>
             )}
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)",
-              fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+            <button onClick={onClose} style={{ background: "none", border: "none",
+              color: "rgba(255,255,255,0.3)", fontSize: 20, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
           </div>
         </div>
 
@@ -1069,14 +1067,12 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                   color: challenger === i ? TC[i] : "rgba(255,255,255,0.55)",
                   padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 700,
                   cursor: "pointer", fontFamily: "inherit",
-                }}>
-                  {TE[i]} {t.name}
-                </button>
+                }}>{TE[i]} {t.name}</button>
               ))}
             </div>
-
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 700,
-              letterSpacing: 1, marginBottom: 8 }}>NIVEAU DES QUESTIONS</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>
+              NIVEAU DES QUESTIONS
+            </div>
             <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
               {Object.entries(LC).map(([k, c]) => (
                 <button key={k} onClick={() => setDuelLevel(k)} style={{
@@ -1085,82 +1081,83 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                   background: duelLevel === k ? `${c.color}22` : "rgba(255,255,255,0.04)",
                   border: `2px solid ${duelLevel === k ? c.color + "60" : "rgba(255,255,255,0.08)"}`,
                   color: duelLevel === k ? c.color : "rgba(255,255,255,0.45)",
-                }}>
-                  {c.emoji} {c.label}
-                </button>
+                }}>{c.emoji} {c.label}</button>
               ))}
             </div>
-
             <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 18,
               background: "rgba(231,76,60,0.06)", border: "1px solid rgba(231,76,60,0.15)",
               color: "rgba(255,255,255,0.45)", fontSize: 12, lineHeight: 1.6 }}>
-              ⏱ Le challenger a <strong style={{ color: "#E74C3C" }}>60s</strong>, le défiant a <strong style={{ color: "#E74C3C" }}>55s</strong>.
-              Le challenger commence. <strong>Bonne réponse = garde la main.</strong> Erreur = passe la main à l&apos;adversaire.
-              Le premier dont le chrono tombe à 0 perd.
+              ⏱ Challenger : <strong style={{ color: "#E74C3C" }}>60s</strong> · Défiant : <strong style={{ color: "#E74C3C" }}>55s</strong>.
+              Le challenger commence. <strong>Bonne réponse = garde la main.</strong> Erreur = passe la main.
             </div>
-
-            <button disabled={challenger === null} onClick={startDuel} style={{
+            <button disabled={challenger === null} onClick={prepDuel} style={{
               width: "100%", padding: "13px", borderRadius: 12, fontSize: 14, fontWeight: 700,
               cursor: challenger !== null ? "pointer" : "not-allowed", fontFamily: "inherit",
               background: challenger !== null ? "rgba(231,76,60,0.18)" : "rgba(60,60,60,0.1)",
               border: `1px solid ${challenger !== null ? "rgba(231,76,60,0.4)" : "rgba(80,80,80,0.2)"}`,
               color: challenger !== null ? "#E74C3C" : "#555",
-            }}>Lancer le Duel ⚔️</button>
+            }}>Préparer le Duel ⚔️</button>
           </div>
         )}
 
-        {/* ── DUEL ── */}
-        {phase === "duel" && challenger !== null && (
+        {/* ── READY — questions drawn, timer not started ── */}
+        {(phase === "ready" || phase === "duel") && challenger !== null && (
           <div>
-            {/* Chess clocks */}
+            {/* Clocks */}
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
               {([[turn, 0], [challenger, 1]]).map(([tIdx, ci]) => {
-                const sec = clocks[ci];
+                const cs = clocks[ci];
                 const isActive = ci === hand;
                 const color = TC[tIdx];
-                const tcol = sec <= 10 ? "#E74C3C" : sec <= 25 ? "#F1C40F" : "#2ECC71";
+                const tcol = cs <= 1000 ? "#E74C3C" : cs <= 2500 ? "#F1C40F" : "#2ECC71";
                 return (
-                  <div key={ci} style={{ flex: 1, padding: "12px 10px", borderRadius: 14, textAlign: "center",
+                  <div key={ci} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center",
                     background: isActive ? `${color}15` : "rgba(255,255,255,0.025)",
-                    border: `2px solid ${isActive ? color + "60" : "rgba(255,255,255,0.07)"}`,
-                    boxShadow: isActive ? `0 0 20px ${color}25` : "none", transition: "all 0.3s" }}>
-                    <div style={{ color, fontWeight: 700, fontSize: 11, marginBottom: 5 }}>
+                    border: `2px solid ${isActive && phase === "duel" ? color + "60" : "rgba(255,255,255,0.07)"}`,
+                    boxShadow: isActive && phase === "duel" ? `0 0 20px ${color}25` : "none",
+                    transition: "all 0.3s" }}>
+                    <div style={{ color, fontWeight: 700, fontSize: 11, marginBottom: 4 }}>
                       {TE[tIdx]} {teams[tIdx]?.name}
                     </div>
-                    <div style={{ fontSize: 44, fontWeight: 900, color: tcol, fontFamily: "system-ui", lineHeight: 1 }}>
-                      {sec < 10 ? `0${sec}` : sec}
+                    <div style={{ fontSize: 36, fontWeight: 900, color: phase === "ready" ? "rgba(255,255,255,0.3)" : tcol,
+                      fontFamily: "monospace", lineHeight: 1 }}>
+                      {fmtClock(cs)}
                     </div>
                     <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 9, marginTop: 2 }}>sec</div>
-                    {isActive && (
-                      <div style={{ marginTop: 5, color, fontSize: 9, fontWeight: 700, letterSpacing: 1 }}>▶ MAIN</div>
+                    {isActive && phase === "duel" && (
+                      <div style={{ marginTop: 4, color, fontSize: 9, fontWeight: 700, letterSpacing: 1 }}>▶ MAIN</div>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Who has the hand */}
-            <div style={{ textAlign: "center", marginBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-              🎤 Au tour de <strong style={{ color: TC[handTeamIdx] }}>
-                {TE[handTeamIdx]} {teams[handTeamIdx]?.name}
-              </strong>
-            </div>
+            {phase === "ready" && (
+              <button onClick={startTimer} style={{
+                width: "100%", padding: "16px", borderRadius: 12, fontSize: 16, fontWeight: 900,
+                cursor: "pointer", fontFamily: "inherit", marginBottom: 14,
+                background: "rgba(231,76,60,0.22)", border: "2px solid rgba(231,76,60,0.55)",
+                color: "#E74C3C", letterSpacing: 1,
+              }}>▶ COMMENCER</button>
+            )}
 
-            {/* Previous question answer — shown below current question */}
+            {phase === "duel" && (
+              <div style={{ textAlign: "center", marginBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                🎤 Au tour de <strong style={{ color: TC[handTeamIdx] }}>
+                  {TE[handTeamIdx]} {teams[handTeamIdx]?.name}
+                </strong>
+              </div>
+            )}
+
             {prevQ && (
               <div style={{ marginBottom: 10, padding: "7px 12px", borderRadius: 9,
                 background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
                 display: "flex", gap: 8, alignItems: "baseline" }}>
-                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, flexShrink: 0 }}>
-                  ↩ Rép. précédente :
-                </span>
-                <span style={{ color: "rgba(212,160,23,0.75)", fontSize: 12, fontWeight: 600 }}>
-                  {prevQ.r}
-                </span>
+                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, flexShrink: 0 }}>↩ Rép. :</span>
+                <span style={{ color: "rgba(212,160,23,0.75)", fontSize: 12, fontWeight: 600 }}>{prevQ.r}</span>
               </div>
             )}
 
-            {/* Current question */}
             {activeQ && (
               <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px",
                 marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -1173,7 +1170,6 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
               </div>
             )}
 
-            {/* Action buttons */}
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => nextQ(true)} style={{
                 flex: 2, background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)",
@@ -1184,7 +1180,7 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                 flex: 1, background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)",
                 color: "#E74C3C", padding: "13px", borderRadius: 12, fontSize: 12, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit",
-              }}>✗ Erreur — continue</button>
+              }}>✗ Erreur</button>
             </div>
           </div>
         )}
@@ -1210,9 +1206,7 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                   </div>
                 </div>
               ) : (
-                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 16, marginBottom: 18 }}>
-                  Égalité parfaite !
-                </div>
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 16, marginBottom: 18 }}>Égalité parfaite !</div>
               )}
               <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
                 {([[turn, 0], [challenger, 1]]).map(([tIdx, ci]) => (
@@ -1222,9 +1216,9 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
                     <div style={{ color: TC[tIdx], fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
                       {TE[tIdx]} {teams[tIdx].name}
                     </div>
-                    <div style={{ fontWeight: 900, fontSize: 30,
-                      color: clocks[ci] > 0 ? "#2ECC71" : "#E74C3C" }}>
-                      {clocks[ci]}s
+                    <div style={{ fontWeight: 900, fontSize: 26,
+                      color: clocks[ci] > 0 ? "#2ECC71" : "#E74C3C", fontFamily: "monospace" }}>
+                      {fmtClock(clocks[ci])}
                     </div>
                     <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>restantes</div>
                   </div>
@@ -1448,75 +1442,111 @@ function ChaosBonusQ({ pool, teams, turn, upT }) {
 // ═══════════════════════════════════════════════════════
 // COIN SPIN — slot-machine animation for coins_plus / coins_minus
 // ═══════════════════════════════════════════════════════
-const PLUS_WEIGHTS  = [1, 2, 2, 2, 2, 2, 2, 3, 3, 6];   // mean ≈ +2.4
-const MINUS_WEIGHTS = [1, 2, 2, 2, 2, 2, 2, 3, 3, 10];  // mean ≈ −2.9
+// Unified coin weights — gaussian-like, centered around +2, slight positive bias
+// Rare negatives for chaos element (-3 to -10). Mean ≈ +1.1
+const COIN_WEIGHTS = [2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 1, 1, -1, -2, -3, -10];
+
+// Timing sequence: fast start, easing out (ms per frame)
+const SPIN_DELAYS = [60,60,60,60,60,65,70,80,95,115,140,170,205,245,290];
 
 function CoinSpinModal({ finalValue, isPlus, onDone }) {
-  const color   = isPlus ? "#D4A017" : "#E74C3C";
-  const bgColor = isPlus ? "rgba(212,160,23,0.12)" : "rgba(231,76,60,0.12)";
-  const border  = isPlus ? "rgba(212,160,23,0.4)" : "rgba(231,76,60,0.4)";
-  const pool    = isPlus ? [1, 2, 3, 6] : [1, 2, 3, 10];
-  const sign    = isPlus ? "+" : "−";
+  const color  = isPlus ? "#D4A017" : "#E74C3C";
+  const bgDark = isPlus ? "#100d00" : "#110000";
+  const pool   = isPlus ? [1, 2, 3, 6] : [1, 2, 3, 10];
+  const sign   = isPlus ? "+" : "−";
+  const label  = isPlus ? "🪙 PIÈCES" : "💀 PERTE";
 
-  const [display, setDisplay] = useState(pool[0]);
-  const [landed, setLanded]   = useState(false);
-  const doneRef = useRef(false);
+  const [display, setDisplay] = useState(() => pool[Math.floor(Math.random() * pool.length)]);
+  const [phase, setPhase]     = useState("spin"); // "spin" | "land" | "done"
+  const timerRefs = useRef([]);
 
   useEffect(() => {
-    let step = 0;
-    const totalSteps = 18;
-    const tick = (delay) => {
-      if (doneRef.current) return;
-      if (step >= totalSteps) {
-        setDisplay(finalValue);
-        setLanded(true);
-        setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, 1100);
-        return;
-      }
-      setDisplay(pool[Math.floor(Math.random() * pool.length)]);
-      step++;
-      // Ease-out: start fast, slow down in last third
-      const nextDelay = step < totalSteps * 0.6 ? 70 : delay + 55;
-      setTimeout(() => tick(nextDelay), delay);
-    };
-    tick(70);
-    return () => { doneRef.current = true; };
+    // Schedule each spin frame
+    let elapsed = 0;
+    SPIN_DELAYS.forEach((d, i) => {
+      elapsed += d;
+      const t = setTimeout(() => {
+        setDisplay(pool[Math.floor(Math.random() * pool.length)]);
+      }, elapsed);
+      timerRefs.current.push(t);
+    });
+
+    // Landing frame
+    const landAt = elapsed + SPIN_DELAYS[SPIN_DELAYS.length - 1];
+    const t1 = setTimeout(() => {
+      setDisplay(finalValue);
+      setPhase("land");
+    }, landAt);
+    timerRefs.current.push(t1);
+
+    // Auto-close
+    const t2 = setTimeout(() => {
+      setPhase("done");
+      onDone();
+    }, landAt + 1200);
+    timerRefs.current.push(t2);
+
+    return () => timerRefs.current.forEach(clearTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.72)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 9998, pointerEvents: "none",
-    }}>
+    <div
+      onClick={() => { if (phase === "land") { timerRefs.current.forEach(clearTimeout); onDone(); } }}
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(0,0,0,0.84)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 9998,
+        cursor: phase === "land" ? "pointer" : "default",
+      }}
+    >
       <div style={{
-        background: bgColor,
-        border: `3px solid ${border}`,
-        borderRadius: 24, padding: "28px 48px",
+        background: bgDark,
+        border: `3px solid ${color}66`,
+        borderRadius: 28, padding: "32px 56px",
         textAlign: "center",
-        boxShadow: `0 0 60px ${color}55`,
-        transform: landed ? "scale(1.08)" : "scale(1)",
-        transition: "transform 0.15s ease-out",
+        boxShadow: `0 0 80px ${color}44, inset 0 0 40px ${color}11`,
+        transform: phase === "land" ? "scale(1.1)" : "scale(1)",
+        transition: "transform 0.18s cubic-bezier(0.34,1.56,0.64,1)",
       }}>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 700,
-          letterSpacing: 2, marginBottom: 8 }}>
-          {isPlus ? "🪙 PIÈCES" : "💀 PERTE"}
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 700,
+          letterSpacing: 3, marginBottom: 10, textTransform: "uppercase" }}>
+          {label}
         </div>
-        <div style={{
-          fontSize: 84, fontWeight: 900, color,
-          fontFamily: "inherit",
-          textShadow: `0 0 40px ${color}aa`,
-          filter: landed ? "none" : "blur(1.5px)",
-          transition: "filter 0.12s",
-          lineHeight: 1,
-        }}>
-          {sign}{display}₽
+
+        {/* Slot-tape: 3 rows, middle one is active */}
+        <div style={{ overflow: "hidden", height: 120, position: "relative", marginBottom: 4 }}>
+          {/* Fade masks top/bottom */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 34,
+            background: `linear-gradient(to bottom, ${bgDark}, transparent)`, zIndex: 2 }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 34,
+            background: `linear-gradient(to top, ${bgDark}, transparent)`, zIndex: 2 }} />
+
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            transition: phase === "spin" ? "none" : "transform 0.12s",
+          }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color, opacity: 0.25, lineHeight: "40px" }}>
+              {sign}{pool[(pool.indexOf(display) + pool.length - 1) % pool.length]}₽
+            </div>
+            <div style={{
+              fontSize: 80, fontWeight: 900, color, lineHeight: "80px",
+              textShadow: `0 0 30px ${color}cc`,
+              filter: phase === "spin" ? "blur(1px)" : "none",
+              transition: "filter 0.15s",
+            }}>
+              {sign}{display}₽
+            </div>
+            <div style={{ fontSize: 36, fontWeight: 900, color, opacity: 0.25, lineHeight: "40px" }}>
+              {sign}{pool[(pool.indexOf(display) + 1) % pool.length]}₽
+            </div>
+          </div>
         </div>
-        {landed && (
-          <div style={{ marginTop: 10, fontSize: 22, opacity: 0.85 }}>
-            {isPlus ? "🎉" : "😬"}
+
+        {phase === "land" && (
+          <div style={{ marginTop: 4, color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+            Appuyer pour continuer
           </div>
         )}
       </div>
@@ -1602,11 +1632,17 @@ function ShopModal({ team, onBuy, onClose }) {
 // ═══════════════════════════════════════════════════════
 function StarBuyModal({ team, onBuy, onSkip }) {
   const canAfford = team.coins >= STAR_COST;
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 10); return () => clearTimeout(t); }, []);
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 901,
       display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#0c1525", border: "2px solid rgba(241,196,15,0.5)", borderRadius: 20,
-        padding: 28, maxWidth: 360, width: "100%", textAlign: "center" }}>
+        padding: 28, maxWidth: 360, width: "100%", textAlign: "center",
+        transform: visible ? "scale(1) translateY(0)" : "scale(0.82) translateY(24px)",
+        opacity: visible ? 1 : 0,
+        transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease",
+      }}>
         <div style={{ fontSize: 56, marginBottom: 8 }}>⭐</div>
         <div style={{ color: "#F1C40F", fontWeight: 800, fontSize: 20, marginBottom: 8 }}>
           Acheter l&apos;Étoile ?
@@ -1869,7 +1905,14 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
 // Phases: rules → ranking → close + advance turn
 // ═══════════════════════════════════════════════════════
 function MiniGameModal({ teams, setTeams, onDone }) {
-  const [game] = useState(() => MG[Math.floor(Math.random() * MG.length)]);
+  const [game] = useState(() => {
+    const used = window._usedMG ?? [];
+    const avail = MG.filter(g => !used.includes(g.id));
+    const pool = avail.length ? avail : MG;
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    window._markUsedMG?.(picked.id);
+    return picked;
+  });
   const [phase, setPhase] = useState("rules"); // rules | ranking
   const [distributed, setDistributed] = useState(false);
   const fmt = FORMAT[game.format] || {};
@@ -2559,12 +2602,169 @@ function DiePanel({ values, onChange, onRoll, onAddDie, onRemoveDie, reachableCo
 }
 
 // ═══════════════════════════════════════════════════════
+// CHAOS CARD MODAL — shown when a player lands on a chaos case
+// ═══════════════════════════════════════════════════════
+function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
+  const [targetIdx, setTargetIdx] = useState(null);
+  const [targetIdx2, setTargetIdx2] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 10); return () => clearTimeout(t); }, []);
+
+  const needsTarget  = ["steal3", "give4", "curse", "steal_star"].includes(card.apply);
+  const needsDouble  = ["magnet"].includes(card.apply);
+  const isManual     = card.apply === "manual";
+  const isAuto       = !needsTarget && !needsDouble && !isManual;
+
+  const doApply = () => {
+    if (needsTarget && targetIdx === null) return;
+    if (needsDouble && (targetIdx === null || targetIdx2 === null)) return;
+    onApply(card.n, targetIdx, targetIdx2);
+    setConfirmed(true);
+    setTimeout(onClose, 1600);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.86)", zIndex: 902,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{
+        background: "#0c1525", border: "2px solid rgba(142,68,173,0.5)", borderRadius: 20,
+        padding: "28px 28px", maxWidth: 400, width: "100%", textAlign: "center",
+        transform: visible ? "scale(1) translateY(0)" : "scale(0.85) translateY(20px)",
+        opacity: visible ? 1 : 0,
+        transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease",
+      }}>
+        <div style={{ fontSize: 50, marginBottom: 6 }}>{card.e}</div>
+        <div style={{ color: "#8E44AD", fontWeight: 700, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+          🌀 CASE CHAOS
+        </div>
+        <div style={{ color: "#D4A0F5", fontWeight: 800, fontSize: 19, marginBottom: 10 }}>
+          {card.n}
+        </div>
+        <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+          {card.d}
+        </p>
+        {card.tip && (
+          <div style={{ padding: "6px 12px", borderRadius: 8, marginBottom: 14,
+            background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)",
+            fontSize: 11, fontStyle: "italic" }}>💡 {card.tip}</div>
+        )}
+
+        {!confirmed ? (
+          <>
+            {/* Target pickers */}
+            {(needsTarget || needsDouble) && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700,
+                  letterSpacing: 1, marginBottom: 8 }}>
+                  {needsDouble ? "CHOISIR ÉQUIPE 1" : "DÉSIGNER UNE CIBLE"}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                  {teams.map((t, i) => i !== turn && (
+                    <button key={i} onClick={() => setTargetIdx(i)} style={{
+                      padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                      cursor: "pointer", fontFamily: "inherit",
+                      background: targetIdx === i ? `${TC[i]}28` : "rgba(255,255,255,0.04)",
+                      border: `2px solid ${targetIdx === i ? TC[i] : "rgba(255,255,255,0.1)"}`,
+                      color: targetIdx === i ? TC[i] : "rgba(255,255,255,0.55)",
+                    }}>{TE[i]} {t.name}</button>
+                  ))}
+                </div>
+                {needsDouble && targetIdx !== null && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700,
+                      letterSpacing: 1, marginBottom: 8 }}>CHOISIR ÉQUIPE 2</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                      {teams.map((t, i) => i !== turn && i !== targetIdx && (
+                        <button key={i} onClick={() => setTargetIdx2(i)} style={{
+                          padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "inherit",
+                          background: targetIdx2 === i ? `${TC[i]}28` : "rgba(255,255,255,0.04)",
+                          border: `2px solid ${targetIdx2 === i ? TC[i] : "rgba(255,255,255,0.1)"}`,
+                          color: targetIdx2 === i ? TC[i] : "rgba(255,255,255,0.55)",
+                        }}>{TE[i]} {t.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={isAuto ? doApply : doApply}
+              disabled={(needsTarget && targetIdx === null) ||
+                        (needsDouble && (targetIdx === null || targetIdx2 === null))}
+              style={{
+                width: "100%", padding: "13px", borderRadius: 12, fontSize: 14, fontWeight: 800,
+                cursor: "pointer", fontFamily: "inherit",
+                background: "rgba(142,68,173,0.2)", border: "2px solid rgba(142,68,173,0.5)",
+                color: "#D4A0F5",
+                opacity: (needsTarget && targetIdx === null) || (needsDouble && (targetIdx === null || targetIdx2 === null)) ? 0.4 : 1,
+              }}>✓ Appliquer l&apos;effet</button>
+            {isManual && (
+              <button onClick={() => { setConfirmed(true); setTimeout(onClose, 600); }}
+                style={{ marginTop: 8, width: "100%", padding: "9px", borderRadius: 10,
+                  background: "none", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.35)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                Gérer manuellement →
+              </button>
+            )}
+          </>
+        ) : (
+          <div style={{ padding: "16px", borderRadius: 12,
+            background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.3)",
+            color: "#2ECC71", fontWeight: 700, fontSize: 15 }}>
+            ✓ Effet appliqué !
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// LAST TOUR MODAL — announces the last round
+// ═══════════════════════════════════════════════════════
+function LastTourModal({ onDone }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const t1 = setTimeout(() => setVisible(true), 60);
+    const t2 = setTimeout(() => { setVisible(false); setTimeout(onDone, 500); }, 3200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9000, pointerEvents: "none",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "rgba(0,0,0,0.6)" }}>
+      <div style={{
+        textAlign: "center",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "scale(1) translateY(0)" : "scale(0.4) translateY(-50px)",
+        transition: "opacity 0.4s ease, transform 0.55s cubic-bezier(0.34,1.56,0.64,1)",
+      }}>
+        <div style={{ fontSize: 72 }}>🏁</div>
+        <div style={{
+          color: "#F1C40F", fontWeight: 900, fontSize: "clamp(32px,8vw,54px)",
+          letterSpacing: 4, textShadow: "0 0 60px rgba(241,196,15,0.7)",
+        }}>DERNIER TOUR !</div>
+        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 8 }}>
+          Tout se joue maintenant !
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // PAWN MAP (Plateau tab)
 // ═══════════════════════════════════════════════════════
 function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
-  tourNum, setTourNum, maxTours, onDuel, onFinale, onFlipBoard,
+  tourNum, setTourNum, maxTours, onDuel, onFinale,
   bridgeTaxTurns = 0, setBridgeTaxTurns,
-  pendingPoisons = [], setPendingPoisons }) {
+  pendingPoisons = [], setPendingPoisons,
+  getChaosCard, onApplyChaos }) {
 
   // Die roller
   const [dieValues, setDieValues] = useState([null]);
@@ -2583,16 +2783,38 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   const [tpOrigin, setTpOrigin]     = useState(null);
   const [showQuestion, setShowQuestion] = useState(false);
   const [showMiniGame, setShowMiniGame] = useState(false);
-  const [coinSpin, setCoinSpin]     = useState(null); // { finalValue, isPlus }
+  const [coinSpin, setCoinSpin]     = useState(null); // { id, finalValue, isPlus }
+  const [caseChaosCard, setCaseChaosCard] = useState(null); // chaos card drawn from case
+  const [showLastTour, setShowLastTour] = useState(false);
   const [itemPickModal, setItemPickModal] = useState(null); // { teamIdx, instanceIdx, itemIdx }
   const [hoveredCaseId, setHoveredCaseId] = useState(null);
 
   // Effective bridge cost (raised by Péage chaos card)
   const effectiveBridgeCost = bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
 
-  // Stable ref so callbacks always have fresh state
-  const stateRef = useRef({ teams, turn, side, starIdx, bridgeTaxTurns });
-  useEffect(() => { stateRef.current = { teams, turn, side, starIdx, bridgeTaxTurns }; });
+  // Stable ref — keeps all values fresh in callbacks/timeouts
+  const stateRef = useRef({ teams, turn, side, starIdx, bridgeTaxTurns, tourNum, maxTours, pendingPoisons });
+  useEffect(() => { stateRef.current = { teams, turn, side, starIdx, bridgeTaxTurns, tourNum, maxTours, pendingPoisons }; });
+
+  // nextTurn ref — always points to latest version
+  const nextTurnRef = useRef(null);
+  nextTurnRef.current = () => {
+    const { turn: tr, bridgeTaxTurns: btt, tourNum: tn, maxTours: mt, pendingPoisons: pp } = stateRef.current;
+    const newTurn = (tr + 1) % 4;
+    if (pp.includes(newTurn)) {
+      setTeams(prev => prev.map((tm, i) => i === newTurn ? { ...tm, coins: Math.max(0, tm.coins - 4) } : tm));
+      setPendingPoisons(prev => prev.filter(x => x !== newTurn));
+      show(`🍄 Poison ! ${TE[newTurn]} perd 4₽`);
+    }
+    setBridgeTaxTurns(p => Math.max(0, p - 1));
+    setTurn(newTurn);
+    if (newTurn === 0) {
+      const newTour = tn + 1;
+      setTourNum(newTour);
+      if (newTour === mt) setTimeout(() => setShowLastTour(true), 200);
+      setShowMiniGame(true);
+    }
+  };
 
   const show = (msg, dur = 3200) => { setToast(msg); setTimeout(() => setToast(null), dur); };
 
@@ -2737,20 +2959,19 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
       starHit = true;
     }
 
-    // Random coin values (Gaussian-like weighted distribution)
-    let plusVal  = 0, minusVal = 0;
-    if (tp === "coins_plus")  plusVal  = PLUS_WEIGHTS[Math.floor(Math.random() * PLUS_WEIGHTS.length)];
-    if (tp === "coins_minus") minusVal = MINUS_WEIGHTS[Math.floor(Math.random() * MINUS_WEIGHTS.length)];
+    // Unified random coin value (gaussian-like, slight positive bias)
+    const isCoinCase = ["coins", "coins_plus", "coins_minus"].includes(tp);
+    let coinVal = 0;
+    if (isCoinCase) coinVal = COIN_WEIGHTS[Math.floor(Math.random() * COIN_WEIGHTS.length)];
 
     // Batch all state updates
     setTeams(prev => prev.map((tm, i) => {
       if (i !== tr) return tm;
       let coins   = Math.max(0, tm.coins - bridgeCost);
       let shields = tm.shields;
-      if (tp === "coins_plus")  coins += plusVal;
-      if (tp === "coins_minus") coins  = Math.max(0, coins - minusVal);
-      if (tp === "bonus")       coins += 5;
-      if (tp === "shield")      shields += 1;
+      if (isCoinCase) coins = Math.max(0, coins + coinVal);
+      if (tp === "bonus")  coins += 5;
+      if (tp === "shield") shields += 1;
       const visited = tm.visitedCases ?? [];
       return {
         ...tm, coins, shields, pos: caseId,
@@ -2760,28 +2981,33 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
 
     // ── Star before special-case handlers (so passing star on way to question still triggers) ──
     if (starHit) {
-      if (["shop", "duel", "teleport", "question"].includes(tp)) {
+      if (["shop", "duel", "teleport", "question", "chaos"].includes(tp)) {
         setPendingCaseAction({ type: tp, caseId });
       }
       setShowStarBuy(true);
       return;
     }
 
-    // Toast + coin spin for auto-applied effects
-    if (tp === "coins_plus") {
-      setCoinSpin({ finalValue: plusVal, isPlus: true });
-    } else if (tp === "coins_minus") {
-      setCoinSpin({ finalValue: minusVal, isPlus: false });
+    // Auto-applied effects: coin spin / shield / then advance turn
+    if (isCoinCase) {
+      setCoinSpin({ id: Date.now(), finalValue: Math.abs(coinVal), isPlus: coinVal >= 0 });
+      // nextTurn called via CoinSpinModal onDone
     } else if (tp === "bonus") {
-      setCoinSpin({ finalValue: 5, isPlus: true });
+      setCoinSpin({ id: Date.now(), finalValue: 5, isPlus: true });
     } else if (tp === "shield") {
       show(`${TE[tr]} 🛡️ +1 bouclier !`);
-    } else if (tp === "shop")   { setShowShop(true); return; }
-    else if (tp === "duel")   { onDuel?.(); return; }
-    else if (tp === "teleport") { setTpOrigin(caseId); setTpState("pending"); return; }
-    else if (tp === "question") { setShowQuestion(true); return; }
+      setTimeout(() => nextTurnRef.current?.(), 3200);
+    } else if (tp === "shop")     { setShowShop(true); return; }
+    else if (tp === "duel")       { onDuel?.(() => nextTurnRef.current?.()); return; }
+    else if (tp === "teleport")   { setTpOrigin(caseId); setTpState("pending"); return; }
+    else if (tp === "question")   { setShowQuestion(true); return; }
+    else if (tp === "chaos") {
+      const card = getChaosCard?.();
+      if (card) setCaseChaosCard(card);
+      return;
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setTeams, onDuel, setCoinSpin]);
+  }, [setTeams, onDuel, setCoinSpin, getChaosCard]);
 
   const handleCaseClick = useCallback((caseId) => {
     // Teleport selection
@@ -2795,6 +3021,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
       }));
       setTpState(null); setTpOrigin(null);
       show(`⚡ Téléporté vers ${caseId} ! −${TELEPORT_COST}₽`);
+      setTimeout(() => nextTurnRef.current?.(), 3200);
       return;
     }
 
@@ -2843,24 +3070,49 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   const resolvePendingCase = (action) => {
     if (!action) return;
     const { type, caseId: pCaseId } = action;
-    if (type === "shop")     setShowShop(true);
-    else if (type === "duel")     onDuel?.();
+    if (type === "shop")         setShowShop(true);
+    else if (type === "duel")     onDuel?.(() => nextTurnRef.current?.());
     else if (type === "teleport") { setTpOrigin(pCaseId); setTpState("pending"); }
     else if (type === "question") setShowQuestion(true);
+    else if (type === "chaos")    {
+      const card = getChaosCard?.();
+      if (card) setCaseChaosCard(card);
+    }
   };
 
   const buyStar = () => {
     setTeams(prev => prev.map((tm, i) => i !== turn ? tm : {
       ...tm, coins: tm.coins - STAR_COST, stars: tm.stars + 1,
     }));
-    let n;
-    do { n = Math.floor(Math.random() * AS.length); } while (n === starIdx);
-    setStarIdx(n);
+    // Balanced star placement: pick from top 25% most-balanced candidates
+    const { teams: t, side: s } = stateRef.current;
+    const teamPositions = t.map(tm => tm.pos);
+    const candidates = AS.map((_, i) => i).filter(i => i !== starIdx);
+    const scored = candidates.map(idx => {
+      const seg = AS[idx];
+      const sfId = seg.f?.id || seg.fId;
+      if (!sfId) return { idx, score: 999 };
+      const dists = teamPositions.map(pos => {
+        const path = findShortestPath(pos, sfId, s);
+        return path ? path.length - 1 : 20;
+      });
+      const spread = Math.max(...dists) - Math.min(...dists);
+      return { idx, score: spread + Math.random() * 3 };
+    });
+    scored.sort((a, b) => a.score - b.score);
+    const topN = Math.max(1, Math.floor(scored.length * 0.25));
+    const pick = scored[Math.floor(Math.random() * topN)];
+    setStarIdx(pick.idx);
     setShowStarBuy(false);
     show(`${TE[turn]} ⭐ +1⭐ — l'étoile se déplace !`);
     const pending = pendingCaseAction;
     setPendingCaseAction(null);
-    resolvePendingCase(pending);
+    if (pending) {
+      resolvePendingCase(pending);
+      // nextTurn will be called by whatever pending modal closes
+    } else {
+      nextTurnRef.current?.();
+    }
   };
 
   const tourPct      = Math.round((tourNum / maxTours) * 100);
@@ -3033,37 +3285,11 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
                   background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
                 }}>✕ Annuler téléport</button>
               )}
-              <button onClick={() => {
-                const newTurn = (turn + 1) % 4;
-                // Apply pending poison before the new team's turn starts
-                if (pendingPoisons.includes(newTurn)) {
-                  setTeams(prev => prev.map((tm, i) => i === newTurn
-                    ? { ...tm, coins: Math.max(0, tm.coins - 4) } : tm));
-                  setPendingPoisons(prev => prev.filter(x => x !== newTurn));
-                  show(`🍄 Poison ! ${TE[newTurn]} perd 4₽`);
-                }
-                // Decrement bridge tax counter
-                setBridgeTaxTurns(p => Math.max(0, p - 1));
-                setTurn(newTurn);
-                if (newTurn === 0) {
-                  setTourNum(p => p + 1);
-                  setShowMiniGame(true);
-                }
-              }} style={{
+              <button onClick={() => nextTurnRef.current?.()} style={{
                 width: "100%", padding: "8px", borderRadius: 9, fontSize: 12, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit",
                 background: `${TC[turn]}22`, border: `1px solid ${TC[turn]}45`, color: TC[turn],
               }}>Équipe suivante →</button>
-
-            {/* Flip board button */}
-            {onFlipBoard && (
-              <button onClick={onFlipBoard} style={{
-                width: "100%", padding: "7px", borderRadius: 9, fontSize: 11, fontWeight: 700,
-                cursor: "pointer", fontFamily: "inherit", marginTop: 6,
-                background: "rgba(139,105,20,0.18)", border: "1px solid rgba(139,105,20,0.4)",
-                color: "#D4A017",
-              }}>🔄 Retourner le plateau ({side === 0 ? "→ Verso" : "→ Recto"})</button>
-            )}
             </div>
           </div>
         </div>
@@ -3103,7 +3329,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
         <ShopModal
           team={teams[turn]}
           onBuy={buyItem}
-          onClose={() => setShowShop(false)}
+          onClose={() => { setShowShop(false); nextTurnRef.current?.(); }}
         />
       )}
       {showStarBuy && (
@@ -3114,7 +3340,8 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
             setShowStarBuy(false);
             const pending = pendingCaseAction;
             setPendingCaseAction(null);
-            resolvePendingCase(pending);
+            if (pending) resolvePendingCase(pending);
+            else nextTurnRef.current?.();
           }}
         />
       )}
@@ -3122,7 +3349,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
         <TeleportModal
           team={teams[turn]}
           onUse={() => setTpState("selecting")}
-          onSkip={() => { setTpState(null); setTpOrigin(null); }}
+          onSkip={() => { setTpState(null); setTpOrigin(null); nextTurnRef.current?.(); }}
         />
       )}
       {showQuestion && (
@@ -3130,7 +3357,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
           teams={teams}
           turn={turn}
           setTeams={setTeams}
-          onClose={() => setShowQuestion(false)}
+          onClose={() => { setShowQuestion(false); nextTurnRef.current?.(); }}
         />
       )}
       {showMiniGame && (
@@ -3142,11 +3369,23 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
       )}
       {coinSpin && (
         <CoinSpinModal
-          key={`${coinSpin.finalValue}-${coinSpin.isPlus}`}
+          key={coinSpin.id}
           finalValue={coinSpin.finalValue}
           isPlus={coinSpin.isPlus}
-          onDone={() => setCoinSpin(null)}
+          onDone={() => { setCoinSpin(null); nextTurnRef.current?.(); }}
         />
+      )}
+      {caseChaosCard && (
+        <ChaosCardModal
+          card={caseChaosCard}
+          teams={teams}
+          turn={turn}
+          onApply={(name, t1, t2) => { onApplyChaos?.(name, t1, t2); }}
+          onClose={() => { setCaseChaosCard(null); nextTurnRef.current?.(); }}
+        />
+      )}
+      {showLastTour && (
+        <LastTourModal onDone={() => setShowLastTour(false)} />
       )}
 
       {/* Item use target picker */}
@@ -3228,6 +3467,10 @@ export default function App() {
   const [resetConf,  setResetConf]  = useState(false);
   const [showFinale, setShowFinale] = useState(false);
   const [showDuel,   setShowDuel]   = useState(false);
+  const [usedMG,     setUsedMG]     = useState([]);
+  const [qMJView,    setQMJView]    = useState(false);
+  const [qMJFilter,  setQMJFilter]  = useState({ level: "all", cat: "all", used: "all" });
+  const duelNextTurnRef = useRef(null);
 
   // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal)
   useEffect(() => { window._Q = Q; }, []);
@@ -3239,6 +3482,10 @@ export default function App() {
       return { ...prev, [lv]: [...already, idx] };
     });
   }, [used]);
+  useEffect(() => {
+    window._usedMG = usedMG;
+    window._markUsedMG = (id) => setUsedMG(prev => prev.includes(id) ? prev : [...prev, id]);
+  }, [usedMG]);
 
   // ── Team helpers ──────────────────────────────────────
   const upT  = (i, field, delta)  => setTeams(p => p.map((t, j) => j === i ? { ...t, [field]: Math.max(0, t[field] + delta) } : t));
@@ -3282,6 +3529,25 @@ export default function App() {
       setCurCC({ ...CC[cardIdx], idx: cardIdx, deckPos });
       return [...prev, deckPos];
     });
+  }, [setUsedCC]);
+
+  // ── Synchronous chaos card draw (for PawnMap inline chaos cases) ──
+  const usedCCRef = useRef(usedCC);
+  useEffect(() => { usedCCRef.current = usedCC; }, [usedCC]);
+  const getChaosCard = useCallback(() => {
+    const prev = usedCCRef.current;
+    const avail = CC_DECK.reduce((acc, _, pos) => { if (!prev.includes(pos)) acc.push(pos); return acc; }, []);
+    const deckPos = avail.length
+      ? avail[Math.floor(Math.random() * avail.length)]
+      : Math.floor(Math.random() * CC_DECK.length);
+    const cardIdx = CC_DECK[deckPos];
+    const card = { ...CC[cardIdx], idx: cardIdx, deckPos };
+    setUsedCC(prev2 => {
+      if (prev2.length >= CC_DECK.length) return [deckPos];
+      if (prev2.includes(deckPos)) return prev2;
+      return [...prev2, deckPos];
+    });
+    return card;
   }, [setUsedCC]);
 
   // ── Chaos auto-apply ──────────────────────────────────
@@ -3347,7 +3613,7 @@ export default function App() {
       }
     });
     if (cardName === "Retournement") setMapSide(s => s === 0 ? 1 : 0);
-    if (cardName === "Péage") setBridgeTaxTurns(4);
+    if (cardName === "Péage") setBridgeTaxTurns(2);
   }, [turn, setTeams, setMapSide, setBridgeTaxTurns]);
 
   // ── Award apply ───────────────────────────────────────
@@ -3403,6 +3669,7 @@ export default function App() {
     setResetConf(false);
     setShowFinale(false);
     setShowDuel(false);
+    setUsedMG([]);
     setTab("dashboard");
   };
 
@@ -3720,121 +3987,229 @@ export default function App() {
         {/* ════════════ QUESTIONS ══════════════════════════ */}
         {tab === "questions" && (
           <div>
-            {/* Level buttons */}
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 18 }}>
-              {Object.entries(LC).map(([k, c]) => (
-                <button key={k} onClick={() => drawQ(k)} style={{
-                  background: `${c.color}18`, border: `2px solid ${c.color}42`,
-                  color: c.color, padding: "12px 24px", borderRadius: 14,
-                  fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                }}>
-                  {c.emoji} {c.label} · {c.coins}
-                  <br />
-                  <span style={{ fontSize: 10, opacity: 0.65, fontWeight: 400 }}>
-                    {rem(k)}/{Q[k].length} restantes
-                  </span>
-                </button>
-              ))}
+            {/* Mode toggle */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+              <button onClick={() => setQMJView(v => !v)} style={{
+                padding: "5px 14px", borderRadius: 9, fontSize: 11, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                background: qMJView ? "rgba(212,160,23,0.18)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${qMJView ? "rgba(212,160,23,0.45)" : "rgba(255,255,255,0.1)"}`,
+                color: qMJView ? "#D4A017" : "rgba(255,255,255,0.5)",
+              }}>
+                📋 Vue MJ {qMJView ? "ON" : "OFF"}
+              </button>
             </div>
 
-            {/* Question card */}
-            {curQ ? (
-              <div style={{
-                background: "rgba(255,255,255,0.04)",
-                border: `2px solid ${LC[curQ.level].color}32`,
-                borderRadius: 20, padding: "24px 28px",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 8 }}>
-                  <span style={{
-                    padding: "4px 14px", borderRadius: 8,
-                    background: `${LC[curQ.level].color}22`, color: LC[curQ.level].color,
-                    fontSize: 12, fontWeight: 700, letterSpacing: 1,
-                  }}>
-                    {LC[curQ.level].emoji} {LC[curQ.level].label.toUpperCase()} · {LC[curQ.level].coins}
-                  </span>
-                  <span style={{
-                    padding: "4px 12px", borderRadius: 8,
-                    background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)",
-                    fontSize: 11, fontWeight: 600,
-                  }}>
-                    {curQ.cat}
-                  </span>
-                </div>
+            {/* ── MJ VIEW ── */}
+            {qMJView ? (() => {
+              const allCats = [...new Set(Object.values(Q).flat().map(q => q.cat))].sort();
+              const levelEntries = [
+                ["college", LC.college], ["lycee", LC.lycee], ["expert", LC.expert],
+              ];
+              const allQ = Object.entries(Q).flatMap(([lv, qs]) =>
+                qs.map((q, i) => ({ ...q, lv, i }))
+              );
+              const filtered = allQ.filter(q => {
+                if (qMJFilter.level !== "all" && q.lv !== qMJFilter.level) return false;
+                if (qMJFilter.cat !== "all" && q.cat !== qMJFilter.cat) return false;
+                if (qMJFilter.used === "used" && !used[q.lv]?.includes(q.i)) return false;
+                if (qMJFilter.used === "unused" && used[q.lv]?.includes(q.i)) return false;
+                return true;
+              });
 
-                <div style={{
-                  fontSize: "clamp(18px,3.5vw,28px)", fontWeight: 600,
-                  color: "#fff", marginBottom: 26, lineHeight: 1.45, textAlign: "center",
-                }}>
-                  {curQ.q}
+              return (
+                <div>
+                  {/* Filters */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12,
+                    padding: "10px 12px", borderRadius: 12,
+                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    {/* Level */}
+                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      {[["all","Tous","rgba(255,255,255,0.5)"], ...levelEntries.map(([k,c]) => [k, c.label, c.color])].map(([k, label, color]) => (
+                        <button key={k} onClick={() => setQMJFilter(f => ({ ...f, level: k }))} style={{
+                          padding: "3px 10px", borderRadius: 7, fontSize: 10, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "inherit",
+                          background: qMJFilter.level === k ? `${color}25` : "none",
+                          border: `1px solid ${qMJFilter.level === k ? color + "50" : "rgba(255,255,255,0.08)"}`,
+                          color: qMJFilter.level === k ? color : "rgba(255,255,255,0.4)",
+                        }}>{label}</button>
+                      ))}
+                    </div>
+                    {/* Usage */}
+                    <div style={{ display: "flex", gap: 4, alignItems: "center", marginLeft: 8 }}>
+                      {[["all","Toutes"],["unused","Non posées"],["used","Posées"]].map(([k, label]) => (
+                        <button key={k} onClick={() => setQMJFilter(f => ({ ...f, used: k }))} style={{
+                          padding: "3px 10px", borderRadius: 7, fontSize: 10, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "inherit",
+                          background: qMJFilter.used === k ? "rgba(0,188,212,0.2)" : "none",
+                          border: `1px solid ${qMJFilter.used === k ? "rgba(0,188,212,0.5)" : "rgba(255,255,255,0.08)"}`,
+                          color: qMJFilter.used === k ? "#00BCD4" : "rgba(255,255,255,0.4)",
+                        }}>{label}</button>
+                      ))}
+                    </div>
+                    {/* Category */}
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", marginLeft: 8 }}>
+                      {["all", ...allCats].map(k => (
+                        <button key={k} onClick={() => setQMJFilter(f => ({ ...f, cat: k }))} style={{
+                          padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "inherit",
+                          background: qMJFilter.cat === k ? "rgba(255,255,255,0.12)" : "none",
+                          border: `1px solid ${qMJFilter.cat === k ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.07)"}`,
+                          color: qMJFilter.cat === k ? "#fff" : "rgba(255,255,255,0.35)",
+                        }}>{k === "all" ? "Tout" : k}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginBottom: 8 }}>
+                    {filtered.length} question{filtered.length !== 1 ? "s" : ""}
+                  </div>
+                  {/* Question list */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {filtered.map((q, ri) => {
+                      const lc = LC[q.lv];
+                      const isUsed = used[q.lv]?.includes(q.i);
+                      return (
+                        <div key={ri} style={{
+                          padding: "9px 12px", borderRadius: 10,
+                          background: isUsed ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.035)",
+                          border: `1px solid ${isUsed ? "rgba(255,255,255,0.04)" : lc.color + "20"}`,
+                          opacity: isUsed ? 0.55 : 1,
+                        }}>
+                          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                            <span style={{
+                              padding: "1px 7px", borderRadius: 5, fontSize: 9, fontWeight: 700,
+                              background: `${lc.color}20`, color: lc.color, flexShrink: 0, marginTop: 1,
+                            }}>{lc.emoji} {lc.label.toUpperCase()}</span>
+                            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 9, flexShrink: 0, marginTop: 2 }}>{q.cat}</span>
+                            {isUsed && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 8, flexShrink: 0, marginTop: 2 }}>✓ posée</span>}
+                            <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, flex: 1, lineHeight: 1.4 }}>{q.q}</span>
+                            <span style={{ color: "#2ECC71", fontWeight: 700, fontSize: 12, flexShrink: 0, marginTop: 1 }}>{q.r}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-
-                {showA ? (
-                  <div>
-                    {/* Answer */}
-                    <div style={{
-                      padding: "16px 24px", borderRadius: 14, marginBottom: 16,
-                      background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.3)",
-                      textAlign: "center",
+              );
+            })() : (
+              <div>
+                {/* Level buttons */}
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 18 }}>
+                  {Object.entries(LC).map(([k, c]) => (
+                    <button key={k} onClick={() => drawQ(k)} style={{
+                      background: `${c.color}18`, border: `2px solid ${c.color}42`,
+                      color: c.color, padding: "12px 24px", borderRadius: 14,
+                      fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                     }}>
-                      <span style={{ fontSize: "clamp(20px,4vw,32px)", fontWeight: 800, color: "#2ECC71" }}>
-                        {curQ.r}
+                      {c.emoji} {c.label} · {c.coins}
+                      <br />
+                      <span style={{ fontSize: 10, opacity: 0.65, fontWeight: 400 }}>
+                        {rem(k)}/{Q[k].length} restantes
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Question card */}
+                {curQ ? (
+                  <div style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: `2px solid ${LC[curQ.level].color}32`,
+                    borderRadius: 20, padding: "24px 28px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 8 }}>
+                      <span style={{
+                        padding: "4px 14px", borderRadius: 8,
+                        background: `${LC[curQ.level].color}22`, color: LC[curQ.level].color,
+                        fontSize: 12, fontWeight: 700, letterSpacing: 1,
+                      }}>
+                        {LC[curQ.level].emoji} {LC[curQ.level].label.toUpperCase()} · {LC[curQ.level].coins}
+                      </span>
+                      <span style={{
+                        padding: "4px 12px", borderRadius: 8,
+                        background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)",
+                        fontSize: 11, fontWeight: 600,
+                      }}>
+                        {curQ.cat}
                       </span>
                     </div>
 
-                    {/* Attribution */}
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 8, textAlign: "center" }}>
-                        ATTRIBUER LES PIÈCES
-                      </div>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-                        {teams.map((t, i) => (
-                          <button key={i} onClick={() => { upT(i,"coins",LC[curQ.level].val); upT(i,"qOk",1); }} style={{
-                            background: `${TC[i]}22`, border: `1px solid ${TC[i]}45`,
-                            color: TC[i], padding: "8px 16px", borderRadius: 10,
-                            fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                          }}>
-                            {TE[i]} {t.name}<br/>
-                            <span style={{ fontSize: 10, opacity: 0.8 }}>{LC[curQ.level].coins}</span>
-                          </button>
-                        ))}
-                      </div>
+                    <div style={{
+                      fontSize: "clamp(18px,3.5vw,28px)", fontWeight: 600,
+                      color: "#fff", marginBottom: 26, lineHeight: 1.45, textAlign: "center",
+                    }}>
+                      {curQ.q}
                     </div>
 
-                    {/* Expert penalty */}
-                    {curQ.level === "expert" && (
+                    {showA ? (
                       <div>
-                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginBottom: 8, textAlign: "center" }}>
-                          PÉNALITÉ MAUVAISE RÉPONSE
+                        {/* Answer */}
+                        <div style={{
+                          padding: "16px 24px", borderRadius: 14, marginBottom: 16,
+                          background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.3)",
+                          textAlign: "center",
+                        }}>
+                          <span style={{ fontSize: "clamp(20px,4vw,32px)", fontWeight: 800, color: "#2ECC71" }}>
+                            {curQ.r}
+                          </span>
                         </div>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-                          {teams.map((t, i) => (
-                            <button key={i} onClick={() => upT(i,"coins",-2)} style={{
-                              background: "rgba(231,76,60,0.14)", border: "1px solid rgba(231,76,60,0.3)",
-                              color: "#E74C3C", padding: "6px 12px", borderRadius: 10,
-                              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                            }}>
-                              −2₽ {t.name}
-                            </button>
-                          ))}
+
+                        {/* Attribution */}
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 8, textAlign: "center" }}>
+                            ATTRIBUER LES PIÈCES
+                          </div>
+                          <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                            {teams.map((t, i) => (
+                              <button key={i} onClick={() => { upT(i,"coins",LC[curQ.level].val); upT(i,"qOk",1); }} style={{
+                                background: `${TC[i]}22`, border: `1px solid ${TC[i]}45`,
+                                color: TC[i], padding: "8px 16px", borderRadius: 10,
+                                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                              }}>
+                                {TE[i]} {t.name}<br/>
+                                <span style={{ fontSize: 10, opacity: 0.8 }}>{LC[curQ.level].coins}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
+
+                        {/* Expert penalty */}
+                        {curQ.level === "expert" && (
+                          <div>
+                            <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginBottom: 8, textAlign: "center" }}>
+                              PÉNALITÉ MAUVAISE RÉPONSE
+                            </div>
+                            <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                              {teams.map((t, i) => (
+                                <button key={i} onClick={() => upT(i,"coins",-2)} style={{
+                                  background: "rgba(231,76,60,0.14)", border: "1px solid rgba(231,76,60,0.3)",
+                                  color: "#E74C3C", padding: "6px 12px", borderRadius: 10,
+                                  fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                                }}>
+                                  −2₽ {t.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center" }}>
+                        <button onClick={() => setShowA(true)} style={{
+                          background: "rgba(241,196,15,0.14)", border: "2px solid rgba(241,196,15,0.3)",
+                          color: "#F1C40F", padding: "14px 42px", borderRadius: 14,
+                          fontSize: 18, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        }}>
+                          Révéler la réponse
+                        </button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center" }}>
-                    <button onClick={() => setShowA(true)} style={{
-                      background: "rgba(241,196,15,0.14)", border: "2px solid rgba(241,196,15,0.3)",
-                      color: "#F1C40F", padding: "14px 42px", borderRadius: 14,
-                      fontSize: 18, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                      Révéler la réponse
-                    </button>
+                  <div style={{ textAlign: "center", padding: 48, color: "rgba(255,255,255,0.28)", fontSize: 14 }}>
+                    Choisis un niveau ci-dessus pour tirer une question
                   </div>
                 )}
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: 48, color: "rgba(255,255,255,0.28)", fontSize: 14 }}>
-                Choisis un niveau ci-dessus pour tirer une question
               </div>
             )}
           </div>
@@ -3857,11 +4232,12 @@ export default function App() {
             side={mapSide} starIdx={starIdx} setStarIdx={setStarIdx}
             tourNum={tourNum} setTourNum={setTourNum}
             maxTours={maxTours}
-            onDuel={() => setShowDuel(true)}
+            onDuel={(onDone) => { duelNextTurnRef.current = onDone; setShowDuel(true); }}
             onFinale={() => setShowFinale(true)}
-            onFlipBoard={() => setMapSide(s => s === 0 ? 1 : 0)}
             bridgeTaxTurns={bridgeTaxTurns} setBridgeTaxTurns={setBridgeTaxTurns}
             pendingPoisons={pendingPoisons} setPendingPoisons={setPendingPoisons}
+            getChaosCard={getChaosCard}
+            onApplyChaos={(name, t1, t2) => applyChaos(name, t1, t2)}
           />
         )}
 
@@ -4232,7 +4608,7 @@ export default function App() {
       {showDuel && (
         <DuelModal
           teams={teams} turn={turn} setTeams={setTeams}
-          onClose={() => setShowDuel(false)}
+          onClose={() => { setShowDuel(false); duelNextTurnRef.current?.(); duelNextTurnRef.current = null; }}
         />
       )}
     </div>

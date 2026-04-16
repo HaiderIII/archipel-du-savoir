@@ -2,17 +2,15 @@
 // CASE TYPES
 // ═══════════════════════════════════════════════════════
 export const CT = {
-  coins_plus: { l: "?₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires +1/+2/+3/+6" },
-  coins_minus: { l: "?₽", c: "#C0392B", e: "💀", d: "Pièces aléatoires −1/−2/−3/−10" },
+  coins:       { l: "?₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires (±)" },
+  coins_plus:  { l: "+₽", c: "#D4A017", e: "🪙", d: "Pièces aléatoires +1/+2/+3/+6" },
+  coins_minus: { l: "−₽", c: "#C0392B", e: "💀", d: "Pièces aléatoires −1/−2/−3/−10" },
   question:    { l: "?",  c: "#2980B9", e: "❓", d: "Question" },
   duel:        { l: "⚔",  c: "#D35400", e: "⚔️", d: "Duel" },
   chaos:       { l: "✦",  c: "#8E44AD", e: "🌀", d: "Chaos" },
   shop:        { l: "$",  c: "#27AE60", e: "🛒", d: "Boutique" },
-  bridge:      { l: "→",  c: "#8B6914", e: "🌉", d: "Pont (3₽)" },
+  bridge:      { l: "→",  c: "#8B6914", e: "🌉", d: "Pont (2₽)" },
   teleport:    { l: "◎",  c: "#00BCD4", e: "⚡", d: "Téléporteur (5₽)" },
-  bonus:       { l: "+5", c: "#1ABC9C", e: "💎", d: "Bonus +5" },
-  steal:       { l: "↗",  c: "#E91E63", e: "🫳", d: "Vol 3₽" },
-  double:      { l: "×2", c: "#FF9800", e: "🎰", d: "Dé ×2" },
   shield:      { l: "🛡", c: "#607D8B", e: "🛡️", d: "Bouclier" },
 };
 
@@ -112,7 +110,7 @@ export const CC = [
   },
   {
     e: "🚧", n: "Péage", count: 2,
-    d: "Les ponts coûtent 4₽ au lieu de 2₽ pendant 4 tours d'équipe. L'effet s'annule automatiquement.",
+    d: "Les ponts coûtent 4₽ au lieu de 2₽ pendant 2 tours d'équipe. L'effet s'annule automatiquement.",
     tip: "Chaque fois qu'une équipe passe son tour, le compteur descend d'un. À 0 : retour au tarif normal.",
     apply: "bridge_tax",
   },
