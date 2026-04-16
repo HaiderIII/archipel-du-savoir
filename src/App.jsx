@@ -1014,6 +1014,7 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
   };
 
   const applyAndClose = () => {
+    if (mjWin.current && !mjWin.current.closed) mjWin.current.close();
     let winnerIdx = null;
     if (clocks[0] > 0 && clocks[1] <= 0) winnerIdx = turn;
     else if (clocks[1] > 0 && clocks[0] <= 0) winnerIdx = challenger;
@@ -1443,7 +1444,7 @@ function ChaosBonusQ({ pool, teams, turn, upT }) {
 // COIN ROULETTE — spinning drum for unified ?₽ cases
 // ═══════════════════════════════════════════════════════
 // Unified coin weights — gaussian-like, centered ~+2, rare negatives
-const COIN_WEIGHTS = [2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 1, 1, -1, -2, -3, -10];
+const COIN_WEIGHTS = [2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 1, 1, -1, -2, -3, -5];
 
 function CoinSpinModal({ finalValue, isPlus, onDone }) {
   const signedVal = isPlus ? finalValue : -finalValue;
@@ -1762,6 +1763,14 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
   const [q, setQ] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(false);
+  const [amnesiaConsumed, setAmnesiaConsumed] = useState(false);
+
+  // Snapshot amnesia state at the time the modal opens
+  const amnesiaRef = useRef(false);
+  useEffect(() => {
+    amnesiaRef.current = !!window._amnesia;
+    setAmnesiaConsumed(amnesiaRef.current);
+  }, []);
 
   const draw = (lv) => {
     const allPool = window._Q?.[lv] ?? [];
@@ -1781,10 +1790,11 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
   };
 
   const giveCoins = () => {
-    const coins = LC[level]?.val ?? 1;
+    const coins = amnesiaRef.current ? 0 : (LC[level]?.val ?? 1);
     setTeams(prev => prev.map((t, i) => i === turn
       ? { ...t, coins: t.coins + coins, qOk: t.qOk + 1 }
       : t));
+    if (amnesiaRef.current) window._clearAmnesia?.(); // consume amnesia
     setDone(true);
   };
 
@@ -1840,6 +1850,13 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
         {/* Question card */}
         {q && (
           <div>
+            {amnesiaConsumed && (
+              <div style={{
+                padding:"8px 14px", borderRadius:10, marginBottom:12,
+                background:"rgba(142,68,173,0.22)", border:"1px solid rgba(142,68,173,0.45)",
+                color:"#D4A0F5", fontSize:12, fontWeight:700, textAlign:"center",
+              }}>🧠 Amnésie active — cette question ne rapporte aucune pièce</div>
+            )}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
               marginBottom:16, flexWrap:"wrap", gap:8 }}>
               <span style={{
@@ -1887,7 +1904,7 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
                       flex:2, padding:"12px", borderRadius:12, fontSize:14, fontWeight:700,
                       cursor:"pointer", fontFamily:"inherit",
                       background:"rgba(46,204,113,0.18)", border:"1px solid rgba(46,204,113,0.4)", color:"#2ECC71",
-                    }}>✓ Bonne réponse {LC[q.level].coins}</button>
+                    }}>✓ Bonne réponse {amnesiaConsumed ? "0₽ 🧠" : LC[q.level].coins}</button>
                     {q.level === "expert" ? (
                       <button onClick={applyPenalty} style={{
                         flex:1, padding:"12px", borderRadius:12, fontSize:13, fontWeight:700,
@@ -2642,11 +2659,16 @@ function ChaosQuestionEmbed({ apply, teamCoins, onApplyCoins, onDone }) {
   const [timedOut, setTimedOut] = useState(false);
   const timerRef = useRef(null);
 
-  // Pick a random question from window._Q
+  // Pick a random question from window._Q (injects level so display is correct)
   const drawQ = (level) => {
-    const pool = window._Q?.[level] ?? [];
-    if (!pool.length) return null;
-    return pool[Math.floor(Math.random() * pool.length)];
+    const allPool = window._Q?.[level] ?? [];
+    if (!allPool.length) return null;
+    const usedIdxs = window._usedQ?.[level] ?? [];
+    const available = allPool.map((q, i) => ({ q, i })).filter(({ i }) => !usedIdxs.includes(i));
+    const source = available.length ? available : allPool.map((q, i) => ({ q, i }));
+    const picked = source[Math.floor(Math.random() * source.length)];
+    window._markUsed?.(level, picked.i);
+    return { ...picked.q, level };
   };
 
   const startTimer = () => {
@@ -2840,9 +2862,10 @@ function ChaosQuestionEmbed({ apply, teamCoins, onApplyCoins, onDone }) {
             }}>Voir la réponse →</button>
           </div>
         ) : (
-          <button onClick={() => { clearInterval(timerRef.current); setStep("revealed"); }} style={{
+          <button disabled={timedOut} onClick={() => { clearInterval(timerRef.current); setStep("revealed"); }} style={{
             width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
-            cursor: "pointer", fontFamily: "inherit",
+            cursor: timedOut ? "not-allowed" : "pointer", fontFamily: "inherit",
+            opacity: timedOut ? 0.4 : 1,
             background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.35)", color: "#2ECC71",
           }}>Révéler la réponse</button>
         )}
@@ -3084,6 +3107,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   const [showLastTour, setShowLastTour] = useState(false);
   const [itemPickModal, setItemPickModal] = useState(null); // { teamIdx, instanceIdx, itemIdx }
   const [hoveredCaseId, setHoveredCaseId] = useState(null);
+  const [amnesiaActive, setAmnesiaActive] = useState(false); // Carte Amnésie — prochaine question sans gain
 
   // Effective bridge cost (raised by Péage chaos card)
   const effectiveBridgeCost = bridgeTaxTurns > 0 ? 4 : BRIDGE_COST;
@@ -3114,8 +3138,12 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     if (tourEnds) {
       const newTour = tn + 1;
       setTourNum(newTour);
-      if (newTour === mt) setTimeout(() => setShowLastTour(true), 200);
-      setShowMiniGame(true);
+      if (newTour === mt) {
+        // Show "last tour" banner first, then mini-game after it's dismissed
+        setTimeout(() => setShowLastTour(true), 200);
+      } else {
+        setShowMiniGame(true);
+      }
     }
   };
 
@@ -3250,16 +3278,18 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     const sfId  = st?.f?.id || st?.fId;
     const stId  = st?.t?.id || st?.tId;
     let starHit = false;
-    if (sfId && stId && traversedPath && traversedPath.length > 1) {
-      for (let k = 0; k < traversedPath.length - 1; k++) {
-        if ((traversedPath[k] === sfId && traversedPath[k+1] === stId) ||
-            (traversedPath[k] === stId  && traversedPath[k+1] === sfId)) {
-          starHit = true; break;
+    if (sfId && stId) {
+      if (caseId === sfId || caseId === stId) {
+        // Direct landing on a star endpoint always triggers
+        starHit = true;
+      } else if (traversedPath && traversedPath.length > 1) {
+        for (let k = 0; k < traversedPath.length - 1; k++) {
+          if ((traversedPath[k] === sfId && traversedPath[k+1] === stId) ||
+              (traversedPath[k] === stId  && traversedPath[k+1] === sfId)) {
+            starHit = true; break;
+          }
         }
       }
-    } else if (sfId && stId && (caseId === sfId || caseId === stId)) {
-      // Fallback when no path info
-      starHit = true;
     }
 
     // Unified random coin value (gaussian-like, slight positive bias)
@@ -3695,7 +3725,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
         />
       )}
       {showLastTour && (
-        <LastTourModal onDone={() => setShowLastTour(false)} />
+        <LastTourModal onDone={() => { setShowLastTour(false); setShowMiniGame(true); }} />
       )}
 
       {/* Item use target picker */}
@@ -3783,7 +3813,10 @@ export default function App() {
   const duelNextTurnRef = useRef(null);
 
   // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal)
-  useEffect(() => { window._Q = Q; }, []);
+  useEffect(() => {
+    window._Q = Q;
+    return () => { delete window._Q; };
+  }, []);
   useEffect(() => {
     window._usedQ = used;
     window._markUsed = (lv, idx) => setUsed(prev => {
@@ -3791,11 +3824,18 @@ export default function App() {
       if (already.includes(idx)) return prev;
       return { ...prev, [lv]: [...already, idx] };
     });
+    return () => { delete window._usedQ; delete window._markUsed; };
   }, [used]);
   useEffect(() => {
     window._usedMG = usedMG;
     window._markUsedMG = (id) => setUsedMG(prev => prev.includes(id) ? prev : [...prev, id]);
+    return () => { delete window._usedMG; delete window._markUsedMG; };
   }, [usedMG]);
+  // Expose amnesia flag so QuestionModal can clear it after consuming
+  useEffect(() => {
+    window._amnesia = amnesiaActive;
+    window._clearAmnesia = () => setAmnesiaActive(false);
+  }, [amnesiaActive]);
 
   // ── Team helpers ──────────────────────────────────────
   const upT  = (i, field, delta)  => setTeams(p => p.map((t, j) => j === i ? { ...t, [field]: Math.max(0, t[field] + delta) } : t));
@@ -3905,7 +3945,7 @@ export default function App() {
             t[turn].coins -= given; t[targetIdx].coins += given; return t; }
         case "Malédiction":
           if (targetIdx === null) return t;
-          if (t[targetIdx].shields > 0) { t[targetIdx].shields -= 1; }
+          if (t[targetIdx].shields > 0) { t[targetIdx].shields = Math.max(0, t[targetIdx].shields - 1); }
           else { t[targetIdx].coins = Math.max(0, t[targetIdx].coins - 3); }
           return t;
         case "Aimant":
@@ -3923,8 +3963,9 @@ export default function App() {
       }
     });
     if (cardName === "Retournement") setMapSide(s => s === 0 ? 1 : 0);
-    if (cardName === "Péage") setBridgeTaxTurns(2);
-  }, [turn, setTeams, setMapSide, setBridgeTaxTurns]);
+    if (cardName === "Péage") setBridgeTaxTurns(8); // 2 full tours × 4 équipes = 8 demi-tours
+    if (cardName === "Amnésie") setAmnesiaActive(true);
+  }, [turn, setTeams, setMapSide, setBridgeTaxTurns, setAmnesiaActive]);
 
   // ── Award apply ───────────────────────────────────────
   const applyAward = useCallback((awardIdx) => {
