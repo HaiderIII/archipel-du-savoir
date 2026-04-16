@@ -965,11 +965,19 @@ function DuelModal({ teams, turn, setTeams, onClose }) {
 
   const startDuel = () => {
     if (challenger === null) return;
-    const pool = [...(window._Q?.[duelLevel] || [])];
+    const allPool = window._Q?.[duelLevel] ?? [];
+    const usedIdxs = window._usedQ?.[duelLevel] ?? [];
+    const available = allPool
+      .map((q, i) => ({ ...q, __idx: i }))
+      .filter(q => !usedIdxs.includes(q.__idx));
+    const source = available.length ? available : allPool.map((q, i) => ({ ...q, __idx: i }));
+    const pool = [...source];
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
+    // Mark all drawn questions as used
+    pool.forEach(q => window._markUsed?.(duelLevel, q.__idx));
     setQPool(pool);
     setQIdx(0);
     setActiveQ(pool[0] || null);
@@ -1438,35 +1446,83 @@ function ChaosBonusQ({ pool, teams, turn, upT }) {
 }
 
 // ═══════════════════════════════════════════════════════
-// COIN FLASH — animated floating value overlay
+// COIN SPIN — slot-machine animation for coins_plus / coins_minus
 // ═══════════════════════════════════════════════════════
-function CoinFlash({ value, color }) {
-  const ref = useRef(null);
+const PLUS_WEIGHTS  = [1, 2, 2, 2, 2, 2, 2, 3, 3, 6];   // mean ≈ +2.4
+const MINUS_WEIGHTS = [1, 2, 2, 2, 2, 2, 2, 3, 3, 10];  // mean ≈ −2.9
+
+function CoinSpinModal({ finalValue, isPlus, onDone }) {
+  const color   = isPlus ? "#D4A017" : "#E74C3C";
+  const bgColor = isPlus ? "rgba(212,160,23,0.12)" : "rgba(231,76,60,0.12)";
+  const border  = isPlus ? "rgba(212,160,23,0.4)" : "rgba(231,76,60,0.4)";
+  const pool    = isPlus ? [1, 2, 3, 6] : [1, 2, 3, 10];
+  const sign    = isPlus ? "+" : "−";
+
+  const [display, setDisplay] = useState(pool[0]);
+  const [landed, setLanded]   = useState(false);
+  const doneRef = useRef(false);
+
   useEffect(() => {
-    if (!ref.current) return;
-    ref.current.animate([
-      { opacity: 1, transform: "translate(-50%,-50%) scale(1)" },
-      { opacity: 0, transform: "translate(-50%,-160%) scale(1.4)" },
-    ], { duration: 1600, easing: "cubic-bezier(0.2,0.8,0.4,1)", fill: "forwards" });
+    let step = 0;
+    const totalSteps = 18;
+    const tick = (delay) => {
+      if (doneRef.current) return;
+      if (step >= totalSteps) {
+        setDisplay(finalValue);
+        setLanded(true);
+        setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, 1100);
+        return;
+      }
+      setDisplay(pool[Math.floor(Math.random() * pool.length)]);
+      step++;
+      // Ease-out: start fast, slow down in last third
+      const nextDelay = step < totalSteps * 0.6 ? 70 : delay + 55;
+      setTimeout(() => tick(nextDelay), delay);
+    };
+    tick(70);
+    return () => { doneRef.current = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const label = value > 0 ? `+${value}₽` : `${value}₽`;
+
   return (
-    <div ref={ref} style={{
-      position: "fixed", top: "48%", left: "50%",
-      transform: "translate(-50%,-50%)",
-      fontSize: 72, fontWeight: 900, color,
-      pointerEvents: "none", zIndex: 9998,
-      fontFamily: "inherit",
-      textShadow: `0 0 40px ${color}99, 0 2px 8px rgba(0,0,0,0.8)`,
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 9998, pointerEvents: "none",
     }}>
-      {label}
+      <div style={{
+        background: bgColor,
+        border: `3px solid ${border}`,
+        borderRadius: 24, padding: "28px 48px",
+        textAlign: "center",
+        boxShadow: `0 0 60px ${color}55`,
+        transform: landed ? "scale(1.08)" : "scale(1)",
+        transition: "transform 0.15s ease-out",
+      }}>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 700,
+          letterSpacing: 2, marginBottom: 8 }}>
+          {isPlus ? "🪙 PIÈCES" : "💀 PERTE"}
+        </div>
+        <div style={{
+          fontSize: 84, fontWeight: 900, color,
+          fontFamily: "inherit",
+          textShadow: `0 0 40px ${color}aa`,
+          filter: landed ? "none" : "blur(1.5px)",
+          transition: "filter 0.12s",
+          lineHeight: 1,
+        }}>
+          {sign}{display}₽
+        </div>
+        {landed && (
+          <div style={{ marginTop: 10, fontSize: 22, opacity: 0.85 }}>
+            {isPlus ? "🎉" : "😬"}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-// Weighted random coin values (Gaussian-like)
-const PLUS_WEIGHTS  = [1, 2, 2, 2, 2, 2, 2, 3, 3, 6];   // mean ≈ +2.4
-const MINUS_WEIGHTS = [1, 2, 2, 2, 2, 2, 2, 3, 3, 10];  // mean ≈ −2.9
 
 // ═══════════════════════════════════════════════════════
 // SHOP MODAL — opened when landing on a shop case
@@ -1641,10 +1697,17 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
   const [done, setDone] = useState(false);
 
   const draw = (lv) => {
-    const pool = window._Q?.[lv] ?? [];
-    if (!pool.length) return;
-    const idx = Math.floor(Math.random() * pool.length);
-    setQ({ ...pool[idx], level: lv });
+    const allPool = window._Q?.[lv] ?? [];
+    if (!allPool.length) return;
+    const usedIdxs = window._usedQ?.[lv] ?? [];
+    const available = allPool
+      .map((q, i) => ({ q, i }))
+      .filter(({ i }) => !usedIdxs.includes(i));
+    // If all questions exhausted for this level, reset that level
+    const source = available.length ? available : allPool.map((q, i) => ({ q, i }));
+    const picked = source[Math.floor(Math.random() * source.length)];
+    window._markUsed?.(lv, picked.i);
+    setQ({ ...picked.q, level: lv });
     setLevel(lv);
     setRevealed(false);
     setDone(false);
@@ -2499,7 +2562,7 @@ function DiePanel({ values, onChange, onRoll, onAddDie, onRemoveDie, reachableCo
 // PAWN MAP (Plateau tab)
 // ═══════════════════════════════════════════════════════
 function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
-  tourNum, setTourNum, maxTours, onDuel, onFinale,
+  tourNum, setTourNum, maxTours, onDuel, onFinale, onFlipBoard,
   bridgeTaxTurns = 0, setBridgeTaxTurns,
   pendingPoisons = [], setPendingPoisons }) {
 
@@ -2515,11 +2578,12 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   const [toast, setToast]           = useState(null);
   const [showShop, setShowShop]     = useState(false);
   const [showStarBuy, setShowStarBuy] = useState(false);
+  const [pendingCaseAction, setPendingCaseAction] = useState(null); // { type, caseId }
   const [tpState, setTpState]       = useState(null);   // null | "pending" | "selecting"
   const [tpOrigin, setTpOrigin]     = useState(null);
   const [showQuestion, setShowQuestion] = useState(false);
   const [showMiniGame, setShowMiniGame] = useState(false);
-  const [coinFlash, setCoinFlash] = useState(null); // { value, color }
+  const [coinSpin, setCoinSpin]     = useState(null); // { finalValue, isPlus }
   const [itemPickModal, setItemPickModal] = useState(null); // { teamIdx, instanceIdx, itemIdx }
   const [hoveredCaseId, setHoveredCaseId] = useState(null);
 
@@ -2694,26 +2758,30 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
       };
     }));
 
-    // Toast + coin flash for auto-applied effects
+    // ── Star before special-case handlers (so passing star on way to question still triggers) ──
+    if (starHit) {
+      if (["shop", "duel", "teleport", "question"].includes(tp)) {
+        setPendingCaseAction({ type: tp, caseId });
+      }
+      setShowStarBuy(true);
+      return;
+    }
+
+    // Toast + coin spin for auto-applied effects
     if (tp === "coins_plus") {
-      setCoinFlash({ value: plusVal, color: "#D4A017" });
-      setTimeout(() => setCoinFlash(null), 1700);
+      setCoinSpin({ finalValue: plusVal, isPlus: true });
     } else if (tp === "coins_minus") {
-      setCoinFlash({ value: -minusVal, color: "#E74C3C" });
-      setTimeout(() => setCoinFlash(null), 1700);
+      setCoinSpin({ finalValue: minusVal, isPlus: false });
     } else if (tp === "bonus") {
-      setCoinFlash({ value: 5, color: "#1ABC9C" });
-      setTimeout(() => setCoinFlash(null), 1700);
+      setCoinSpin({ finalValue: 5, isPlus: true });
     } else if (tp === "shield") {
       show(`${TE[tr]} 🛡️ +1 bouclier !`);
     } else if (tp === "shop")   { setShowShop(true); return; }
     else if (tp === "duel")   { onDuel?.(); return; }
     else if (tp === "teleport") { setTpOrigin(caseId); setTpState("pending"); return; }
     else if (tp === "question") { setShowQuestion(true); return; }
-
-    if (starHit) { setShowStarBuy(true); return; }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setTeams, onDuel, setCoinFlash]);
+  }, [setTeams, onDuel, setCoinSpin]);
 
   const handleCaseClick = useCallback((caseId) => {
     // Teleport selection
@@ -2772,6 +2840,15 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     show(`${TE[turn]} 🛒 ${item.e} ${item.n} acheté !`);
   };
 
+  const resolvePendingCase = (action) => {
+    if (!action) return;
+    const { type, caseId: pCaseId } = action;
+    if (type === "shop")     setShowShop(true);
+    else if (type === "duel")     onDuel?.();
+    else if (type === "teleport") { setTpOrigin(pCaseId); setTpState("pending"); }
+    else if (type === "question") setShowQuestion(true);
+  };
+
   const buyStar = () => {
     setTeams(prev => prev.map((tm, i) => i !== turn ? tm : {
       ...tm, coins: tm.coins - STAR_COST, stars: tm.stars + 1,
@@ -2781,6 +2858,9 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     setStarIdx(n);
     setShowStarBuy(false);
     show(`${TE[turn]} ⭐ +1⭐ — l'étoile se déplace !`);
+    const pending = pendingCaseAction;
+    setPendingCaseAction(null);
+    resolvePendingCase(pending);
   };
 
   const tourPct      = Math.round((tourNum / maxTours) * 100);
@@ -2974,6 +3054,16 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
                 cursor: "pointer", fontFamily: "inherit",
                 background: `${TC[turn]}22`, border: `1px solid ${TC[turn]}45`, color: TC[turn],
               }}>Équipe suivante →</button>
+
+            {/* Flip board button */}
+            {onFlipBoard && (
+              <button onClick={onFlipBoard} style={{
+                width: "100%", padding: "7px", borderRadius: 9, fontSize: 11, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit", marginTop: 6,
+                background: "rgba(139,105,20,0.18)", border: "1px solid rgba(139,105,20,0.4)",
+                color: "#D4A017",
+              }}>🔄 Retourner le plateau ({side === 0 ? "→ Verso" : "→ Recto"})</button>
+            )}
             </div>
           </div>
         </div>
@@ -3020,7 +3110,12 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
         <StarBuyModal
           team={teams[turn]}
           onBuy={buyStar}
-          onSkip={() => setShowStarBuy(false)}
+          onSkip={() => {
+            setShowStarBuy(false);
+            const pending = pendingCaseAction;
+            setPendingCaseAction(null);
+            resolvePendingCase(pending);
+          }}
         />
       )}
       {tpState === "pending" && (
@@ -3045,7 +3140,14 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
           onDone={() => setShowMiniGame(false)}
         />
       )}
-      {coinFlash && <CoinFlash key={`${coinFlash.value}-${Date.now()}`} value={coinFlash.value} color={coinFlash.color} />}
+      {coinSpin && (
+        <CoinSpinModal
+          key={`${coinSpin.finalValue}-${coinSpin.isPlus}`}
+          finalValue={coinSpin.finalValue}
+          isPlus={coinSpin.isPlus}
+          onDone={() => setCoinSpin(null)}
+        />
+      )}
 
       {/* Item use target picker */}
       {itemPickModal && (() => {
@@ -3127,8 +3229,16 @@ export default function App() {
   const [showFinale, setShowFinale] = useState(false);
   const [showDuel,   setShowDuel]   = useState(false);
 
-  // Expose Q globally so DuelModal can access it
+  // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal)
   useEffect(() => { window._Q = Q; }, []);
+  useEffect(() => {
+    window._usedQ = used;
+    window._markUsed = (lv, idx) => setUsed(prev => {
+      const already = prev[lv] ?? [];
+      if (already.includes(idx)) return prev;
+      return { ...prev, [lv]: [...already, idx] };
+    });
+  }, [used]);
 
   // ── Team helpers ──────────────────────────────────────
   const upT  = (i, field, delta)  => setTeams(p => p.map((t, j) => j === i ? { ...t, [field]: Math.max(0, t[field] + delta) } : t));
@@ -3749,6 +3859,7 @@ export default function App() {
             maxTours={maxTours}
             onDuel={() => setShowDuel(true)}
             onFinale={() => setShowFinale(true)}
+            onFlipBoard={() => setMapSide(s => s === 0 ? 1 : 0)}
             bridgeTaxTurns={bridgeTaxTurns} setBridgeTaxTurns={setBridgeTaxTurns}
             pendingPoisons={pendingPoisons} setPendingPoisons={setPendingPoisons}
           />
