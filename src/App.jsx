@@ -1446,7 +1446,6 @@ function ChaosBonusQ({ pool, teams, turn, upT }) {
 const COIN_WEIGHTS = [2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 1, 1, -1, -2, -3, -10];
 
 function CoinSpinModal({ finalValue, isPlus, onDone }) {
-  // Reconstruct signed value for display
   const signedVal = isPlus ? finalValue : -finalValue;
   const isPos = signedVal >= 0;
   const accentColor = isPos ? "#D4A017" : "#E74C3C";
@@ -1454,10 +1453,13 @@ function CoinSpinModal({ finalValue, isPlus, onDone }) {
 
   const TILE_H   = 78;
   const VISIBLE  = 5;
-  const TAPE_LEN = 38;
-  const TARGET   = TAPE_LEN - 4; // index where final value sits
+  const TAPE_LEN = 72;
+  // 3 checkpoints across the tape for the 3 speed phases
+  const MID1   = 18;  // after phase-1 (fast ramp-up)
+  const MID2   = 50;  // after phase-2 (sustained fast spin)
+  const TARGET = 67;  // final landing position
 
-  // Build tape: random draws from COIN_WEIGHTS, then inject finalSignedVal at TARGET
+  // Build tape: random draws from COIN_WEIGHTS, inject result at TARGET
   const [tape] = useState(() => {
     const t = Array.from({ length: TAPE_LEN }, () =>
       COIN_WEIGHTS[Math.floor(Math.random() * COIN_WEIGHTS.length)]
@@ -1466,18 +1468,29 @@ function CoinSpinModal({ finalValue, isPlus, onDone }) {
     return t;
   });
 
-  // translateY to center TARGET in the 5-tile viewport
-  const endY = -(TARGET - Math.floor(VISIBLE / 2)) * TILE_H;
+  const toY = (idx) => -(idx - Math.floor(VISIBLE / 2)) * TILE_H;
+  const y1   = toY(MID1);
+  const y2   = toY(MID2);
+  const endY = toY(TARGET);
 
-  const [y, setY]         = useState(0);
-  const [phase, setPhase] = useState("idle"); // idle → spin → land → done
+  // Separate y and css-transition so we can change each independently
+  const [y,          setY]          = useState(0);
+  const [cssTransit, setCssTransit] = useState("none");
+  const [phase,      setPhase]      = useState("idle");
   const timers = useRef([]);
 
   useEffect(() => {
-    const push = (fn, ms) => { const t = setTimeout(fn, ms); timers.current.push(t); };
-    push(() => { setPhase("spin"); setY(endY); }, 60);
-    push(() => setPhase("land"),  2400);
-    push(() => { setPhase("done"); onDone(); }, 3700);
+    const push = (fn, ms) => { const id = setTimeout(fn, ms); timers.current.push(id); };
+    // Phase 1 — quick ease-in ramp (400 ms)
+    push(() => { setCssTransit("transform 0.42s cubic-bezier(0.4,0,1,1)"); setY(y1); }, 60);
+    // Phase 2 — sustained fast linear spin (900 ms)
+    push(() => { setCssTransit("transform 0.9s linear"); setY(y2); }, 520);
+    // Phase 3 — smooth deceleration to target (1100 ms ease-out)
+    push(() => { setCssTransit("transform 1.1s cubic-bezier(0.12, 0.72, 0.25, 1)"); setY(endY); }, 1470);
+    // Show result
+    push(() => setPhase("land"),  2620);
+    // Auto-dismiss
+    push(() => { setPhase("done"); onDone(); }, 4100);
     return () => timers.current.forEach(clearTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1527,9 +1540,7 @@ function CoinSpinModal({ finalValue, isPlus, onDone }) {
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "stretch",
           transform: `translateY(${y}px)`,
-          transition: phase === "spin"
-            ? "transform 2.2s cubic-bezier(0.01, 0.88, 0.18, 1)"
-            : "none",
+          transition: cssTransit,
           willChange: "transform",
         }}>
           {tape.map((v, i) => {
@@ -1542,10 +1553,10 @@ function CoinSpinModal({ finalValue, isPlus, onDone }) {
                 fontSize: isCenter ? 56 : 38,
                 fontWeight: 900, fontFamily: "monospace",
                 color: pos ? "#D4A017" : neg ? "#E74C3C" : "rgba(255,255,255,0.3)",
-                transform: isCenter ? "scale(1.1)" : "scale(1)",
-                transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+                transform: isCenter ? "scale(1.12)" : "scale(1)",
+                transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), font-size 0.3s ease",
                 textShadow: isCenter
-                  ? `0 0 28px ${pos ? "#D4A017" : "#E74C3C"}99`
+                  ? `0 0 32px ${pos ? "#D4A017" : "#E74C3C"}cc`
                   : "none",
               }}>
                 {v > 0 ? "+" : ""}{v}₽
@@ -1557,9 +1568,7 @@ function CoinSpinModal({ finalValue, isPlus, onDone }) {
 
       {/* Result overlay once landed */}
       {phase === "land" && (
-        <div style={{ marginTop: 22, textAlign: "center",
-          animation: "none",
-        }}>
+        <div style={{ marginTop: 22, textAlign: "center" }}>
           <div style={{
             fontSize: 32, fontWeight: 900,
             color: isPos ? "#D4A017" : "#E74C3C",
@@ -2624,9 +2633,261 @@ function DiePanel({ values, onChange, onRoll, onAddDie, onRemoveDie, reachableCo
 }
 
 // ═══════════════════════════════════════════════════════
+// ── Chaos inline question sub-component ────────────────
+function ChaosQuestionEmbed({ apply, teamCoins, onApplyCoins, onDone }) {
+  const [step,    setStep]    = useState("idle"); // idle→bet→drawn→revealed→done
+  const [q,       setQ]       = useState(null);
+  const [bet,     setBet]     = useState(3);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef(null);
+
+  // Pick a random question from window._Q
+  const drawQ = (level) => {
+    const pool = window._Q?.[level] ?? [];
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  const startTimer = () => {
+    setTimeLeft(15);
+    setTimedOut(false);
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          setTimedOut(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  // ── Double ou rien ──
+  if (apply === "double_ou_rien") {
+    const maxBet = Math.min(6, teamCoins);
+    if (step === "idle") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, marginBottom: 8, letterSpacing: 1 }}>
+          MISE (max {maxBet}₽ / 6₽)
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", marginBottom: 12 }}>
+          <button onClick={() => setBet(b => Math.max(0, b - 1))} style={{
+            width: 32, height: 32, borderRadius: 8, fontSize: 16, fontWeight: 700,
+            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+            color: "#fff", cursor: "pointer", fontFamily: "inherit",
+          }}>−</button>
+          <div style={{ minWidth: 52, textAlign: "center", fontSize: 26, fontWeight: 900,
+            color: "#F1C40F", fontFamily: "monospace" }}>{bet}₽</div>
+          <button onClick={() => setBet(b => Math.min(maxBet, b + 1))} style={{
+            width: 32, height: 32, borderRadius: 8, fontSize: 16, fontWeight: 700,
+            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+            color: "#fff", cursor: "pointer", fontFamily: "inherit",
+          }}>+</button>
+        </div>
+        <button onClick={() => {
+          const drawn = drawQ("college") || drawQ("lycee") || drawQ("expert");
+          if (!drawn) return;
+          setQ(drawn); setStep("drawn");
+        }} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(241,196,15,0.15)", border: "1px solid rgba(241,196,15,0.4)", color: "#F1C40F",
+        }}>🎲 Tirer la question (mise : {bet}₽)</button>
+      </div>
+    );
+    if (step === "drawn") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ background: "rgba(241,196,15,0.07)", border: "1px solid rgba(241,196,15,0.25)",
+          borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, marginBottom: 6, letterSpacing: 1 }}>
+            {q.level?.toUpperCase() ?? "?"} · {q.cat}
+          </div>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{q.q}</div>
+        </div>
+        <button onClick={() => setStep("revealed")} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.35)", color: "#2ECC71",
+        }}>Révéler la réponse</button>
+      </div>
+    );
+    if (step === "revealed") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ color: "#2ECC71", fontWeight: 700, fontSize: 13, marginBottom: 12,
+          background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.3)",
+          borderRadius: 10, padding: "10px 14px" }}>→ {q.r}</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => { onApplyCoins(+bet); setStep("done"); onDone(); }} style={{
+            flex: 2, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)", color: "#2ECC71",
+          }}>✓ Bonne réponse +{bet}₽</button>
+          <button onClick={() => { onApplyCoins(-bet); setStep("done"); onDone(); }} style={{
+            flex: 1, padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(231,76,60,0.12)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
+          }}>✗ Faux −{bet}₽</button>
+        </div>
+      </div>
+    );
+    return null;
+  }
+
+  // ── Question bonus ──
+  if (apply === "bonus_question") {
+    if (step === "idle") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <button onClick={() => {
+          const drawn = drawQ("expert");
+          if (!drawn) return;
+          setQ(drawn); setStep("drawn");
+        }} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(231,76,60,0.15)", border: "1px solid rgba(231,76,60,0.4)", color: "#E74C3C",
+        }}>📚 Tirer la question Expert</button>
+      </div>
+    );
+    if (step === "drawn") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.25)",
+          borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, marginBottom: 6, letterSpacing: 1 }}>
+            🔴 EXPERT · {q.cat}
+          </div>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{q.q}</div>
+        </div>
+        <button onClick={() => setStep("revealed")} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(241,196,15,0.14)", border: "1px solid rgba(241,196,15,0.35)", color: "#F1C40F",
+        }}>Révéler la réponse</button>
+      </div>
+    );
+    if (step === "revealed") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ color: "#2ECC71", fontWeight: 700, fontSize: 13, marginBottom: 12,
+          background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.3)",
+          borderRadius: 10, padding: "10px 14px" }}>→ {q.r}</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => { onApplyCoins(8); setStep("done"); onDone(); }} style={{
+            flex: 2, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)", color: "#2ECC71",
+          }}>✓ Bonne réponse +8₽</button>
+          <button onClick={() => { onApplyCoins(-2); setStep("done"); onDone(); }} style={{
+            flex: 1, padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(231,76,60,0.12)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
+          }}>✗ Faux −2₽</button>
+        </div>
+      </div>
+    );
+    return null;
+  }
+
+  // ── Sablier ──
+  if (apply === "sablier") {
+    if (step === "idle") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <button onClick={() => {
+          const lvls = ["college", "lycee", "expert"];
+          let drawn = null;
+          for (const lv of lvls.sort(() => Math.random() - 0.5)) { drawn = drawQ(lv); if (drawn) break; }
+          if (!drawn) return;
+          setQ(drawn); setStep("drawn"); startTimer();
+        }} style={{
+          width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(0,188,212,0.15)", border: "1px solid rgba(0,188,212,0.4)", color: "#00BCD4",
+        }}>⏳ Tirer la question (chrono 15s)</button>
+      </div>
+    );
+    if (step === "drawn") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        {/* Countdown ring */}
+        <div style={{ textAlign: "center", marginBottom: 10 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 52, height: 52, borderRadius: "50%",
+            border: `3px solid ${timedOut ? "#E74C3C" : timeLeft <= 5 ? "#E74C3C" : timeLeft <= 10 ? "#F1C40F" : "#00BCD4"}`,
+            fontSize: 20, fontWeight: 900, fontFamily: "monospace",
+            color: timedOut ? "#E74C3C" : timeLeft <= 5 ? "#E74C3C" : timeLeft <= 10 ? "#F1C40F" : "#00BCD4",
+            transition: "border-color 0.3s, color 0.3s",
+          }}>{timedOut ? "✕" : timeLeft}</div>
+        </div>
+        <div style={{ background: "rgba(0,188,212,0.07)", border: "1px solid rgba(0,188,212,0.2)",
+          borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, marginBottom: 6, letterSpacing: 1 }}>
+            {q.level?.toUpperCase() ?? "?"} · {q.cat}
+          </div>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.55 }}>{q.q}</div>
+        </div>
+        {timedOut ? (
+          <div>
+            <div style={{ color: "#E74C3C", fontWeight: 700, textAlign: "center", marginBottom: 10, fontSize: 13 }}>
+              ⏱ Temps écoulé — 0 pièce pour tout le monde
+            </div>
+            <button onClick={() => setStep("revealed")} style={{
+              width: "100%", padding: "9px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.5)",
+            }}>Voir la réponse →</button>
+          </div>
+        ) : (
+          <button onClick={() => { clearInterval(timerRef.current); setStep("revealed"); }} style={{
+            width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.35)", color: "#2ECC71",
+          }}>Révéler la réponse</button>
+        )}
+      </div>
+    );
+    if (step === "revealed") return (
+      <div style={{ marginTop: 14, borderTop: "1px solid rgba(142,68,173,0.3)", paddingTop: 14 }}>
+        <div style={{ color: "#2ECC71", fontWeight: 700, fontSize: 13, marginBottom: 12,
+          background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.3)",
+          borderRadius: 10, padding: "10px 14px" }}>→ {q.r}</div>
+        {timedOut ? (
+          <button onClick={() => { onDone(); }} style={{
+            width: "100%", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            background: "rgba(142,68,173,0.2)", border: "1px solid rgba(142,68,173,0.4)", color: "#D4A0F5",
+          }}>Continuer →</button>
+        ) : (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => {
+              const bonus = q.level === "expert" ? 5 : q.level === "lycee" ? 3 : 3;
+              onApplyCoins(bonus); onDone();
+            }} style={{
+              flex: 2, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+              background: "rgba(46,204,113,0.18)", border: "1px solid rgba(46,204,113,0.4)", color: "#2ECC71",
+            }}>✓ Bonne réponse (dans les temps)</button>
+            <button onClick={() => { onDone(); }} style={{
+              flex: 1, padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+              background: "rgba(231,76,60,0.12)", border: "1px solid rgba(231,76,60,0.35)", color: "#E74C3C",
+            }}>✗ Faux</button>
+          </div>
+        )}
+      </div>
+    );
+    return null;
+  }
+
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
 // CHAOS CARD MODAL — shown when a player lands on a chaos case
 // ═══════════════════════════════════════════════════════
-function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
+function ChaosCardModal({ card, teams, turn, onApply, onApplyCoins, onClose }) {
   const [targetIdx, setTargetIdx] = useState(null);
   const [targetIdx2, setTargetIdx2] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -2636,7 +2897,8 @@ function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
   const needsTarget  = ["steal3", "give4", "curse", "steal_star"].includes(card.apply);
   const needsDouble  = ["magnet"].includes(card.apply);
   const isManual     = card.apply === "manual";
-  const isAuto       = !needsTarget && !needsDouble && !isManual;
+  const isQCard      = ["bonus_question", "sablier", "double_ou_rien"].includes(card.apply);
+  const isAuto       = !needsTarget && !needsDouble && !isManual && !isQCard;
 
   const doApply = () => {
     if (needsTarget && targetIdx === null) return;
@@ -2648,13 +2910,15 @@ function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.86)", zIndex: 902,
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+      overflowY: "auto" }}>
       <div style={{
         background: "#0c1525", border: "2px solid rgba(142,68,173,0.5)", borderRadius: 20,
-        padding: "28px 28px", maxWidth: 400, width: "100%", textAlign: "center",
+        padding: "28px 28px", maxWidth: 420, width: "100%", textAlign: "center",
         transform: visible ? "scale(1) translateY(0)" : "scale(0.85) translateY(20px)",
         opacity: visible ? 1 : 0,
         transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease",
+        maxHeight: "90vh", overflowY: "auto",
       }}>
         <div style={{ fontSize: 50, marginBottom: 6 }}>{card.e}</div>
         <div style={{ color: "#8E44AD", fontWeight: 700, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
@@ -2672,7 +2936,17 @@ function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
             fontSize: 11, fontStyle: "italic" }}>💡 {card.tip}</div>
         )}
 
-        {!confirmed ? (
+        {/* Question-based chaos cards — embedded question flow */}
+        {isQCard && !confirmed && (
+          <ChaosQuestionEmbed
+            apply={card.apply}
+            teamCoins={teams[turn]?.coins ?? 0}
+            onApplyCoins={onApplyCoins}
+            onDone={() => { setConfirmed(true); setTimeout(onClose, 800); }}
+          />
+        )}
+
+        {!confirmed && !isQCard ? (
           <>
             {/* Target pickers */}
             {(needsTarget || needsDouble) && (
@@ -2713,7 +2987,7 @@ function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
             )}
 
             <button
-              onClick={isAuto ? doApply : doApply}
+              onClick={doApply}
               disabled={(needsTarget && targetIdx === null) ||
                         (needsDouble && (targetIdx === null || targetIdx2 === null))}
               style={{
@@ -2732,13 +3006,13 @@ function ChaosCardModal({ card, teams, turn, onApply, onClose }) {
               </button>
             )}
           </>
-        ) : (
+        ) : confirmed ? (
           <div style={{ padding: "16px", borderRadius: 12,
             background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.3)",
             color: "#2ECC71", fontWeight: 700, fontSize: 15 }}>
             ✓ Effet appliqué !
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -3012,6 +3286,8 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     if (starHit) {
       if (["shop", "duel", "teleport", "question", "chaos"].includes(tp)) {
         setPendingCaseAction({ type: tp, caseId });
+      } else if (isCoinCase) {
+        setPendingCaseAction({ type: "coins", caseId, coinVal });
       }
       setShowStarBuy(true);
       return;
@@ -3098,7 +3374,7 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
 
   const resolvePendingCase = (action) => {
     if (!action) return;
-    const { type, caseId: pCaseId } = action;
+    const { type, caseId: pCaseId, coinVal: pCoinVal } = action;
     if (type === "shop")         setShowShop(true);
     else if (type === "duel")     onDuel?.(() => nextTurnRef.current?.());
     else if (type === "teleport") { setTpOrigin(pCaseId); setTpState("pending"); }
@@ -3106,6 +3382,8 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     else if (type === "chaos")    {
       const card = getChaosCard?.();
       if (card) setCaseChaosCard(card);
+    } else if (type === "coins") {
+      setCoinSpin({ id: Date.now(), finalValue: Math.abs(pCoinVal), isPlus: pCoinVal >= 0 });
     }
   };
 
@@ -3410,6 +3688,9 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
           teams={teams}
           turn={turn}
           onApply={(name, t1, t2) => { onApplyChaos?.(name, t1, t2); }}
+          onApplyCoins={(delta) => setTeams(prev => prev.map((tm, i) =>
+            i !== turn ? tm : { ...tm, coins: Math.max(0, tm.coins + delta) }
+          ))}
           onClose={() => { setCaseChaosCard(null); nextTurnRef.current?.(); }}
         />
       )}

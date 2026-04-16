@@ -113,9 +113,9 @@ export const CC = [
   },
   {
     e: "🎲", n: "Double ou rien", count: 2,
-    d: "L'équipe active peut parier jusqu'à 6₽ sur la prochaine question tirée. Bonne réponse = mise doublée. Faux = mise perdue.",
-    tip: "Le pari est optionnel ; s'annonce avant de tirer la question.",
-    apply: "manual",
+    d: "L'équipe active parie jusqu'à 6₽. Une question est tirée immédiatement : bonne réponse = mise doublée, faux = mise perdue.",
+    tip: "Fixez votre mise AVANT de voir la question.",
+    apply: "double_ou_rien",
   },
   // ── Cartes rares (count:1) ── puissantes ou structurantes
   {
@@ -144,15 +144,15 @@ export const CC = [
   },
   {
     e: "📚", n: "Question bonus", count: 1,
-    d: "Tirez une question Expert maintenant. Si l'équipe active répond juste, elle gagne 8₽ au lieu de 5₽. Si elle répond faux, elle perd 2₽.",
-    tip: "La question est tirée et résolue immédiatement, en bonus du tour normal.",
-    apply: "manual",
+    d: "Tirez une question Expert maintenant. Bonne réponse = +8₽. Faux = −2₽.",
+    tip: "La question est résolue immédiatement, en bonus du tour normal.",
+    apply: "bonus_question",
   },
   {
     e: "⏳", n: "Sablier", count: 1,
-    d: "La prochaine question est chronométrée : 15 secondes max. Si le temps est dépassé, aucune pièce n'est accordée.",
-    tip: "L'hôte démarre le chrono dès la lecture de la question.",
-    apply: "manual",
+    d: "Une question est tirée immédiatement avec un chrono de 15 secondes. Hors délai = 0 pièce pour tout le monde.",
+    tip: "Le chrono démarre dès la lecture de la question à voix haute.",
+    apply: "sablier",
   },
   {
     e: "🎭", n: "Troc", count: 1,
