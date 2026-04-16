@@ -120,7 +120,7 @@ const CC_DECK = CC.flatMap((card, i) => Array(card.count || 1).fill(i));
 const BRIDGE_CONNECTIONS = [["1e","2g"],["1h","3a"],["2e","3d"]];
 const TELEPORT_IDS = ["1i","2h","3f"];
 const BRIDGE_COST = 2;
-const TELEPORT_COST = 5;
+const TELEPORT_COST = 3;
 function getCaseIsland(caseId) {
   return islands.findIndex(il => il.cases.some(c => c.id === caseId));
 }
@@ -239,7 +239,7 @@ const INIT_TEAMS = [
 ];
 const INIT_USED = { college: [], lycee: [], expert: [] };
 const MAX_TOURS = 10;
-const STAR_COST = 10;
+const STAR_COST = 12;
 const MG_PER_FLIP = 3;
 
 // ═══════════════════════════════════════════════════════
@@ -1440,116 +1440,138 @@ function ChaosBonusQ({ pool, teams, turn, upT }) {
 }
 
 // ═══════════════════════════════════════════════════════
-// COIN SPIN — slot-machine animation for coins_plus / coins_minus
+// COIN ROULETTE — spinning drum for unified ?₽ cases
 // ═══════════════════════════════════════════════════════
-// Unified coin weights — gaussian-like, centered around +2, slight positive bias
-// Rare negatives for chaos element (-3 to -10). Mean ≈ +1.1
+// Unified coin weights — gaussian-like, centered ~+2, rare negatives
 const COIN_WEIGHTS = [2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 1, 1, -1, -2, -3, -10];
 
-// Timing sequence: fast start, easing out (ms per frame)
-const SPIN_DELAYS = [60,60,60,60,60,65,70,80,95,115,140,170,205,245,290];
-
 function CoinSpinModal({ finalValue, isPlus, onDone }) {
-  const color  = isPlus ? "#D4A017" : "#E74C3C";
-  const bgDark = isPlus ? "#100d00" : "#110000";
-  const pool   = isPlus ? [1, 2, 3, 6] : [1, 2, 3, 10];
-  const sign   = isPlus ? "+" : "−";
-  const label  = isPlus ? "🪙 PIÈCES" : "💀 PERTE";
+  // Reconstruct signed value for display
+  const signedVal = isPlus ? finalValue : -finalValue;
+  const isPos = signedVal >= 0;
+  const accentColor = isPos ? "#D4A017" : "#E74C3C";
+  const bgColor     = isPos ? "#0d0900" : "#0d0000";
 
-  const [display, setDisplay] = useState(() => pool[Math.floor(Math.random() * pool.length)]);
-  const [phase, setPhase]     = useState("spin"); // "spin" | "land" | "done"
-  const timerRefs = useRef([]);
+  const TILE_H   = 78;
+  const VISIBLE  = 5;
+  const TAPE_LEN = 38;
+  const TARGET   = TAPE_LEN - 4; // index where final value sits
+
+  // Build tape: random draws from COIN_WEIGHTS, then inject finalSignedVal at TARGET
+  const [tape] = useState(() => {
+    const t = Array.from({ length: TAPE_LEN }, () =>
+      COIN_WEIGHTS[Math.floor(Math.random() * COIN_WEIGHTS.length)]
+    );
+    t[TARGET] = signedVal;
+    return t;
+  });
+
+  // translateY to center TARGET in the 5-tile viewport
+  const endY = -(TARGET - Math.floor(VISIBLE / 2)) * TILE_H;
+
+  const [y, setY]         = useState(0);
+  const [phase, setPhase] = useState("idle"); // idle → spin → land → done
+  const timers = useRef([]);
 
   useEffect(() => {
-    // Schedule each spin frame
-    let elapsed = 0;
-    SPIN_DELAYS.forEach((d, i) => {
-      elapsed += d;
-      const t = setTimeout(() => {
-        setDisplay(pool[Math.floor(Math.random() * pool.length)]);
-      }, elapsed);
-      timerRefs.current.push(t);
-    });
-
-    // Landing frame
-    const landAt = elapsed + SPIN_DELAYS[SPIN_DELAYS.length - 1];
-    const t1 = setTimeout(() => {
-      setDisplay(finalValue);
-      setPhase("land");
-    }, landAt);
-    timerRefs.current.push(t1);
-
-    // Auto-close
-    const t2 = setTimeout(() => {
-      setPhase("done");
-      onDone();
-    }, landAt + 1200);
-    timerRefs.current.push(t2);
-
-    return () => timerRefs.current.forEach(clearTimeout);
+    const push = (fn, ms) => { const t = setTimeout(fn, ms); timers.current.push(t); };
+    push(() => { setPhase("spin"); setY(endY); }, 60);
+    push(() => setPhase("land"),  2400);
+    push(() => { setPhase("done"); onDone(); }, 3700);
+    return () => timers.current.forEach(clearTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const skip = () => {
+    if (phase !== "land") return;
+    timers.current.forEach(clearTimeout);
+    onDone();
+  };
+
   return (
-    <div
-      onClick={() => { if (phase === "land") { timerRefs.current.forEach(clearTimeout); onDone(); } }}
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.84)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 9998,
-        cursor: phase === "land" ? "pointer" : "default",
-      }}
-    >
-      <div style={{
-        background: bgDark,
-        border: `3px solid ${color}66`,
-        borderRadius: 28, padding: "32px 56px",
-        textAlign: "center",
-        boxShadow: `0 0 80px ${color}44, inset 0 0 40px ${color}11`,
-        transform: phase === "land" ? "scale(1.1)" : "scale(1)",
-        transition: "transform 0.18s cubic-bezier(0.34,1.56,0.64,1)",
-      }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 700,
-          letterSpacing: 3, marginBottom: 10, textTransform: "uppercase" }}>
-          {label}
-        </div>
-
-        {/* Slot-tape: 3 rows, middle one is active */}
-        <div style={{ overflow: "hidden", height: 120, position: "relative", marginBottom: 4 }}>
-          {/* Fade masks top/bottom */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 34,
-            background: `linear-gradient(to bottom, ${bgDark}, transparent)`, zIndex: 2 }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 34,
-            background: `linear-gradient(to top, ${bgDark}, transparent)`, zIndex: 2 }} />
-
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            transition: phase === "spin" ? "none" : "transform 0.12s",
-          }}>
-            <div style={{ fontSize: 36, fontWeight: 900, color, opacity: 0.25, lineHeight: "40px" }}>
-              {sign}{pool[(pool.indexOf(display) + pool.length - 1) % pool.length]}₽
-            </div>
-            <div style={{
-              fontSize: 80, fontWeight: 900, color, lineHeight: "80px",
-              textShadow: `0 0 30px ${color}cc`,
-              filter: phase === "spin" ? "blur(1px)" : "none",
-              transition: "filter 0.15s",
-            }}>
-              {sign}{display}₽
-            </div>
-            <div style={{ fontSize: 36, fontWeight: 900, color, opacity: 0.25, lineHeight: "40px" }}>
-              {sign}{pool[(pool.indexOf(display) + 1) % pool.length]}₽
-            </div>
-          </div>
-        </div>
-
-        {phase === "land" && (
-          <div style={{ marginTop: 4, color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
-            Appuyer pour continuer
-          </div>
-        )}
+    <div onClick={skip} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 9998,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      cursor: phase === "land" ? "pointer" : "default",
+    }}>
+      {/* Header label */}
+      <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 700,
+        letterSpacing: 3, marginBottom: 18, textTransform: "uppercase" }}>
+        {isPos ? "🪙 CASE PIÈCES" : "💀 CASE PIÈCES"}
       </div>
+
+      {/* Drum window */}
+      <div style={{
+        position: "relative", width: 220, height: TILE_H * VISIBLE,
+        overflow: "hidden", borderRadius: 20,
+        border: `2px solid ${accentColor}50`,
+        background: bgColor,
+        boxShadow: `0 0 70px ${accentColor}28, inset 0 0 30px ${accentColor}08`,
+      }}>
+        {/* Top fade */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, pointerEvents: "none",
+          height: TILE_H * 1.8, background: `linear-gradient(to bottom, ${bgColor}, transparent)`, zIndex: 2 }} />
+        {/* Bottom fade */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none",
+          height: TILE_H * 1.8, background: `linear-gradient(to top, ${bgColor}, transparent)`, zIndex: 2 }} />
+        {/* Center selector frame */}
+        <div style={{
+          position: "absolute", pointerEvents: "none",
+          top: TILE_H * Math.floor(VISIBLE / 2), left: 8, right: 8, height: TILE_H,
+          border: `2px solid ${accentColor}70`,
+          borderRadius: 10, zIndex: 3,
+          boxShadow: `0 0 18px ${accentColor}30, inset 0 0 12px ${accentColor}12`,
+        }} />
+
+        {/* Scrolling tape */}
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "stretch",
+          transform: `translateY(${y}px)`,
+          transition: phase === "spin"
+            ? "transform 2.2s cubic-bezier(0.01, 0.88, 0.18, 1)"
+            : "none",
+          willChange: "transform",
+        }}>
+          {tape.map((v, i) => {
+            const pos = v > 0;
+            const neg = v < 0;
+            const isCenter = phase === "land" && i === TARGET;
+            return (
+              <div key={i} style={{
+                height: TILE_H, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: isCenter ? 56 : 38,
+                fontWeight: 900, fontFamily: "monospace",
+                color: pos ? "#D4A017" : neg ? "#E74C3C" : "rgba(255,255,255,0.3)",
+                transform: isCenter ? "scale(1.1)" : "scale(1)",
+                transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+                textShadow: isCenter
+                  ? `0 0 28px ${pos ? "#D4A017" : "#E74C3C"}99`
+                  : "none",
+              }}>
+                {v > 0 ? "+" : ""}{v}₽
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Result overlay once landed */}
+      {phase === "land" && (
+        <div style={{ marginTop: 22, textAlign: "center",
+          animation: "none",
+        }}>
+          <div style={{
+            fontSize: 32, fontWeight: 900,
+            color: isPos ? "#D4A017" : "#E74C3C",
+            textShadow: `0 0 24px ${accentColor}88`,
+          }}>
+            {signedVal > 0 ? "+" : ""}{signedVal}₽
+          </div>
+          <div style={{ marginTop: 8, color: "rgba(255,255,255,0.28)", fontSize: 11 }}>
+            Toucher pour continuer
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2797,18 +2819,25 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
   useEffect(() => { stateRef.current = { teams, turn, side, starIdx, bridgeTaxTurns, tourNum, maxTours, pendingPoisons }; });
 
   // nextTurn ref — always points to latest version
+  // Tour rotation: tour N starts at team (N-1)%4, so each tour a different team goes first.
   const nextTurnRef = useRef(null);
   nextTurnRef.current = () => {
     const { turn: tr, bridgeTaxTurns: btt, tourNum: tn, maxTours: mt, pendingPoisons: pp } = stateRef.current;
     const newTurn = (tr + 1) % 4;
-    if (pp.includes(newTurn)) {
-      setTeams(prev => prev.map((tm, i) => i === newTurn ? { ...tm, coins: Math.max(0, tm.coins - 4) } : tm));
-      setPendingPoisons(prev => prev.filter(x => x !== newTurn));
-      show(`🍄 Poison ! ${TE[newTurn]} perd 4₽`);
+    // First team of the CURRENT tour — when newTurn cycles back to it, the tour is complete.
+    const ftt = (tn - 1) % 4;
+    const tourEnds = newTurn === ftt;
+    // If tour ends, next active team is first of the NEXT tour: (ftt+1)%4
+    const actualNewTurn = tourEnds ? (ftt + 1) % 4 : newTurn;
+
+    if (pp.includes(actualNewTurn)) {
+      setTeams(prev => prev.map((tm, i) => i === actualNewTurn ? { ...tm, coins: Math.max(0, tm.coins - 4) } : tm));
+      setPendingPoisons(prev => prev.filter(x => x !== actualNewTurn));
+      show(`🍄 Poison ! ${TE[actualNewTurn]} perd 4₽`);
     }
     setBridgeTaxTurns(p => Math.max(0, p - 1));
-    setTurn(newTurn);
-    if (newTurn === 0) {
+    setTurn(actualNewTurn);
+    if (tourEnds) {
       const newTour = tn + 1;
       setTourNum(newTour);
       if (newTour === mt) setTimeout(() => setShowLastTour(true), 200);
