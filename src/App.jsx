@@ -127,6 +127,26 @@ function segs() {
 }
 const AS = segs();
 
+// Returns the AS index farthest from all pawns (maximise min-distance to nearest pawn),
+// then picks randomly from the top 25% candidates.
+function pickFarthestStarIdx(teams, currentIdx, side) {
+  const positions = teams.map(t => t.pos);
+  const candidates = AS.map((_, i) => i).filter(i => i !== currentIdx);
+  const scored = candidates.map(idx => {
+    const seg = AS[idx];
+    const caseId = seg.f?.id || seg.fId;
+    if (!caseId) return { idx, minDist: 0 };
+    const minDist = Math.min(...positions.map(pos => {
+      const path = findShortestPath(pos, caseId, side);
+      return path ? path.length - 1 : 20;
+    }));
+    return { idx, minDist };
+  });
+  scored.sort((a, b) => b.minDist - a.minDist);
+  const topN = Math.max(1, Math.floor(scored.length * 0.25));
+  return scored[Math.floor(Math.random() * topN)].idx;
+}
+
 // ═══════════════════════════════════════════════════════
 // CHAOS DECK  (multiple copies per card based on count)
 // ═══════════════════════════════════════════════════════
@@ -3022,7 +3042,7 @@ function BoardSVG({ side, starIdx, buying = false, withHover = false, mario = fa
 // ═══════════════════════════════════════════════════════
 // BOARD MAP COMPONENT  (Carte tab — no pawns)
 // ═══════════════════════════════════════════════════════
-function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
+function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx, teams }) {
   const [hov, setHov]       = useState(null);
   const [hovT, setHovT]     = useState(null);
   const [buying, setBuying] = useState(false);
@@ -3071,12 +3091,13 @@ function BoardMap({ side, setSide, mgCount, setMgCount, starIdx, setStarIdx }) {
     setBuying(true);
     show("⭐ Étoile achetée ! Déplacement...", 2200);
     setTimeout(() => {
-      let n;
-      do { n = Math.floor(Math.random() * AS.length); } while (n === starIdx);
+      const n = teams?.length
+        ? pickFarthestStarIdx(teams, starIdx, side)
+        : (() => { let r; do { r = Math.floor(Math.random() * AS.length); } while (r === starIdx); return r; })();
       setStarIdx(n);
       setBuying(false);
     }, 1800);
-  }, [starIdx, buying, setStarIdx]);
+  }, [starIdx, buying, setStarIdx, teams, side]);
 
   const isRecto = side === 0;
   const sideColor = isRecto ? "#2ecc71" : "#e74c3c";
@@ -4004,25 +4025,8 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     setTeams(prev => prev.map((tm, i) => i !== turn ? tm : {
       ...tm, coins: tm.coins - STAR_COST, stars: tm.stars + 1,
     }));
-    // Balanced star placement: pick from top 25% most-balanced candidates
     const { teams: t, side: s } = stateRef.current;
-    const teamPositions = t.map(tm => tm.pos);
-    const candidates = AS.map((_, i) => i).filter(i => i !== starIdx);
-    const scored = candidates.map(idx => {
-      const seg = AS[idx];
-      const sfId = seg.f?.id || seg.fId;
-      if (!sfId) return { idx, score: 999 };
-      const dists = teamPositions.map(pos => {
-        const path = findShortestPath(pos, sfId, s);
-        return path ? path.length - 1 : 20;
-      });
-      const spread = Math.max(...dists) - Math.min(...dists);
-      return { idx, score: spread + Math.random() * 3 };
-    });
-    scored.sort((a, b) => a.score - b.score);
-    const topN = Math.max(1, Math.floor(scored.length * 0.25));
-    const pick = scored[Math.floor(Math.random() * topN)];
-    setStarIdx(pick.idx);
+    setStarIdx(pickFarthestStarIdx(t, starIdx, s));
     setShowStarBuy(false);
     show(`${TE[turn]} ⭐ +1⭐ — l'étoile se déplace !`);
     const pending = pendingCaseAction;
@@ -5236,6 +5240,7 @@ export default function App() {
             side={mapSide} setSide={setMapSide}
             mgCount={mgCount} setMgCount={setMgCount}
             starIdx={starIdx} setStarIdx={setStarIdx}
+            teams={teams}
           />
         )}
 
