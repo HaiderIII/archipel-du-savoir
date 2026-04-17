@@ -2210,6 +2210,25 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
   const { type, items } = content;
   const total = items.length;
 
+  // ── TABOU / MOTS : contenu réservé à la fenêtre MJ ───
+  if (type === "taboo" || type === "words") {
+    return (
+      <div>
+        <style>{`@keyframes mgPulse{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}`}</style>
+        <div style={{ textAlign:"center", padding:"32px 0 24px" }}>
+          <div style={{ fontSize:54, marginBottom:14, display:"inline-block", animation:"mgPulse 2.2s ease-in-out infinite" }}>{game.emoji}</div>
+          <div style={{ color:"rgba(255,255,255,0.85)", fontSize:17, fontWeight:800, letterSpacing:2, marginBottom:6 }}>JEU EN COURS</div>
+          <div style={{ color:"rgba(255,255,255,0.35)", fontSize:12, marginBottom:4 }}>{game.name}</div>
+          <div style={{ color:"rgba(255,255,255,0.2)", fontSize:11 }}>Le MJ gère le contenu sur sa fenêtre</div>
+        </div>
+        <ScoreTracker teams={teams} scores={scores} setScores={setScores} />
+        <button onClick={onDone} style={{ marginTop:14, width:"100%", padding:"12px", borderRadius:12, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit", background:`${fmt.color||"#D4A0F5"}22`, border:`2px solid ${fmt.color||"#D4A0F5"}50`, color:fmt.color||"#D4A0F5" }}>
+          → Voir le classement
+        </button>
+      </div>
+    );
+  }
+
   // ── THEMES : grille cochable avec réponses ────────────
   if (type === "themes") {
     return (
@@ -2547,7 +2566,10 @@ function MiniGameModal({ teams, setTeams, onDone }) {
                 fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
                 background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.75)",
               }}>📋 Vue MJ</button>
-              <button onClick={() => setPhase("play")} style={{
+              <button onClick={() => {
+                setPhase("play");
+                if (["taboo", "words"].includes(game.content?.type)) openMGMJWindow(game);
+              }} style={{
                 flex:1, padding:"13px", borderRadius:12,
                 fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit",
                 background:`${fmt.color || "#D4A0F5"}22`, border:`2px solid ${fmt.color || "#D4A0F5"}50`, color:fmt.color || "#D4A0F5",
