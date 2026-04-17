@@ -336,7 +336,57 @@ function ClueItem({ item }) {
 // ═══════════════════════════════════════════════════════
 // MINI-GAME CONTENT RENDERER
 // ═══════════════════════════════════════════════════════
-function ContentRenderer({ content, gameId }) {
+// ══════════════════════════════════════════════════════════
+// ADD QUESTION FORM
+// ══════════════════════════════════════════════════════════
+function AddQuestionForm({ onAdd }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [r, setR] = useState("");
+  const [cat, setCat] = useState("");
+  const submit = () => {
+    if (!q.trim() || !r.trim()) return;
+    onAdd({ q: q.trim(), r: r.trim(), cat: cat.trim() || "CUSTOM" });
+    setQ(""); setR(""); setCat(""); setOpen(false);
+  };
+  const inp = {
+    width: "100%", background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+    color: "#fff", padding: "6px 10px", fontSize: 12, fontFamily: "inherit", outline: "none",
+  };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{
+      marginTop: 8, width: "100%", padding: "6px", borderRadius: 8,
+      background: "none", border: "1px dashed rgba(255,255,255,0.12)",
+      color: "rgba(255,255,255,0.35)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+    }}>+ Ajouter une question</button>
+  );
+  return (
+    <div style={{
+      marginTop: 8, padding: "10px 12px", borderRadius: 10,
+      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)",
+      display: "flex", flexDirection: "column", gap: 6,
+    }}>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Question…" style={inp} />
+      <input value={r} onChange={e => setR(e.target.value)} placeholder="Réponse…" style={inp} />
+      <input value={cat} onChange={e => setCat(e.target.value)} placeholder="Catégorie (ex: HIST, SCIENCE…)" style={inp} />
+      <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={submit} style={{
+          flex: 1, padding: "6px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(46,204,113,0.15)", border: "1px solid rgba(46,204,113,0.3)", color: "#2ECC71",
+        }}>✓ Ajouter</button>
+        <button onClick={() => setOpen(false)} style={{
+          padding: "6px 12px", borderRadius: 8, fontSize: 11,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)",
+        }}>Annuler</button>
+      </div>
+    </div>
+  );
+}
+
+function ContentRenderer({ content, gameId, editable = false, onItemsChange = null }) {
   const [revealed, setReveal] = useState({});
   const toggle = (k) => setReveal(p => ({ ...p, [k]: !p[k] }));
 
@@ -363,6 +413,10 @@ function ContentRenderer({ content, gameId }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                 <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, flex: 1 }}>{item.q}</span>
                 <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 9, flexShrink: 0 }}>{item.cat}</span>
+                {editable && onItemsChange && (
+                  <button onClick={() => onItemsChange(items.filter((_, j) => j !== i))}
+                    style={{ background: "none", border: "none", color: "rgba(231,76,60,0.6)", cursor: "pointer", fontSize: 15, flexShrink: 0, padding: "0 2px", lineHeight: 1 }}>×</button>
+                )}
               </div>
               {revealed[key]
                 ? <div style={{ marginTop: 5, color: "#2ECC71", fontWeight: 700, fontSize: 13 }}>→ {item.r}</div>
@@ -375,6 +429,9 @@ function ContentRenderer({ content, gameId }) {
             </div>
           );
         })}
+        {editable && onItemsChange && (
+          <AddQuestionForm onAdd={(item) => onItemsChange([...items, item])} />
+        )}
       </div>
     </div>
   );
@@ -780,23 +837,21 @@ function PawnShape({ cx, cy, color, active }) {
 // Supports ties: multiple teams can share the same rank.
 // ranks[teamIdx] = 0..3  (0 = 1er, 1 = 2e, …)
 // ═══════════════════════════════════════════════════════
-function MiniGameRanking({ teams, setTeams, onDone }) {
-  // ranks[teamIdx] = rankPos (0–3) or null
-  const [ranks, setRanks] = useState([null, null, null, null]);
+function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null }) {
+  const [order, setOrder] = useState(() => initialOrder ?? [0, 1, 2, 3]);
   const [done, setDone]   = useState(false);
 
-  const setRank = (teamIdx, pos) => {
+  const swap = (pos, dir) => {
     if (done) return;
-    setRanks(prev => { const n = [...prev]; n[teamIdx] = pos; return n; });
+    const other = pos + dir;
+    if (other < 0 || other > 3) return;
+    setOrder(prev => { const n = [...prev]; [n[pos], n[other]] = [n[other], n[pos]]; return n; });
   };
-
-  const allAssigned = ranks.every(r => r !== null);
 
   const distribute = () => {
     setTeams(prev => prev.map((t, i) => {
-      const pos = ranks[i];
-      if (pos === null) return t;
-      return { ...t, coins: t.coins + RANK_COINS[pos], mgWon: pos === 0 ? t.mgWon + 1 : t.mgWon };
+      const rank = order.indexOf(i);
+      return { ...t, coins: t.coins + RANK_COINS[rank], mgWon: rank === 0 ? t.mgWon + 1 : t.mgWon };
     }));
     setDone(true);
     onDone?.();
@@ -804,82 +859,53 @@ function MiniGameRanking({ teams, setTeams, onDone }) {
 
   const rankColors = ["#F1C40F", "#BDC3C7", "#CD7F32", "rgba(180,180,180,0.35)"];
   const rankEmoji  = ["🥇", "🥈", "🥉", "4️⃣"];
-  const rankLabel  = ["1er", "2e", "3e", "4e"];
-
-  // Which rank positions have ties?
-  const tiedPositions = new Set(
-    [0,1,2,3].filter(pos => ranks.filter(r => r === pos).length > 1)
-  );
+  const swapBtn = {
+    background: "none", borderRadius: 4, width: 22, height: 16,
+    fontSize: 8, fontFamily: "inherit", lineHeight: 1, padding: 0,
+  };
 
   return (
     <div style={{ marginTop: 14, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 12 }}>
-      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
-        🏆 RÉSULTATS DU MINI-JEU — cliquez le rang de chaque équipe
+      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
+        🏆 CLASSEMENT FINAL — utilisez ▲▼ pour ajuster
       </div>
-
-      {teams.map((tm, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-          {/* Team label */}
-          <span style={{ color: TC[i], fontWeight: 700, fontSize: 12, minWidth: 58, flexShrink: 0 }}>
-            {TE[i]} {tm.name}
-          </span>
-
-          {/* Rank buttons */}
-          <div style={{ display: "flex", gap: 3 }}>
-            {[0,1,2,3].map(pos => {
-              const sel = ranks[i] === pos;
-              return (
-                <button key={pos} onClick={() => setRank(i, pos)} title={`${rankLabel[pos]} (+${RANK_COINS[pos]}₽)`}
-                  style={{
-                    width: 32, height: 28, borderRadius: 7, fontSize: 13,
-                    cursor: done ? "default" : "pointer", fontFamily: "inherit",
-                    background: sel ? `${rankColors[pos]}40` : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${sel ? rankColors[pos] : "rgba(255,255,255,0.08)"}`,
-                    color: sel ? rankColors[pos] : "rgba(255,255,255,0.28)",
-                    fontWeight: sel ? 800 : 400,
-                  }}>
-                  {rankEmoji[pos]}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Reward preview */}
-          {ranks[i] !== null && (
-            <span style={{ color: "#D4A017", fontSize: 11, minWidth: 28 }}>
-              +{RANK_COINS[ranks[i]]}₽
+      {order.map((teamIdx, rankPos) => {
+        const tm = teams[teamIdx];
+        return (
+          <div key={teamIdx} style={{
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
+            padding: "8px 12px", borderRadius: 10,
+            background: `${rankColors[rankPos]}18`,
+            border: `1px solid ${rankColors[rankPos]}40`,
+          }}>
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{rankEmoji[rankPos]}</span>
+            <span style={{ color: TC[teamIdx], fontWeight: 700, fontSize: 13, flex: 1 }}>
+              {TE[teamIdx]} {tm.name}
             </span>
-          )}
-
-          {/* Tie badge */}
-          {ranks[i] !== null && tiedPositions.has(ranks[i]) && (
-            <span style={{ color: "#F1C40F", fontSize: 10, fontWeight: 700 }}>⚖️ ex-æquo</span>
-          )}
-        </div>
-      ))}
-
-      {/* Tie explanation when ties exist */}
-      {tiedPositions.size > 0 && (
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontStyle: "italic",
-          marginBottom: 8, lineHeight: 1.5 }}>
-          En cas d&apos;ex-æquo, chaque équipe reçoit la récompense de leur rang partagé.
-        </div>
-      )}
-
+            <span style={{ color: "#D4A017", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+              +{RANK_COINS[rankPos]}₽
+            </span>
+            {!done && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <button onClick={() => swap(rankPos, -1)} disabled={rankPos === 0}
+                  style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 0 ? "default" : "pointer" }}>▲</button>
+                <button onClick={() => swap(rankPos, 1)} disabled={rankPos === 3}
+                  style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 3 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 3 ? "default" : "pointer" }}>▼</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
       {done ? (
         <div style={{ color: "#2ECC71", fontSize: 12, fontWeight: 700, textAlign: "center", marginTop: 8 }}>
           ✓ Récompenses distribuées !
         </div>
       ) : (
-        <button disabled={!allAssigned} onClick={distribute} style={{
-          marginTop: 8, width: "100%", padding: "8px", borderRadius: 10, fontSize: 12, fontWeight: 700,
-          cursor: allAssigned ? "pointer" : "not-allowed", fontFamily: "inherit",
-          background: allAssigned ? "rgba(212,160,23,0.15)" : "rgba(80,80,80,0.1)",
-          border: `1px solid ${allAssigned ? "rgba(212,160,23,0.4)" : "rgba(80,80,80,0.2)"}`,
-          color: allAssigned ? "#D4A017" : "#555",
-        }}>
-          💰 Distribuer les récompenses
-        </button>
+        <button onClick={distribute} style={{
+          marginTop: 8, width: "100%", padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(212,160,23,0.15)", border: "1px solid rgba(212,160,23,0.4)", color: "#D4A017",
+        }}>💰 Distribuer les récompenses</button>
       )}
     </div>
   );
@@ -1952,6 +1978,431 @@ function QuestionModal({ teams, turn, setTeams, onClose }) {
 // MINI-GAME MODAL — pops automatically at end of turn
 // Phases: rules → ranking → close + advance turn
 // ═══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// FENÊTRE MJ MINI-JEU (nouvelle fenêtre navigateur)
+// ══════════════════════════════════════════════════════════
+function openMGMJWindow(game) {
+  const w = window.open("", `mj_mg_${game.id}`, "width=860,height=700,resizable=yes,scrollbars=yes");
+  if (!w) { alert("Autorisez les pop-ups pour cette page."); return; }
+  const fmt   = { tous: "#E74C3C", teams: "#00BCD4", solo: "#2ECC71", tournoi: "#8E44AD", coop: "#D35400" };
+  const color = fmt[game.format] || "#D4A0F5";
+  const c     = game.content;
+  const items = c?.items || [];
+
+  const escH  = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+  let contentHTML = "";
+  if (!c || !items.length) {
+    contentHTML = `<p class="note">Pas de contenu — jouez selon les règles.</p>`;
+  } else if (c.type === "questions") {
+    contentHTML = items.map((q, i) => `
+      <div class="card" id="q${i}">
+        <div class="meta">${escH(q.cat||"")}</div>
+        <div class="question">${escH(q.q)}</div>
+        <div class="answer hidden" id="a${i}">${escH(q.r)}</div>
+        <button onclick="rev('a${i}',this)">Révéler la réponse</button>
+      </div>`).join("");
+  } else if (c.type === "taboo") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((t, i) => `<div class="card taboo-card ${i===0?"":"hidden"}" id="t${i}"><div class="big-word">${escH(t.word)}</div>${(t.forbidden||[]).map(f=>`<div class="forbidden">🚫 ${escH(f)}</div>`).join("")}</div>`).join("");
+  } else if (c.type === "themes") {
+    contentHTML = `<div class="grid">${items.map((t,i)=>`<div class="chip" id="chip${i}" onclick="this.classList.toggle('used')">${t.emoji||""} ${escH(t.label||t)}</div>`).join("")}</div>`;
+  } else if (c.type === "statements") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((s, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div class="question">${escH(s.text)}</div><div class="answer hidden ${s.answer==="VRAI"?"vrai":"faux"}" id="a${i}">${escH(s.answer)}${s.note?`<div class="note">💡 ${escH(s.note)}</div>`:""}</div><button onclick="rev('a${i}',this)">Révéler</button></div>`).join("");
+  } else if (c.type === "clues") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((s, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div id="clues${i}"></div><button onclick="nextClue(${i},${JSON.stringify(s.clues).replace(/</g,"\\u003c")},this)">Indice 1</button><div class="answer hidden" id="a${i}">${escH(s.answer)}</div><button class="hidden" id="revbtn${i}" onclick="rev('a${i}',this)">Révéler la réponse</button></div>`).join("");
+  } else if (c.type === "words") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((w, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div class="big-word">${escH(w)}</div></div>`).join("");
+  } else if (c.type === "definitions") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((d, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div class="big-word">${escH(d.word)}</div><div class="answer hidden" id="a${i}"><em>${escH(d.def)}</em></div><button onclick="rev('a${i}',this)">Révéler définition</button></div>`).join("");
+  } else if (c.type === "top5") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((t, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div class="question">${escH(t.q)}</div><div class="answer hidden" id="a${i}">${(t.answers||[]).map((a,j)=>`<div><b>${j+1}.</b> ${escH(a)}</div>`).join("")}</div><button onclick="rev('a${i}',this)">Révéler classement</button></div>`).join("");
+  } else if (c.type === "pairs") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((p, i) => `<div class="card ${i===0?"":"hidden"}" id="s${i}"><div class="big-word">${escH(p.a)}</div><div class="answer hidden" id="a${i}">${escH(p.b)}</div><button onclick="rev('a${i}',this)">Révéler mot B</button></div>`).join("");
+  } else if (c.type === "series") {
+    contentHTML = `<div id="nav"><button onclick="go(-1)">← Préc</button><span id="counter">1 / ${items.length}</span><button onclick="go(1)">Suiv →</button></div>` +
+      items.map((s, i) => {
+        const sh = [...(s.items||[])].sort((a,b)=>a.localeCompare(b));
+        return `<div class="card ${i===0?"":"hidden"}" id="s${i}"><b>${escH(s.title)}</b><div class="chips">${sh.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}</div><div class="answer hidden" id="a${i}">${(s.items||[]).map((x,j)=>`<div>${j+1}. ${escH(x)}</div>`).join("")}</div><button onclick="rev('a${i}',this)">Révéler l'ordre</button></div>`;
+      }).join("");
+  } else {
+    contentHTML = `<p class="note">${escH(c.title||"")}</p>`;
+  }
+
+  // Score panel HTML
+  const teamsArr = ["🔴 Équipe 1","🔵 Équipe 2","🟢 Équipe 3","🟡 Équipe 4"];
+  const scorePanel = `<div class="score-panel"><div class="score-title">SCORES</div>${teamsArr.map((t,i)=>`<div class="score-row"><span class="team-name" style="color:${["#E74C3C","#3498DB","#2ECC71","#F39C12"][i]}">${t}</span><button onclick="adj(${i},-1)">−</button><span id="sc${i}" class="sc">0</span><button onclick="adj(${i},+1)">+</button></div>`).join("")}</div>`;
+
+  const rulesHTML = game.rules?.map(r=>`<li>${escH(r)}</li>`).join("")||"";
+
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>MJ — ${escH(game.name)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0c1525;color:#fff;font-family:system-ui,sans-serif;padding:18px;min-height:100vh;display:flex;flex-direction:column;gap:14px}
+h1{color:${color};font-size:20px;font-weight:800;letter-spacing:1px}
+.desc{color:rgba(255,255,255,0.55);font-size:13px;line-height:1.5}
+.rules{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 16px}
+.rules li{color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:3px;margin-left:16px}
+.card{background:rgba(255,255,255,0.05);border:1px solid ${color}30;border-radius:14px;padding:18px 16px;display:flex;flex-direction:column;gap:10px}
+.taboo-card{align-items:center;gap:14px}
+.meta{color:rgba(255,255,255,0.3);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.question{font-size:16px;font-weight:600;line-height:1.5}
+.big-word{font-size:28px;font-weight:900;text-align:center;letter-spacing:1px}
+.answer{color:#2ECC71;font-size:15px;font-weight:700;margin-top:4px;padding:10px;background:rgba(46,204,113,0.08);border-radius:8px}
+.answer.vrai{color:#2ECC71;background:rgba(46,204,113,0.1)}
+.answer.faux{color:#E74C3C;background:rgba(231,76,60,0.1)}
+.answer .note{color:rgba(255,255,255,0.4);font-size:11px;font-style:italic;margin-top:6px;font-weight:400}
+.forbidden{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.15);border-radius:8px;font-size:14px;font-weight:600;width:100%}
+.hidden{display:none!important}
+button{background:${color}22;border:1px solid ${color}50;color:${color};padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;align-self:flex-start}
+button:hover{background:${color}35}
+#nav{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+#nav button{padding:6px 14px}
+#counter{color:rgba(255,255,255,0.35);font-size:11px;flex:1;text-align:center}
+.grid,.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:7px 12px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;user-select:none;transition:all 0.15s}
+.chip.used{opacity:.3;text-decoration:line-through;background:rgba(255,255,255,0.02);border-color:rgba(255,255,255,0.04)}
+.score-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 16px;margin-top:auto}
+.score-title{color:rgba(255,255,255,0.3);font-size:9px;font-weight:700;letter-spacing:1px;margin-bottom:10px}
+.score-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.team-name{font-weight:700;font-size:13px;flex:1}
+.score-row button{width:28px;height:28px;padding:0;text-align:center;font-size:16px;border-radius:6px;align-self:auto}
+.sc{min-width:30px;text-align:center;font-weight:800;font-size:16px;color:#fff}
+.note{color:rgba(255,255,255,0.4);font-size:12px;font-style:italic}
+</style></head><body>
+<h1>${escH(game.emoji)} ${escH(game.name)}</h1>
+<p class="desc">${escH(game.desc)}</p>
+${rulesHTML ? `<div class="rules"><ul>${rulesHTML}</ul></div>` : ""}
+<div id="content">${contentHTML}</div>
+${scorePanel}
+<script>
+const scores=[0,0,0,0];
+function adj(i,d){scores[i]=Math.max(0,scores[i]+d);document.getElementById('sc'+i).textContent=scores[i];}
+function rev(id,btn){document.getElementById(id).classList.remove('hidden');btn.style.display='none';}
+let cur=0,total=${items.length};
+function go(d){
+  const cards=document.querySelectorAll('[id^="s"],[id^="t"]');
+  const prefix=${c?.type==="taboo"?'"t"':'"s"'};
+  const el=document.getElementById(prefix+cur);
+  if(el)el.classList.add('hidden');
+  cur=Math.max(0,Math.min(total-1,cur+d));
+  const el2=document.getElementById(prefix+cur);
+  if(el2)el2.classList.remove('hidden');
+  const ct=document.getElementById('counter');
+  if(ct)ct.textContent=(cur+1)+' / '+total;
+}
+const clueCounters={};
+function nextClue(i,clues,btn){
+  clueCounters[i]=(clueCounters[i]||0)+1;
+  const c=clueCounters[i];
+  const el=document.getElementById('clues'+i);
+  if(el)el.innerHTML=clues.slice(0,c).map((x,j)=>'<div style="margin-bottom:6px;font-size:13px;color:rgba(255,255,255,0.8)"><b>'+(j+1)+'.</b> '+x+'</div>').join('');
+  if(c>=clues.length){btn.style.display='none';const rb=document.getElementById('revbtn'+i);if(rb)rb.classList.remove('hidden');}
+  else btn.textContent='Indice '+(c+1);
+}
+<\/script></body></html>`);
+  w.document.close();
+}
+
+// ══════════════════════════════════════════════════════════
+// SCORE TRACKER
+// ══════════════════════════════════════════════════════════
+function ScoreTracker({ teams, scores, setScores }) {
+  return (
+    <div style={{
+      marginTop: 14, padding: "10px 12px", borderRadius: 12,
+      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+    }}>
+      <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>
+        SCORES EN COURS
+      </div>
+      {teams.map((tm, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: i < 3 ? 6 : 0 }}>
+          <span style={{ color: TC[i], fontWeight: 700, fontSize: 12, flex: 1 }}>{TE[i]} {tm.name}</span>
+          <button onClick={() => setScores(s => { const n = [...s]; n[i] = Math.max(0, n[i] - 1); return n; })}
+            style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(231,76,60,0.12)", border: "1px solid rgba(231,76,60,0.25)", color: "#E74C3C", fontSize: 16, cursor: "pointer", fontFamily: "inherit", lineHeight: 1 }}>−</button>
+          <span style={{ minWidth: 28, textAlign: "center", color: "#fff", fontWeight: 800, fontSize: 16 }}>{scores[i]}</span>
+          <button onClick={() => setScores(s => { const n = [...s]; n[i] += 1; return n; })}
+            style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.25)", color: "#2ECC71", fontSize: 16, cursor: "pointer", fontFamily: "inherit", lineHeight: 1 }}>+</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// PLAY PHASE — carte interactive + score
+// ══════════════════════════════════════════════════════════
+function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent, onDone }) {
+  const [idx, setIdx]           = useState(0);
+  const [revealMap, setRevealMap] = useState({});
+  const [usedSet, setUsedSet]   = useState(new Set());
+  const fmt = FORMAT[game.format] || {};
+  const reveal = (key, val = true) => setRevealMap(p => ({ ...p, [key]: val }));
+
+  const content = liveContent;
+
+  if (!content || !content.items || content.items.length === 0) {
+    return (
+      <div>
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <div style={{ fontSize: 44, marginBottom: 8 }}>{game.emoji}</div>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Jouez selon les règles. Notez les scores ci-dessous.</p>
+        </div>
+        <ScoreTracker teams={teams} scores={scores} setScores={setScores} />
+        <button onClick={onDone} style={{ marginTop: 14, width: "100%", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: `${fmt.color || "#D4A0F5"}22`, border: `2px solid ${fmt.color || "#D4A0F5"}50`, color: fmt.color || "#D4A0F5" }}>
+          → Voir le classement
+        </button>
+      </div>
+    );
+  }
+
+  const { type, items } = content;
+  const total = items.length;
+
+  // ── THEMES : grille cochable ──────────────────────────
+  if (type === "themes") {
+    return (
+      <div>
+        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
+          {content.title} — appuyez pour cocher
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+          {items.map((item, i) => {
+            const used = usedSet.has(i);
+            return (
+              <div key={i} onClick={() => setUsedSet(s => { const n = new Set(s); used ? n.delete(i) : n.add(i); return n; })}
+                style={{
+                  padding: "7px 12px", borderRadius: 10, cursor: "pointer", userSelect: "none",
+                  background: used ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
+                  border: `1px solid ${used ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)"}`,
+                  display: "flex", alignItems: "center", gap: 6,
+                  opacity: used ? 0.3 : 1, textDecoration: used ? "line-through" : "none",
+                  transition: "all 0.15s",
+                }}>
+                {item.emoji && <span style={{ fontSize: 13 }}>{item.emoji}</span>}
+                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 12 }}>{item.label || item}</span>
+              </div>
+            );
+          })}
+        </div>
+        <ScoreTracker teams={teams} scores={scores} setScores={setScores} />
+        <button onClick={onDone} style={{ marginTop: 12, width: "100%", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: `${fmt.color || "#D4A0F5"}22`, border: `2px solid ${fmt.color || "#D4A0F5"}50`, color: fmt.color || "#D4A0F5" }}>
+          → Voir le classement
+        </button>
+      </div>
+    );
+  }
+
+  // ── CARTE PAR CARTE ───────────────────────────────────
+  const item    = items[idx];
+  const cardKey = `play-${game.id}-${idx}`;
+
+  const bigCard = {
+    padding: "18px 16px", borderRadius: 14, minHeight: 130,
+    background: "rgba(255,255,255,0.04)", border: `1px solid ${fmt.color || "#D4A0F5"}30`,
+    display: "flex", flexDirection: "column", gap: 10, marginBottom: 12,
+  };
+  const bigTxt  = { color: "#fff", fontSize: 15, fontWeight: 600, lineHeight: 1.55 };
+  const catBadge = { display: "inline-block", padding: "2px 8px", borderRadius: 6, fontSize: 9, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)", alignSelf: "flex-start", letterSpacing: 1, fontWeight: 700 };
+  const revBtn  = (label, fn) => (
+    <button onClick={fn} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", alignSelf: "flex-start", background: `${fmt.color || "#D4A0F5"}22`, border: `1px solid ${fmt.color || "#D4A0F5"}50`, color: fmt.color || "#D4A0F5" }}>{label}</button>
+  );
+  const ansBox  = (text, note) => (
+    <div>
+      <div style={{ color: "#2ECC71", fontWeight: 700, fontSize: 15 }}>→ {text}</div>
+      {note && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>💡 {note}</div>}
+    </div>
+  );
+
+  const renderCard = () => {
+    if (type === "questions") {
+      const canDelete = !!setLiveContent;
+      const doDelete  = () => {
+        const ni = items.filter((_, j) => j !== idx);
+        setLiveContent(p => ({ ...p, items: ni }));
+        setIdx(i => Math.min(i, ni.length - 1));
+      };
+      return (
+        <div style={bigCard}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            {item.cat ? <span style={catBadge}>{item.cat}</span> : <span />}
+            {canDelete && <button onClick={doDelete} style={{ background: "none", border: "none", color: "rgba(231,76,60,0.5)", cursor: "pointer", fontSize: 17, padding: "0 2px" }}>×</button>}
+          </div>
+          <p style={bigTxt}>{item.q}</p>
+          {revealMap[cardKey] ? ansBox(item.r) : revBtn("Révéler la réponse", () => reveal(cardKey))}
+        </div>
+      );
+    }
+
+    if (type === "taboo") return (
+      <div style={{ ...bigCard, alignItems: "center", gap: 14 }}>
+        <div style={{ color: "#fff", fontWeight: 900, fontSize: 28, textAlign: "center", letterSpacing: 1 }}>{item.word}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+          {(item.forbidden || []).map((w, j) => (
+            <div key={j} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.15)" }}>
+              <span style={{ color: "#E74C3C", fontSize: 12 }}>🚫</span>
+              <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, fontWeight: 600 }}>{w}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    if (type === "statements") {
+      const isV = item.answer === "VRAI";
+      return (
+        <div style={bigCard}>
+          {item.cat && <span style={catBadge}>{item.cat}</span>}
+          <p style={bigTxt}>{item.text}</p>
+          {revealMap[cardKey]
+            ? <div>
+                <span style={{ display: "inline-block", padding: "4px 14px", borderRadius: 8, fontSize: 14, fontWeight: 800, background: isV ? "rgba(46,204,113,0.15)" : "rgba(231,76,60,0.15)", border: `1px solid ${isV ? "rgba(46,204,113,0.35)" : "rgba(231,76,60,0.35)"}`, color: isV ? "#2ECC71" : "#E74C3C" }}>{item.answer}</span>
+                {item.note && <div style={{ marginTop: 8, color: "rgba(255,255,255,0.4)", fontSize: 11, fontStyle: "italic" }}>💡 {item.note}</div>}
+              </div>
+            : revBtn("Révéler", () => reveal(cardKey))
+          }
+        </div>
+      );
+    }
+
+    if (type === "words") return (
+      <div style={{ ...bigCard, alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#fff", fontWeight: 800, fontSize: 26, textAlign: "center", lineHeight: 1.3 }}>{item}</div>
+      </div>
+    );
+
+    if (type === "debate") return (
+      <div style={bigCard}>
+        {item.cat && <span style={catBadge}>{item.cat}</span>}
+        <p style={bigTxt}>{item.topic || item}</p>
+      </div>
+    );
+
+    if (type === "definitions") return (
+      <div style={bigCard}>
+        <div style={{ color: "#fff", fontWeight: 900, fontSize: 24 }}>{item.word}</div>
+        {revealMap[cardKey]
+          ? <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 1.6, fontStyle: "italic" }}>"{item.def}"</p>
+          : revBtn("Révéler la définition", () => reveal(cardKey))
+        }
+      </div>
+    );
+
+    if (type === "clues") {
+      const clueCount = revealMap[cardKey] || 0;
+      const ansKey    = cardKey + "-ans";
+      return (
+        <div style={bigCard}>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>INDICES {clueCount}/{item.clues.length}</span>
+          {item.clues.slice(0, clueCount).map((c, j) => (
+            <div key={j} style={{ display: "flex", gap: 8 }}>
+              <span style={{ color: fmt.color || "#D4A0F5", fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{j + 1}.</span>
+              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, lineHeight: 1.5 }}>{c}</span>
+            </div>
+          ))}
+          {revealMap[ansKey]
+            ? ansBox(item.answer)
+            : clueCount < item.clues.length
+              ? revBtn(`Indice ${clueCount + 1}`, () => reveal(cardKey, clueCount + 1))
+              : revBtn("Révéler la réponse", () => reveal(ansKey))
+          }
+        </div>
+      );
+    }
+
+    if (type === "series") {
+      const shuffled = [...(item.items || [])].sort((a, b) => a.localeCompare(b));
+      return (
+        <div style={bigCard}>
+          {item.cat && <span style={catBadge}>{item.cat}</span>}
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{item.title}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {shuffled.map((x, j) => (
+              <span key={j} style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)", fontSize: 12 }}>{x}</span>
+            ))}
+          </div>
+          {revealMap[cardKey]
+            ? <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                {(item.items || []).map((x, j) => (
+                  <span key={j} style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.2)", color: "#2ECC71", fontSize: 12 }}>{j + 1}. {x}</span>
+                ))}
+              </div>
+            : revBtn("Révéler l'ordre chronologique", () => reveal(cardKey))
+          }
+        </div>
+      );
+    }
+
+    if (type === "pairs") return (
+      <div style={{ ...bigCard, alignItems: "center", gap: 16 }}>
+        <div style={{ color: "#fff", fontWeight: 800, fontSize: 22 }}>{item.a}</div>
+        <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>paire avec</div>
+        {revealMap[cardKey]
+          ? <div style={{ color: fmt.color || "#D4A0F5", fontWeight: 800, fontSize: 22 }}>{item.b}</div>
+          : revBtn("Révéler le mot B", () => reveal(cardKey))
+        }
+      </div>
+    );
+
+    if (type === "top5") return (
+      <div style={bigCard}>
+        {item.cat && <span style={catBadge}>{item.cat}</span>}
+        <p style={bigTxt}>{item.q}</p>
+        {revealMap[cardKey]
+          ? <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {(item.answers || []).map((a, j) => (
+                <div key={j} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ color: "#F1C40F", fontWeight: 700, minWidth: 18, fontSize: 12 }}>{j + 1}.</span>
+                  <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>{a}</span>
+                </div>
+              ))}
+            </div>
+          : revBtn("Révéler le classement", () => reveal(cardKey))
+        }
+      </div>
+    );
+
+    return <div style={bigCard}><p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{item?.word || item?.label || String(item)}</p></div>;
+  };
+
+  return (
+    <div>
+      {/* Compteur + bouton classement */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>{idx + 1} / {total}</span>
+        <button onClick={onDone} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "rgba(46,204,113,0.12)", border: "1px solid rgba(46,204,113,0.3)", color: "#2ECC71" }}>
+          → Classement
+        </button>
+      </div>
+
+      {renderCard()}
+
+      {/* Navigation */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}
+          style={{ flex: 1, padding: "9px", borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "inherit", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: idx === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", cursor: idx === 0 ? "not-allowed" : "pointer" }}>← Préc</button>
+        <button onClick={() => setIdx(i => Math.min(total - 1, i + 1))} disabled={idx === total - 1}
+          style={{ flex: 1, padding: "9px", borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "inherit", background: `${fmt.color || "#D4A0F5"}18`, border: `1px solid ${fmt.color || "#D4A0F5"}35`, color: idx === total - 1 ? "rgba(255,255,255,0.2)" : fmt.color || "#D4A0F5", cursor: idx === total - 1 ? "not-allowed" : "pointer" }}>Suiv →</button>
+      </div>
+
+      {/* Ajout question (type questions uniquement) */}
+      {type === "questions" && setLiveContent && (
+        <AddQuestionForm onAdd={newItem => setLiveContent(p => ({ ...p, items: [...(p.items || []), newItem] }))} />
+      )}
+
+      <ScoreTracker teams={teams} scores={scores} setScores={setScores} />
+    </div>
+  );
+}
+
 function MiniGameModal({ teams, setTeams, onDone }) {
   const [game] = useState(() => {
     const used = window._usedMG ?? [];
@@ -1961,9 +2412,16 @@ function MiniGameModal({ teams, setTeams, onDone }) {
     window._markUsedMG?.(picked.id);
     return picked;
   });
-  const [phase, setPhase] = useState("rules"); // rules | ranking
+  const [phase, setPhase]           = useState("rules");
+  const [scores, setScores]         = useState([0, 0, 0, 0]);
+  const [liveContent, setLiveContent] = useState(() => game.content);
   const [distributed, setDistributed] = useState(false);
   const fmt = FORMAT[game.format] || {};
+
+  // Ordre de classement dérivé des scores (meilleur en premier)
+  const rankOrder = [0, 1, 2, 3].sort((a, b) => scores[b] - scores[a]);
+
+  const phaseLabel = { rules: "PRÉSENTATION", play: "JEU EN COURS", ranking: "CLASSEMENT" };
 
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:907,
@@ -1971,31 +2429,31 @@ function MiniGameModal({ teams, setTeams, onDone }) {
       <div style={{ background:"#0c1525", border:`2px solid ${fmt.color || "#D4A0F5"}55`,
         borderRadius:20, padding:24, maxWidth:580, width:"100%", maxHeight:"94vh", overflowY:"auto" }}>
 
+        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
           <div style={{ color:fmt.color || "#D4A0F5", fontWeight:800, fontSize:20, letterSpacing:1 }}>
             {game.emoji} MINI-JEU
           </div>
-          <span style={{ padding:"2px 9px", borderRadius:7, fontSize:10, fontWeight:700,
-            background:`${fmt.color || "#D4A0F5"}20`, color:fmt.color || "#D4A0F5" }}>
-            {fmt.emoji} {fmt.short}
-          </span>
+          <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+            <span style={{ padding:"2px 9px", borderRadius:7, fontSize:10, fontWeight:700,
+              background:`${fmt.color || "#D4A0F5"}20`, color:fmt.color || "#D4A0F5" }}>
+              {fmt.emoji} {fmt.short}
+            </span>
+            <span style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:1 }}>
+              {phaseLabel[phase]}
+            </span>
+          </div>
         </div>
 
+        {/* ── PHASE PRÉSENTATION ── */}
         {phase === "rules" && (
           <div>
             <div style={{ fontSize:42, textAlign:"center", marginBottom:8 }}>{game.emoji}</div>
-            <div style={{ color:"#fff", fontWeight:800, fontSize:18, textAlign:"center", marginBottom:6 }}>
-              {game.name}
-            </div>
-            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, lineHeight:1.6, textAlign:"center", marginBottom:14 }}>
-              {game.desc}
-            </p>
-
+            <div style={{ color:"#fff", fontWeight:800, fontSize:18, textAlign:"center", marginBottom:6 }}>{game.name}</div>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, lineHeight:1.6, textAlign:"center", marginBottom:14 }}>{game.desc}</p>
             {game.rules && game.rules.length > 0 && (
-              <div style={{ marginBottom:14, padding:"12px 16px", borderRadius:12,
-                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontWeight:700,
-                  letterSpacing:1, marginBottom:8 }}>RÈGLES</div>
+              <div style={{ marginBottom:14, padding:"12px 16px", borderRadius:12, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:8 }}>RÈGLES</div>
                 {game.rules.map((r, i) => (
                   <div key={i} style={{ display:"flex", gap:8, marginBottom:4 }}>
                     <span style={{ color:fmt.color || "#D4A0F5", fontWeight:700, fontSize:11, flexShrink:0 }}>{i+1}.</span>
@@ -2004,40 +2462,57 @@ function MiniGameModal({ teams, setTeams, onDone }) {
                 ))}
               </div>
             )}
-
             {game.material && (
-              <div style={{ marginBottom:14, padding:"6px 12px", borderRadius:8,
-                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ marginBottom:14, padding:"6px 12px", borderRadius:8, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)" }}>
                 <span style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontWeight:700, letterSpacing:1 }}>MATÉRIEL · </span>
                 <span style={{ color:"rgba(255,255,255,0.55)", fontSize:11 }}>{game.material}</span>
               </div>
             )}
-
-            <div style={{ marginBottom:14, display:"inline-flex", alignItems:"center", gap:6,
-              padding:"4px 12px", borderRadius:8,
-              background:"rgba(212,160,23,0.1)", border:"1px solid rgba(212,160,23,0.2)" }}>
+            <div style={{ marginBottom:14, display:"inline-flex", alignItems:"center", gap:6, padding:"4px 12px", borderRadius:8, background:"rgba(212,160,23,0.1)", border:"1px solid rgba(212,160,23,0.2)" }}>
               <span style={{ fontSize:13 }}>🪙</span>
               <span style={{ color:"#D4A017", fontWeight:600, fontSize:12 }}>{game.reward}</span>
             </div>
-
-            <ContentRenderer content={game.content} gameId={game.id} />
-
-            <button onClick={() => setPhase("ranking")} style={{
-              marginTop:18, width:"100%", padding:"13px", borderRadius:12,
-              fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit",
-              background:`${fmt.color || "#D4A0F5"}22`,
-              border:`2px solid ${fmt.color || "#D4A0F5"}50`,
-              color:fmt.color || "#D4A0F5",
-            }}>▶ Commencer</button>
+            <div style={{ marginTop:18, display:"flex", gap:10 }}>
+              <button onClick={() => openMGMJWindow(game)} style={{
+                flex:"0 0 auto", padding:"13px 18px", borderRadius:12,
+                fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.75)",
+              }}>📋 Vue MJ</button>
+              <button onClick={() => setPhase("play")} style={{
+                flex:1, padding:"13px", borderRadius:12,
+                fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit",
+                background:`${fmt.color || "#D4A0F5"}22`, border:`2px solid ${fmt.color || "#D4A0F5"}50`, color:fmt.color || "#D4A0F5",
+              }}>▶ Commencer le jeu</button>
+            </div>
           </div>
         )}
 
+        {/* ── PHASE JEU ── */}
+        {phase === "play" && (
+          <PlayPhase
+            game={game} teams={teams}
+            scores={scores} setScores={setScores}
+            liveContent={liveContent} setLiveContent={setLiveContent}
+            onDone={() => setPhase("ranking")}
+          />
+        )}
+
+        {/* ── PHASE CLASSEMENT ── */}
         {phase === "ranking" && (
           <div>
-            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:13, textAlign:"center", marginBottom:16 }}>
-              🏆 Entrez le classement du mini-jeu
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:13, textAlign:"center", marginBottom:12 }}>
+              🏆 Classement final — ajustez avec ▲▼ si besoin
             </div>
-            <MiniGameRanking teams={teams} setTeams={setTeams} onDone={() => setDistributed(true)} />
+            {scores.some(s => s > 0) && (
+              <div style={{ display:"flex", gap:4, justifyContent:"center", flexWrap:"wrap", marginBottom:12 }}>
+                {[0,1,2,3].map(i => (
+                  <span key={i} style={{ padding:"3px 10px", borderRadius:8, fontSize:11, background:"rgba(255,255,255,0.04)", color:TC[i], fontWeight:700 }}>
+                    {TE[i]} {scores[i]} pt{scores[i] !== 1 ? "s" : ""}
+                  </span>
+                ))}
+              </div>
+            )}
+            <MiniGameRanking teams={teams} setTeams={setTeams} initialOrder={rankOrder} onDone={() => setDistributed(true)} />
             <button onClick={onDone} disabled={!distributed} style={{
               marginTop:14, width:"100%", padding:"12px", borderRadius:12,
               fontSize:14, fontWeight:700, cursor: distributed ? "pointer" : "not-allowed", fontFamily:"inherit",
@@ -3277,16 +3752,11 @@ function PawnMap({ teams, setTeams, turn, setTurn, side, starIdx, setStarIdx,
     const sfId  = st?.f?.id || st?.fId;
     const stId  = st?.t?.id || st?.tId;
     let starHit = false;
-    if (sfId && stId) {
-      if (caseId === sfId || caseId === stId) {
-        // Direct landing on a star endpoint always triggers
-        starHit = true;
-      } else if (traversedPath && traversedPath.length > 1) {
-        for (let k = 0; k < traversedPath.length - 1; k++) {
-          if ((traversedPath[k] === sfId && traversedPath[k+1] === stId) ||
-              (traversedPath[k] === stId  && traversedPath[k+1] === sfId)) {
-            starHit = true; break;
-          }
+    if (sfId && stId && traversedPath && traversedPath.length > 1) {
+      for (let k = 0; k < traversedPath.length - 1; k++) {
+        if ((traversedPath[k] === sfId && traversedPath[k+1] === stId) ||
+            (traversedPath[k] === stId  && traversedPath[k+1] === sfId)) {
+          starHit = true; break;
         }
       }
     }
@@ -3786,6 +4256,8 @@ export default function App() {
   const [tab,      setTab]      = useLS("archi_tab",    "dashboard");
   const [teams,    setTeams]    = useLS("archi_teams",  INIT_TEAMS);
   const [used,     setUsed]     = useLS("archi_used",   INIT_USED);
+  const [extraQ,   setExtraQ]   = useLS("archi_extraQ",  { college: [], lycee: [], expert: [] });
+  const [hiddenQ,  setHiddenQ]  = useLS("archi_hiddenQ", { college: [], lycee: [], expert: [] });
   const [turn,     setTurn]     = useLS("archi_turn",   0);
   const [tourNum,  setTourNum]  = useLS("archi_tour",   1);
   const [maxTours, setMaxTours] = useLS("archi_maxtour", 10);
@@ -3812,20 +4284,30 @@ export default function App() {
   const [amnesiaActive, setAmnesiaActive] = useState(false); // Carte Amnésie — prochaine question sans gain
   const duelNextTurnRef = useRef(null);
 
-  // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal)
+  // Expose Q + used-question registry globally (accessible from DuelModal, QuestionModal, PawnMap)
   useEffect(() => {
-    window._Q = Q;
+    // Effective pool = base + custom extras (hiddenQ handled via _usedQ injection below)
+    window._Q = {
+      college: [...Q.college, ...(extraQ.college || [])],
+      lycee:   [...Q.lycee,   ...(extraQ.lycee   || [])],
+      expert:  [...Q.expert,  ...(extraQ.expert  || [])],
+    };
     return () => { delete window._Q; };
-  }, []);
+  }, [extraQ]);
   useEffect(() => {
-    window._usedQ = used;
+    // Hidden questions are injected as "already used" so drawing code skips them
+    window._usedQ = {
+      college: [...new Set([...(used.college || []), ...(hiddenQ.college || [])])],
+      lycee:   [...new Set([...(used.lycee   || []), ...(hiddenQ.lycee   || [])])],
+      expert:  [...new Set([...(used.expert  || []), ...(hiddenQ.expert  || [])])],
+    };
     window._markUsed = (lv, idx) => setUsed(prev => {
       const already = prev[lv] ?? [];
       if (already.includes(idx)) return prev;
       return { ...prev, [lv]: [...already, idx] };
     });
     return () => { delete window._usedQ; delete window._markUsed; };
-  }, [used]);
+  }, [used, hiddenQ]);
   useEffect(() => {
     window._usedMG = usedMG;
     window._markUsedMG = (id) => setUsedMG(prev => prev.includes(id) ? prev : [...prev, id]);
@@ -3843,25 +4325,44 @@ export default function App() {
 
   // ── Question helpers ──────────────────────────────────
   const drawQ = useCallback((lv) => {
-    const pool = Q[lv];
+    const basePool  = Q[lv];
+    const extraPool = extraQ[lv] || [];
+    const baseLen   = basePool.length;
     setUsed(prev => {
-      const u = prev[lv];
-      const avail = pool.reduce((acc, _, i) => { if (!u.includes(i)) acc.push(i); return acc; }, []);
+      const u      = prev[lv] ?? [];
+      const hidden = new Set(hiddenQ[lv] || []);
+      const usedS  = new Set(u);
+      const avail  = [];
+      basePool.forEach((_, i)  => { if (!usedS.has(i)            && !hidden.has(i)) avail.push(i); });
+      extraPool.forEach((_, j) => { if (!usedS.has(baseLen + j))                    avail.push(baseLen + j); });
       if (avail.length === 0) {
-        const idx = Math.floor(Math.random() * pool.length);
-        setCurQ({ ...pool[idx], level: lv });
-        return { ...prev, [lv]: [] };
+        // Repartir à zéro en gardant les questions cachées exclues
+        const fresh = [];
+        basePool.forEach((_, i)  => { if (!hidden.has(i)) fresh.push(i); });
+        extraPool.forEach((_, j) => { fresh.push(baseLen + j); });
+        const oi = fresh[Math.floor(Math.random() * fresh.length)];
+        const q  = oi < baseLen ? basePool[oi] : extraPool[oi - baseLen];
+        setCurQ({ ...q, level: lv });
+        return { ...prev, [lv]: [...hidden, oi] };
       }
-      const ri = Math.floor(Math.random() * avail.length);
-      const oi = avail[ri];
-      setCurQ({ ...pool[oi], level: lv });
+      const oi = avail[Math.floor(Math.random() * avail.length)];
+      const q  = oi < baseLen ? basePool[oi] : extraPool[oi - baseLen];
+      setCurQ({ ...q, level: lv });
       return { ...prev, [lv]: [...u, oi] };
     });
     setShowA(false);
     setTab("questions");
-  }, [setUsed, setTab]);
+  }, [setUsed, setTab, extraQ, hiddenQ]);
 
-  const rem = (lv) => Q[lv].length - used[lv].length;
+  const rem = (lv) => {
+    const baseLen  = Q[lv].length;
+    const extraLen = extraQ[lv]?.length || 0;
+    const skip     = new Set([...(used[lv] || []), ...(hiddenQ[lv] || [])]);
+    let n = 0;
+    for (let i = 0; i < baseLen;  i++) if (!skip.has(i))            n++;
+    for (let j = 0; j < extraLen; j++) if (!skip.has(baseLen + j))  n++;
+    return n;
+  };
 
   // ── Chaos card helper ─────────────────────────────────
   const drawCC = useCallback(() => {
@@ -4380,14 +4881,16 @@ export default function App() {
               const levelEntries = [
                 ["college", LC.college], ["lycee", LC.lycee], ["expert", LC.expert],
               ];
-              const allQ = Object.entries(Q).flatMap(([lv, qs]) =>
-                qs.map((q, i) => ({ ...q, lv, i }))
-              );
+              const allQ = [
+                ...Object.entries(Q).flatMap(([lv, qs]) => qs.map((q, i) => ({ ...q, lv, i, custom: false }))),
+                ...Object.entries(extraQ).flatMap(([lv, qs]) => qs.map((q, j) => ({ ...q, lv, i: Q[lv].length + j, j, custom: true }))),
+              ];
               const filtered = allQ.filter(q => {
                 if (qMJFilter.level !== "all" && q.lv !== qMJFilter.level) return false;
                 if (qMJFilter.cat !== "all" && q.cat !== qMJFilter.cat) return false;
-                if (qMJFilter.used === "used" && !used[q.lv]?.includes(q.i)) return false;
-                if (qMJFilter.used === "unused" && used[q.lv]?.includes(q.i)) return false;
+                const isHidden = !q.custom && hiddenQ[q.lv]?.includes(q.i);
+                if (qMJFilter.used === "used" && !used[q.lv]?.includes(q.i) && !isHidden) return false;
+                if (qMJFilter.used === "unused" && (used[q.lv]?.includes(q.i) || isHidden)) return false;
                 return true;
               });
 
@@ -4434,35 +4937,56 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                  <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginBottom: 8 }}>
-                    {filtered.length} question{filtered.length !== 1 ? "s" : ""}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>
+                      {filtered.length} question{filtered.length !== 1 ? "s" : ""}
+                      {Object.values(hiddenQ).flat().length > 0 && <span style={{ color: "#E74C3C", marginLeft: 6 }}>· {Object.values(hiddenQ).flat().length} cachée{Object.values(hiddenQ).flat().length > 1 ? "s" : ""}</span>}
+                    </span>
+                    <button onClick={() => setHiddenQ({ college: [], lycee: [], expert: [] })} style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontFamily: "inherit" }}>
+                      Tout afficher
+                    </button>
                   </div>
                   {/* Question list */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {filtered.map((q, ri) => {
-                      const lc = LC[q.lv];
-                      const isUsed = used[q.lv]?.includes(q.i);
+                      const lc      = LC[q.lv];
+                      const isUsed  = used[q.lv]?.includes(q.i);
+                      const isHidden = !q.custom && hiddenQ[q.lv]?.includes(q.i);
                       return (
                         <div key={ri} style={{
                           padding: "9px 12px", borderRadius: 10,
-                          background: isUsed ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.035)",
-                          border: `1px solid ${isUsed ? "rgba(255,255,255,0.04)" : lc.color + "20"}`,
-                          opacity: isUsed ? 0.55 : 1,
+                          background: isHidden ? "rgba(231,76,60,0.05)" : isUsed ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.035)",
+                          border: `1px solid ${isHidden ? "rgba(231,76,60,0.2)" : isUsed ? "rgba(255,255,255,0.04)" : lc.color + "20"}`,
+                          opacity: isUsed || isHidden ? 0.55 : 1,
                         }}>
                           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                            <span style={{
-                              padding: "1px 7px", borderRadius: 5, fontSize: 9, fontWeight: 700,
-                              background: `${lc.color}20`, color: lc.color, flexShrink: 0, marginTop: 1,
-                            }}>{lc.emoji} {lc.label.toUpperCase()}</span>
+                            <span style={{ padding: "1px 7px", borderRadius: 5, fontSize: 9, fontWeight: 700, background: `${lc.color}20`, color: lc.color, flexShrink: 0, marginTop: 1 }}>{lc.emoji} {lc.label.toUpperCase()}</span>
                             <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 9, flexShrink: 0, marginTop: 2 }}>{q.cat}</span>
-                            {isUsed && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 8, flexShrink: 0, marginTop: 2 }}>✓ posée</span>}
+                            {isUsed  && <span style={{ color: "rgba(255,255,255,0.2)",  fontSize: 8, flexShrink: 0, marginTop: 2 }}>✓ posée</span>}
+                            {isHidden && <span style={{ color: "#E74C3C",               fontSize: 8, flexShrink: 0, marginTop: 2 }}>🚫 cachée</span>}
+                            {q.custom && <span style={{ color: "#F1C40F",              fontSize: 8, flexShrink: 0, marginTop: 2 }}>✏️ custom</span>}
                             <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, flex: 1, lineHeight: 1.4 }}>{q.q}</span>
                             <span style={{ color: "#2ECC71", fontWeight: 700, fontSize: 12, flexShrink: 0, marginTop: 1 }}>{q.r}</span>
+                            {/* Supprimer / cacher */}
+                            {q.custom
+                              ? <button onClick={() => setExtraQ(prev => ({ ...prev, [q.lv]: prev[q.lv].filter((_, jj) => jj !== q.j) }))}
+                                  style={{ background: "none", border: "none", color: "#E74C3C", cursor: "pointer", fontSize: 15, padding: "0 2px", flexShrink: 0 }}>×</button>
+                              : isHidden
+                                ? <button onClick={() => setHiddenQ(prev => ({ ...prev, [q.lv]: prev[q.lv].filter(i => i !== q.i) }))}
+                                    style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 9, padding: "1px 6px", borderRadius: 5, flexShrink: 0, fontFamily: "inherit" }}>Afficher</button>
+                                : <button onClick={() => setHiddenQ(prev => ({ ...prev, [q.lv]: [...(prev[q.lv] || []), q.i] }))}
+                                    style={{ background: "none", border: "none", color: "rgba(231,76,60,0.5)", cursor: "pointer", fontSize: 15, padding: "0 2px", flexShrink: 0 }}>×</button>
+                            }
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                  {/* Formulaire ajout */}
+                  {(() => {
+                    const lvAdd = qMJFilter.level !== "all" ? qMJFilter.level : "college";
+                    return <AddQuestionForm onAdd={item => setExtraQ(prev => ({ ...prev, [lvAdd]: [...(prev[lvAdd] || []), item] }))} />;
+                  })()}
                 </div>
               );
             })() : (
