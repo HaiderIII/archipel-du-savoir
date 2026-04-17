@@ -327,7 +327,7 @@ export const Q = {
     { q: "Dans quel pays se trouve le désert du Gobi ?", r: "Chine et Mongolie", cat: "GÉO" },
     { q: "Qui a fondé la première université du monde, Al-Qaraouiyine, en 859 ?", r: "Fatima al-Fihri (à Fès, Maroc)", cat: "HISTOIRE" },
     // ── Pop culture lycée ──
-    { q: "Dans « Breaking Bad », comment s'appelle le chimiste qui fabrique de la méthamphétamine ?", r: "Walter White (alias Heisenberg)", cat: "DÉTENTE" },
+    { q: "Dans quelle ville américaine fictive se déroule la série « Breaking Bad » ?", r: "Albuquerque (Nouveau-Mexique)", cat: "DÉTENTE" },
     { q: "Quel studio a créé les films « Spirited Away » et « Le Château ambulant » ?", r: "Studio Ghibli (Hayao Miyazaki)", cat: "DÉTENTE" },
     { q: "Quelle chanteuse islandaise est connue pour ses tenues extravagantes et des albums comme « Post » et « Homogenic » ?", r: "Björk", cat: "DÉTENTE" },
     { q: "Dans quelle ville fictive Batman protège-t-il les habitants ?", r: "Gotham City", cat: "DÉTENTE" },
@@ -656,7 +656,7 @@ export const Q = {
     { q: "Quel philosophe a distingué le noumène (chose en soi) du phénomène (chose telle qu'elle est perçue) ?", r: "Emmanuel Kant", cat: "PHILO" },
     { q: "Quel compositeur romantique est surnommé « le poète du piano » ?", r: "Frédéric Chopin", cat: "MUSIQUE" },
     { q: "Quelle est l'origine du mot « hystérie » et pourquoi est-il problématique ?", r: "Du grec hystera (utérus) ; problématique car il a longtemps pathologisé les émotions féminines", cat: "PSYCHO" },
-    { q: "Qui a fondé l'analyse psychologique en théorisant le complexe d'Œdipe et l'inconscient ?", r: "Sigmund Freud", cat: "PSYCHO" },
+    { q: "Quel neurologue viennois a fondé la psychanalyse en théorisant le rôle de l'inconscient dans nos comportements ?", r: "Sigmund Freud (fin XIXe – début XXe s.)", cat: "PSYCHO" },
     { q: "Quel est le nom du principe qui dit qu'une théorie scientifique doit pouvoir être réfutée ?", r: "Le falsifiabilisme (Karl Popper)", cat: "SCIENCE" },
     { q: "Quelle est la différence entre une métaphore et une métonymie ?", r: "Métaphore : analogie (ex : « la vie est un voyage »). Métonymie : lien de contiguïté (ex : « boire un verre »).", cat: "LITTÉRATURE" },
     { q: "Quel traité de paix a mis fin à la Première Guerre mondiale ?", r: "Le traité de Versailles (1919)", cat: "HISTOIRE" },
