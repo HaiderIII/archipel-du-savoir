@@ -2252,8 +2252,8 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
   const { type, items } = content;
   const total = items.length;
 
-  // ── TABOU / MOTS : contenu réservé à la fenêtre MJ ───
-  if (type === "taboo" || type === "words") {
+  // ── TABOU / MOTS / PAIRES : contenu réservé à la fenêtre MJ ───
+  if (type === "taboo" || type === "words" || type === "pairs") {
     return (
       <div>
         <style>{`@keyframes mgPulse{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}`}</style>
@@ -2276,47 +2276,29 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
     return (
       <div>
         <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
-          {content.title} — cliquez pour voir les réponses · ✓ pour marquer joué
+          {content.title} — ✓ pour marquer joué
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
           {items.map((item, i) => {
             const used = usedSet.has(i);
-            const expanded = expandedIdx === i;
-            const hasAnswers = item.answers && item.answers.length > 0;
             return (
               <div key={i} style={{ borderRadius: 10, overflow: "hidden", opacity: used ? 0.4 : 1 }}>
-                <div onClick={() => hasAnswers && setExpandedIdx(expanded ? null : i)}
-                  style={{
-                    padding: "8px 12px", cursor: hasAnswers ? "pointer" : "default",
-                    background: expanded ? "rgba(255,255,255,0.1)" : used ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${expanded ? "rgba(255,255,255,0.2)" : used ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)"}`,
-                    borderBottom: expanded ? "none" : undefined,
+                <div style={{
+                    padding: "8px 12px",
+                    background: used ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${used ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)"}`,
                     display: "flex", alignItems: "center", gap: 8,
                     textDecoration: used ? "line-through" : "none",
-                    transition: "all 0.15s",
                   }}>
                   {item.emoji && <span style={{ fontSize: 14, flexShrink: 0 }}>{item.emoji}</span>}
-                  <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, flex: 1 }}>{item.label || item}</span>
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>
-                    {hasAnswers ? (expanded ? "▲" : "▼") : ""}
-                  </span>
-                  <button onClick={e => { e.stopPropagation(); setUsedSet(s => { const n = new Set(s); used ? n.delete(i) : n.add(i); return n; }); setExpandedIdx(null); }}
+                  <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, flex: 1 }}>{item.label || item.theme || item}</span>
+                  <button onClick={e => { e.stopPropagation(); setUsedSet(s => { const n = new Set(s); used ? n.delete(i) : n.add(i); return n; }); }}
                     style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
                       background: used ? "rgba(46,204,113,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${used ? "rgba(46,204,113,0.3)" : "rgba(255,255,255,0.1)"}`,
                       color: used ? "#2ECC71" : "rgba(255,255,255,0.4)" }}>
                     {used ? "✓" : "Joué"}
                   </button>
                 </div>
-                {expanded && hasAnswers && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", borderTop: "none" }}>
-                    <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9, fontWeight: 700, letterSpacing: 1, marginBottom: 7 }}>EXEMPLES DE RÉPONSES</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {item.answers.map((ans, j) => (
-                        <span key={j} style={{ padding: "3px 9px", borderRadius: 6, fontSize: 11, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}>{ans}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -2369,20 +2351,6 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
       );
     }
 
-    if (type === "taboo") return (
-      <div style={{ ...bigCard, alignItems: "center", gap: 14 }}>
-        <div style={{ color: "#fff", fontWeight: 900, fontSize: 28, textAlign: "center", letterSpacing: 1 }}>{item.word}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-          {(item.forbidden || []).map((w, j) => (
-            <div key={j} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.15)" }}>
-              <span style={{ color: "#E74C3C", fontSize: 12 }}>🚫</span>
-              <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, fontWeight: 600 }}>{w}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-
     if (type === "statements") {
       const isV = item.answer === "VRAI";
       return (
@@ -2399,15 +2367,6 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
         </div>
       );
     }
-
-    if (type === "words") return (
-      <div style={{ ...bigCard, alignItems: "center", justifyContent: "center" }}>
-        {revealMap[cardKey]
-          ? <div style={{ color: "#fff", fontWeight: 800, fontSize: 26, textAlign: "center", lineHeight: 1.3 }}>{item}</div>
-          : revBtn("🎨 Révéler le mot (MJ seulement)", () => reveal(cardKey))
-        }
-      </div>
-    );
 
     if (type === "debate") return (
       <div style={bigCard}>
@@ -2610,7 +2569,7 @@ function MiniGameModal({ teams, setTeams, onDone }) {
               }}>📋 Vue MJ</button>
               <button onClick={() => {
                 setPhase("play");
-                if (["taboo", "words"].includes(game.content?.type)) openMGMJWindow(game);
+                if (["taboo", "words", "pairs"].includes(game.content?.type)) openMGMJWindow(game);
               }} style={{
                 flex:1, padding:"13px", borderRadius:12,
                 fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit",
