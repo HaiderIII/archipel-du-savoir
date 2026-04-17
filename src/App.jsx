@@ -396,7 +396,11 @@ function ContentRenderer({ content, gameId, editable = false, onItemsChange = nu
   const [revealed, setReveal] = useState({});
   const toggle = (k) => setReveal(p => ({ ...p, [k]: !p[k] }));
 
-  if (!content) return null;
+  if (!content || !content.type || !content.items?.length) return (
+    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontStyle: "italic", padding: "10px 0" }}>
+      Pas de contenu numérique — le MJ anime ce jeu librement.
+    </div>
+  );
   const { type, title, items } = content;
 
   const sectionHeader = (
@@ -3618,11 +3622,12 @@ function ChaosCardModal({ card, teams, turn, onApply, onApplyCoins, onClose }) {
 // ═══════════════════════════════════════════════════════
 function LastTourModal({ onDone }) {
   const [visible, setVisible] = useState(false);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
   useEffect(() => {
     const t1 = setTimeout(() => setVisible(true), 60);
-    const t2 = setTimeout(() => { setVisible(false); setTimeout(onDone, 500); }, 3200);
+    const t2 = setTimeout(() => { setVisible(false); setTimeout(() => onDoneRef.current(), 500); }, 3200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -4643,6 +4648,9 @@ export default function App() {
     setShowDuel(false);
     setUsedMG([]);
     setTab("dashboard");
+    setBridgeTaxTurns(0);
+    setPendingPoisons([]);
+    setAmnesiaActive(false);
   };
 
   // ── UI helpers ────────────────────────────────────────

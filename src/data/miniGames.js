@@ -455,41 +455,6 @@ export const MG = [
   },
 
   {
-    id: 13, emoji: "🎤", name: "Blind Test Fredonné",
-    format: "teams", duration: "~7 min",
-    desc: "Fredonner ou taper le rythme d'un morceau sans paroles ni titre. L'alliance adverse doit deviner le titre ET l'artiste.",
-    rules: [
-      "1 joueur par alliance fredonne / tapeà le rythme du morceau.",
-      "L'alliance adverse a 20 secondes pour deviner titre + artiste.",
-      "+2 pts pour le titre seul. +1 pt bonus pour l'artiste.",
-      "Si personne ne trouve en 20s : l'alliance qui fredonnait peut voler le point.",
-    ],
-    reward: "Classement par score → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
-    material: null,
-    content: {
-      type: "questions", title: "16 morceaux (12 légitimes / 4 pop)",
-      items: [
-        { q: "Fredonner : Ode à la Joie", r: "Beethoven — 9e Symphonie", cat: "ART" },
-        { q: "Fredonner : La Marseillaise (incipit)", r: "Hymne national français", cat: "HIST" },
-        { q: "Fredonner : Les Quatre Saisons — Le Printemps", r: "Vivaldi", cat: "ART" },
-        { q: "Fredonner : Für Elise", r: "Beethoven", cat: "ART" },
-        { q: "Fredonner : Boléro de Ravel", r: "Maurice Ravel — Boléro", cat: "ART" },
-        { q: "Fredonner : La Petite Musique de Nuit", r: "Mozart — Eine kleine Nachtmusik", cat: "ART" },
-        { q: "Fredonner : Clair de Lune", r: "Claude Debussy", cat: "ART" },
-        { q: "Fredonner : Hymne de la Ligue des Champions", r: "UEFA Champions League Anthem (Handel/Handel)", cat: "ART" },
-        { q: "Fredonner : Bella Ciao", r: "Chant partisan italien — Bella Ciao", cat: "HIST" },
-        { q: "Fredonner : L'Internationale", r: "L'Internationale (hymne socialiste)", cat: "HIST" },
-        { q: "Fredonner : Le Lac des Cygnes", r: "Tchaïkovski — Le Lac des Cygnes", cat: "ART" },
-        { q: "Fredonner : God Save the King", r: "Hymne national britannique", cat: "HIST" },
-        { q: "Fredonner : Thème de Star Wars", r: "John Williams — Star Wars", cat: "POP" },
-        { q: "Fredonner : Pirates des Caraïbes (thème principal)", r: "Hans Zimmer — He's a Pirate", cat: "POP" },
-        { q: "Fredonner : Bohemian Rhapsody", r: "Queen — Bohemian Rhapsody", cat: "POP" },
-        { q: "Fredonner : Alors on danse", r: "Stromae — Alors on danse", cat: "POP" },
-      ],
-    },
-  },
-
-  {
     id: 14, emoji: "🤐", name: "Mime en Chaîne",
     format: "teams", duration: "~6 min",
     desc: "Un concept est mimé de joueur en joueur. Le dernier de la chaîne doit deviner. Aucun mot, aucun son. 3 manches.",
@@ -983,7 +948,14 @@ export const MG = [
     ],
     material: "Jeu The Mind (cartes 1–100) · Chronomètre",
     reward: "Classement par temps (+ rapide sans erreur = 🥇) → 🥇 +8₽ · 🥈 +4₽ · 🥉 +2₽ · 4e 0₽",
-    content: null,
+    content: {
+      type: "themes", title: "Déroulement",
+      items: [
+        { theme: "Mise en place", examples: ["Distribuer 2 cartes par joueur (face cachée)", "Rappel : zéro communication autorisée"] },
+        { theme: "Phase de jeu", examples: ["Les joueurs posent les cartes en ordre croissant", "Chronométrer depuis la 1ère carte posée", "Si une carte est dans le mauvais ordre → tentative ratée"] },
+        { theme: "Fin de manche", examples: ["Relever le temps de chaque équipe", "La plus rapide sans erreur remporte la manche"] },
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
