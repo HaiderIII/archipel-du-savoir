@@ -900,9 +900,9 @@ function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null, initial
         const rank = getRank(rankPos);
         const tm = teams[teamIdx];
         return (
-          <React.Fragment key={teamIdx}>
+          <div key={teamIdx} style={{ marginBottom: rankPos < 3 ? 0 : 0 }}>
             <div style={{
-              display: "flex", alignItems: "center", gap: 8, marginBottom: 0,
+              display: "flex", alignItems: "center", gap: 8,
               padding: "8px 12px", borderRadius: tied[rankPos] ? "10px 10px 0 0" : 10,
               background: `${rankColors[rank]}18`,
               border: `1px solid ${rankColors[rank]}40`,
@@ -926,7 +926,7 @@ function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null, initial
             </div>
             {rankPos < 3 && !done && (
               <button onClick={() => toggleTied(rankPos)} style={{
-                width: "100%", marginBottom: 4, padding: "3px 0", borderRadius: "0 0 8px 8px",
+                width: "100%", marginBottom: 6, padding: "3px 0", borderRadius: "0 0 8px 8px",
                 fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                 background: tied[rankPos] ? `${rankColors[rank]}25` : "rgba(255,255,255,0.02)",
                 border: `1px solid ${tied[rankPos] ? rankColors[rank] + "50" : "rgba(255,255,255,0.06)"}`,
@@ -934,8 +934,8 @@ function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null, initial
                 color: tied[rankPos] ? rankColors[rank] : "rgba(255,255,255,0.2)",
               }}>{tied[rankPos] ? "🤝 Ex-æquo — cliquez pour annuler" : "· · · cliquez pour ex-æquo · · ·"}</button>
             )}
-            {rankPos < 3 && done && <div style={{ marginBottom: 4 }} />}
-          </React.Fragment>
+            {(rankPos < 3 && done) && <div style={{ marginBottom: 6 }} />}
+          </div>
         );
       })}
       {done ? (
