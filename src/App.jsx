@@ -2341,7 +2341,10 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
 
     if (type === "words") return (
       <div style={{ ...bigCard, alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#fff", fontWeight: 800, fontSize: 26, textAlign: "center", lineHeight: 1.3 }}>{item}</div>
+        {revealMap[cardKey]
+          ? <div style={{ color: "#fff", fontWeight: 800, fontSize: 26, textAlign: "center", lineHeight: 1.3 }}>{item}</div>
+          : revBtn("🎨 Révéler le mot (MJ seulement)", () => reveal(cardKey))
+        }
       </div>
     );
 
