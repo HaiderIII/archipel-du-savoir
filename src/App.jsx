@@ -2186,6 +2186,7 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
   const [idx, setIdx]           = useState(0);
   const [revealMap, setRevealMap] = useState({});
   const [usedSet, setUsedSet]   = useState(new Set());
+  const [expandedIdx, setExpandedIdx] = useState(null);
   const fmt = FORMAT[game.format] || {};
   const reveal = (key, val = true) => setRevealMap(p => ({ ...p, [key]: val }));
 
@@ -2211,7 +2212,6 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
 
   // ── THEMES : grille cochable avec réponses ────────────
   if (type === "themes") {
-    const [expandedIdx, setExpandedIdx] = useState(null);
     return (
       <div>
         <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
@@ -2304,7 +2304,6 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
             {canDelete && <button onClick={doDelete} style={{ background: "none", border: "none", color: "rgba(231,76,60,0.5)", cursor: "pointer", fontSize: 17, padding: "0 2px" }}>×</button>}
           </div>
           <p style={bigTxt}>{item.q}</p>
-          {revealMap[cardKey] ? ansBox(item.r) : revBtn("Révéler la réponse", () => reveal(cardKey))}
         </div>
       );
     }
