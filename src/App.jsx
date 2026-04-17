@@ -6,22 +6,28 @@ import { MG, FORMAT, RANK_COINS } from "./data/miniGames";
 // ═══════════════════════════════════════════════════════
 // BOARD DATA
 // ═══════════════════════════════════════════════════════
+// Island node positions calculated by placing 11 path nodes evenly around each ellipse
+// (≥60 px spacing between consecutive nodes). Shortcut nodes sit in the interior.
+// Bridge anchors match the exact x,y of the cases they connect.
 const i1 = {
   name: "ÎLE MYSTÈRE", icon: "🏝", cx: 200, cy: 148, rx: 158, ry: 128, rot: -5, color: "#1B3A22",
   cases: [
-    { id: "1a", x: 100, y: 88,  r: "question",   v: "duel"      },
-    { id: "1b", x: 160, y: 56,  r: "coins",       v: "chaos"     },
-    { id: "1c", x: 228, y: 46,  r: "question",   v: "duel"      },
-    { id: "1d", x: 298, y: 66,  r: "duel",        v: "question"  },
-    { id: "1e", x: 328, y: 128, r: "question",   v: "chaos"     },
-    { id: "1f", x: 292, y: 195, r: "chaos",       v: "coins"     },
-    { id: "1g", x: 220, y: 222, r: "coins",       v: "coins"     },
-    { id: "1h", x: 142, y: 208, r: "chaos",       v: "question"  },
-    { id: "1i", x: 85,  y: 152, r: "teleport",   v: "teleport"  },
-    { id: "1x", x: 205, y: 118, r: "chaos",       v: "chaos"     },
-    { id: "1y", x: 255, y: 148, r: "shop",        v: "chaos"     },
-    { id: "1j", x: 318, y: 96,  r: "question",    v: "chaos"     },
-    { id: "1k", x: 180, y: 224, r: "chaos",       v: "coins"     },
+    // ── outer path (clockwise, θ from 220° step +33°) ──
+    { id: "1a", x: 100, y: 76,  r: "question",  v: "duel"      }, // θ=220°
+    { id: "1b", x: 162, y: 41,  r: "coins",      v: "chaos"     }, // θ=253°
+    { id: "1c", x: 236, y: 40,  r: "question",  v: "duel"      }, // θ=286°
+    { id: "1d", x: 298, y: 74,  r: "duel",       v: "question"  }, // θ=319°
+    { id: "1e", x: 318, y: 195, r: "question",  v: "chaos"     }, // θ=25°  → bridge i2
+    { id: "1f", x: 269, y: 243, r: "chaos",      v: "coins"     }, // θ=58°
+    { id: "1g", x: 198, y: 260, r: "coins",      v: "coins"     }, // θ=91°
+    { id: "1h", x: 80,  y: 192, r: "chaos",      v: "question"  }, // θ=157° → bridge i3
+    { id: "1i", x: 72,  y: 129, r: "teleport",  v: "teleport"  }, // θ=190° teleport
+    // ── interior shortcuts ──
+    { id: "1x", x: 192, y: 118, r: "chaos",      v: "chaos"     },
+    { id: "1y", x: 252, y: 148, r: "shop",       v: "chaos"     },
+    // ── extra path nodes (inserted into mp) ──
+    { id: "1j", x: 329, y: 132, r: "question",  v: "chaos"     }, // θ=352°
+    { id: "1k", x: 127, y: 241, r: "chaos",      v: "coins"     }, // θ=124°
   ],
   mp:  ["1a","1b","1c","1d","1j","1e","1f","1g","1k","1h","1i"],
   sc:  [
@@ -33,20 +39,23 @@ const i1 = {
 const i2 = {
   name: "ÎLE VOLCANIQUE", icon: "🌋", cx: 568, cy: 172, rx: 148, ry: 122, rot: 4, color: "#3A1B1B",
   cases: [
-    { id: "2a", x: 568, y: 70,  r: "question",   v: "duel"      },
-    { id: "2b", x: 646, y: 106, r: "duel",        v: "question"  },
-    { id: "2c", x: 688, y: 172, r: "question",   v: "coins"     },
-    { id: "2d", x: 646, y: 240, r: "coins",       v: "chaos"     },
-    { id: "2e", x: 568, y: 270, r: "question",   v: "duel"      },
-    { id: "2f", x: 490, y: 240, r: "chaos",       v: "chaos"     },
-    { id: "2g", x: 452, y: 172, r: "question",   v: "coins"     },
-    { id: "2h", x: 490, y: 106, r: "teleport",   v: "teleport"  },
-    { id: "2x", x: 530, y: 145, r: "shop",        v: "chaos"     },
-    { id: "2y", x: 608, y: 145, r: "question",   v: "chaos"     },
-    { id: "2z", x: 608, y: 205, r: "coins",       v: "coins"     },
-    { id: "2w", x: 530, y: 205, r: "chaos",       v: "question"  },
-    { id: "2i", x: 612, y: 262, r: "question",    v: "coins"     },
-    { id: "2j", x: 464, y: 212, r: "coins",       v: "chaos"     },
+    // ── outer path (clockwise from top, θ from −90° step +36.7°) ──
+    { id: "2a", x: 568, y: 67,  r: "question",  v: "duel"      }, // θ=−90°
+    { id: "2b", x: 643, y: 88,  r: "duel",       v: "question"  }, // θ=−53°
+    { id: "2c", x: 688, y: 142, r: "question",  v: "coins"     }, // θ=−17°
+    { id: "2d", x: 685, y: 208, r: "coins",      v: "chaos"     }, // θ=20°
+    { id: "2e", x: 560, y: 277, r: "question",  v: "duel"      }, // θ=94°  → bridge i3
+    { id: "2f", x: 487, y: 252, r: "chaos",      v: "chaos"     }, // θ=130°
+    { id: "2g", x: 454, y: 130, r: "question",  v: "coins"     }, // θ=204° ← bridge i1
+    { id: "2h", x: 506, y: 81,  r: "teleport",  v: "teleport"  }, // θ=240° teleport
+    // ── interior shortcuts ──
+    { id: "2x", x: 528, y: 148, r: "shop",       v: "chaos"     },
+    { id: "2y", x: 610, y: 142, r: "question",  v: "chaos"     },
+    { id: "2z", x: 610, y: 202, r: "coins",      v: "coins"     },
+    { id: "2w", x: 528, y: 202, r: "chaos",      v: "question"  },
+    // ── extra path nodes (inserted into mp) ──
+    { id: "2i", x: 636, y: 260, r: "question",  v: "coins"     }, // θ=57°
+    { id: "2j", x: 446, y: 196, r: "coins",      v: "chaos"     }, // θ=167°
   ],
   mp:  ["2a","2b","2c","2d","2i","2e","2f","2j","2g","2h"],
   sc:  [
@@ -59,19 +68,22 @@ const i2 = {
 const i3 = {
   name: "ÎLE CORAIL", icon: "🐚", cx: 348, cy: 438, rx: 162, ry: 110, rot: -2, color: "#1B2A3A",
   cases: [
-    { id: "3a", x: 256, y: 373, r: "question",    v: "chaos"     },
-    { id: "3b", x: 348, y: 346, r: "question",   v: "duel"      },
-    { id: "3c", x: 440, y: 373, r: "chaos",       v: "chaos"     },
-    { id: "3d", x: 480, y: 438, r: "chaos",       v: "coins"     },
-    { id: "3e", x: 440, y: 500, r: "coins",       v: "question"  },
-    { id: "3f", x: 348, y: 520, r: "teleport",   v: "teleport"  },
-    { id: "3g", x: 256, y: 500, r: "question",   v: "question"  },
-    { id: "3h", x: 216, y: 438, r: "shop",        v: "chaos"     },
-    { id: "3x", x: 310, y: 408, r: "question",   v: "coins"     },
-    { id: "3y", x: 392, y: 408, r: "coins",       v: "duel"      },
-    { id: "3z", x: 348, y: 465, r: "coins",       v: "coins"     },
-    { id: "3i", x: 466, y: 404, r: "chaos",       v: "coins"     },
-    { id: "3j", x: 228, y: 478, r: "question",    v: "coins"     },
+    // ── outer path (clockwise from upper-left, θ from 225° step +36°) ──
+    { id: "3a", x: 250, y: 376, r: "question",  v: "chaos"     }, // θ=225° ← bridge i1
+    { id: "3b", x: 326, y: 351, r: "question",  v: "duel"      }, // θ=261°
+    { id: "3c", x: 411, y: 360, r: "chaos",      v: "chaos"     }, // θ=297°
+    { id: "3d", x: 484, y: 452, r: "chaos",      v: "coins"     }, // θ=9°   ← bridge i2
+    { id: "3e", x: 446, y: 500, r: "coins",      v: "question"  }, // θ=45°
+    { id: "3f", x: 370, y: 525, r: "teleport",  v: "teleport"  }, // θ=81°  teleport
+    { id: "3g", x: 285, y: 516, r: "question",  v: "question"  }, // θ=117°
+    { id: "3h", x: 212, y: 424, r: "shop",       v: "chaos"     }, // θ=189°
+    // ── interior shortcuts ──
+    { id: "3x", x: 308, y: 408, r: "question",  v: "coins"     },
+    { id: "3y", x: 388, y: 408, r: "coins",      v: "duel"      },
+    { id: "3z", x: 348, y: 462, r: "coins",      v: "coins"     },
+    // ── extra path nodes (inserted into mp) ──
+    { id: "3i", x: 471, y: 398, r: "chaos",      v: "coins"     }, // θ=333°
+    { id: "3j", x: 225, y: 478, r: "question",  v: "coins"     }, // θ=153°
   ],
   mp:  ["3a","3b","3c","3i","3d","3e","3f","3g","3j","3h"],
   sc:  [
@@ -83,9 +95,9 @@ const i3 = {
 };
 const islands = [i1, i2, i3];
 const bridges = [
-  { f: { x: 328, y: 128 }, t: { x: 452, y: 172 }, m: { x: 390, y: 142 } },
-  { f: { x: 142, y: 208 }, t: { x: 256, y: 373 }, m: { x: 190, y: 292 } },
-  { f: { x: 568, y: 270 }, t: { x: 480, y: 438 }, m: { x: 536, y: 354 } },
+  { f: { x: 318, y: 195 }, t: { x: 454, y: 130 }, m: { x: 386, y: 162 } }, // 1e → 2g
+  { f: { x: 80,  y: 192 }, t: { x: 250, y: 376 }, m: { x: 165, y: 284 } }, // 1h → 3a
+  { f: { x: 560, y: 277 }, t: { x: 484, y: 452 }, m: { x: 522, y: 365 } }, // 2e → 3d
 ];
 const tpLinks = [
   { f: i1.cases[8], t: i3.cases[5] },
