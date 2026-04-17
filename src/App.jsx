@@ -837,20 +837,47 @@ function PawnShape({ cx, cy, color, active }) {
 // Supports ties: multiple teams can share the same rank.
 // ranks[teamIdx] = 0..3  (0 = 1er, 1 = 2e, …)
 // ═══════════════════════════════════════════════════════
-function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null }) {
+function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null, initialScores = null }) {
   const [order, setOrder] = useState(() => initialOrder ?? [0, 1, 2, 3]);
   const [done, setDone]   = useState(false);
+
+  // tied[i] = true → position i and i+1 share the same rank (ex-æquo)
+  const [tied, setTied] = useState(() => {
+    if (!initialScores || !initialOrder) return [false, false, false];
+    return [0, 1, 2].map(i => initialScores[initialOrder[i]] !== undefined &&
+      initialScores[initialOrder[i]] === initialScores[initialOrder[i + 1]]);
+  });
+
+  const getRank = (pos) => {
+    let r = 0;
+    for (let i = 0; i < pos; i++) if (!tied[i]) r++;
+    return r;
+  };
 
   const swap = (pos, dir) => {
     if (done) return;
     const other = pos + dir;
     if (other < 0 || other > 3) return;
     setOrder(prev => { const n = [...prev]; [n[pos], n[other]] = [n[other], n[pos]]; return n; });
+    setTied(prev => {
+      const n = [...prev];
+      const lo = Math.min(pos, other);
+      if (lo > 0) n[lo - 1] = false;
+      n[lo] = false;
+      if (lo + 1 < 3) n[lo + 1] = false;
+      return n;
+    });
+  };
+
+  const toggleTied = (boundary) => {
+    if (done) return;
+    setTied(prev => { const n = [...prev]; n[boundary] = !n[boundary]; return n; });
   };
 
   const distribute = () => {
     setTeams(prev => prev.map((t, i) => {
-      const rank = order.indexOf(i);
+      const pos = order.indexOf(i);
+      const rank = getRank(pos);
       return { ...t, coins: t.coins + RANK_COINS[rank], mgWon: rank === 0 ? t.mgWon + 1 : t.mgWon };
     }));
     setDone(true);
@@ -867,33 +894,48 @@ function MiniGameRanking({ teams, setTeams, onDone, initialOrder = null }) {
   return (
     <div style={{ marginTop: 14, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 12 }}>
       <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
-        🏆 CLASSEMENT FINAL — utilisez ▲▼ pour ajuster
+        🏆 CLASSEMENT FINAL — ▲▼ pour ajuster · 🤝 pour ex-æquo
       </div>
       {order.map((teamIdx, rankPos) => {
+        const rank = getRank(rankPos);
         const tm = teams[teamIdx];
         return (
-          <div key={teamIdx} style={{
-            display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
-            padding: "8px 12px", borderRadius: 10,
-            background: `${rankColors[rankPos]}18`,
-            border: `1px solid ${rankColors[rankPos]}40`,
-          }}>
-            <span style={{ fontSize: 18, flexShrink: 0 }}>{rankEmoji[rankPos]}</span>
-            <span style={{ color: TC[teamIdx], fontWeight: 700, fontSize: 13, flex: 1 }}>
-              {TE[teamIdx]} {tm.name}
-            </span>
-            <span style={{ color: "#D4A017", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
-              +{RANK_COINS[rankPos]}₽
-            </span>
-            {!done && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <button onClick={() => swap(rankPos, -1)} disabled={rankPos === 0}
-                  style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 0 ? "default" : "pointer" }}>▲</button>
-                <button onClick={() => swap(rankPos, 1)} disabled={rankPos === 3}
-                  style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 3 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 3 ? "default" : "pointer" }}>▼</button>
-              </div>
+          <React.Fragment key={teamIdx}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, marginBottom: 0,
+              padding: "8px 12px", borderRadius: tied[rankPos] ? "10px 10px 0 0" : 10,
+              background: `${rankColors[rank]}18`,
+              border: `1px solid ${rankColors[rank]}40`,
+              borderBottom: tied[rankPos] ? "none" : `1px solid ${rankColors[rank]}40`,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{rankEmoji[rank]}</span>
+              <span style={{ color: TC[teamIdx], fontWeight: 700, fontSize: 13, flex: 1 }}>
+                {TE[teamIdx]} {tm.name}
+              </span>
+              <span style={{ color: "#D4A017", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                +{RANK_COINS[rank]}₽
+              </span>
+              {!done && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <button onClick={() => swap(rankPos, -1)} disabled={rankPos === 0}
+                    style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 0 ? "default" : "pointer" }}>▲</button>
+                  <button onClick={() => swap(rankPos, 1)} disabled={rankPos === 3}
+                    style={{ ...swapBtn, border: "1px solid rgba(255,255,255,0.12)", color: rankPos === 3 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.5)", cursor: rankPos === 3 ? "default" : "pointer" }}>▼</button>
+                </div>
+              )}
+            </div>
+            {rankPos < 3 && !done && (
+              <button onClick={() => toggleTied(rankPos)} style={{
+                width: "100%", marginBottom: 4, padding: "3px 0", borderRadius: "0 0 8px 8px",
+                fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                background: tied[rankPos] ? `${rankColors[rank]}25` : "rgba(255,255,255,0.02)",
+                border: `1px solid ${tied[rankPos] ? rankColors[rank] + "50" : "rgba(255,255,255,0.06)"}`,
+                borderTop: "none",
+                color: tied[rankPos] ? rankColors[rank] : "rgba(255,255,255,0.2)",
+              }}>{tied[rankPos] ? "🤝 Ex-æquo — cliquez pour annuler" : "· · · cliquez pour ex-æquo · · ·"}</button>
             )}
-          </div>
+            {rankPos < 3 && done && <div style={{ marginBottom: 4 }} />}
+          </React.Fragment>
         );
       })}
       {done ? (
@@ -2167,28 +2209,53 @@ function PlayPhase({ game, teams, scores, setScores, liveContent, setLiveContent
   const { type, items } = content;
   const total = items.length;
 
-  // ── THEMES : grille cochable ──────────────────────────
+  // ── THEMES : grille cochable avec réponses ────────────
   if (type === "themes") {
+    const [expandedIdx, setExpandedIdx] = useState(null);
     return (
       <div>
         <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
-          {content.title} — appuyez pour cocher
+          {content.title} — cliquez pour voir les réponses · ✓ pour marquer joué
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
           {items.map((item, i) => {
             const used = usedSet.has(i);
+            const expanded = expandedIdx === i;
+            const hasAnswers = item.answers && item.answers.length > 0;
             return (
-              <div key={i} onClick={() => setUsedSet(s => { const n = new Set(s); used ? n.delete(i) : n.add(i); return n; })}
-                style={{
-                  padding: "7px 12px", borderRadius: 10, cursor: "pointer", userSelect: "none",
-                  background: used ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
-                  border: `1px solid ${used ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)"}`,
-                  display: "flex", alignItems: "center", gap: 6,
-                  opacity: used ? 0.3 : 1, textDecoration: used ? "line-through" : "none",
-                  transition: "all 0.15s",
-                }}>
-                {item.emoji && <span style={{ fontSize: 13 }}>{item.emoji}</span>}
-                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 12 }}>{item.label || item}</span>
+              <div key={i} style={{ borderRadius: 10, overflow: "hidden", opacity: used ? 0.4 : 1 }}>
+                <div onClick={() => hasAnswers && setExpandedIdx(expanded ? null : i)}
+                  style={{
+                    padding: "8px 12px", cursor: hasAnswers ? "pointer" : "default",
+                    background: expanded ? "rgba(255,255,255,0.1)" : used ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${expanded ? "rgba(255,255,255,0.2)" : used ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)"}`,
+                    borderBottom: expanded ? "none" : undefined,
+                    display: "flex", alignItems: "center", gap: 8,
+                    textDecoration: used ? "line-through" : "none",
+                    transition: "all 0.15s",
+                  }}>
+                  {item.emoji && <span style={{ fontSize: 14, flexShrink: 0 }}>{item.emoji}</span>}
+                  <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, flex: 1 }}>{item.label || item}</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>
+                    {hasAnswers ? (expanded ? "▲" : "▼") : ""}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); setUsedSet(s => { const n = new Set(s); used ? n.delete(i) : n.add(i); return n; }); setExpandedIdx(null); }}
+                    style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+                      background: used ? "rgba(46,204,113,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${used ? "rgba(46,204,113,0.3)" : "rgba(255,255,255,0.1)"}`,
+                      color: used ? "#2ECC71" : "rgba(255,255,255,0.4)" }}>
+                    {used ? "✓" : "Joué"}
+                  </button>
+                </div>
+                {expanded && hasAnswers && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", borderTop: "none" }}>
+                    <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9, fontWeight: 700, letterSpacing: 1, marginBottom: 7 }}>EXEMPLES DE RÉPONSES</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {item.answers.map((ans, j) => (
+                        <span key={j} style={{ padding: "3px 9px", borderRadius: 6, fontSize: 11, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}>{ans}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2512,7 +2579,7 @@ function MiniGameModal({ teams, setTeams, onDone }) {
                 ))}
               </div>
             )}
-            <MiniGameRanking teams={teams} setTeams={setTeams} initialOrder={rankOrder} onDone={() => setDistributed(true)} />
+            <MiniGameRanking teams={teams} setTeams={setTeams} initialOrder={rankOrder} initialScores={scores} onDone={() => setDistributed(true)} />
             <button onClick={onDone} disabled={!distributed} style={{
               marginTop:14, width:"100%", padding:"12px", borderRadius:12,
               fontSize:14, fontWeight:700, cursor: distributed ? "pointer" : "not-allowed", fontFamily:"inherit",
